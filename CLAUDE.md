@@ -1,0 +1,143 @@
+# CLAUDE.md — Cómo trabajamos en este repo
+
+Este archivo explica cómo trabajamos los dos desarrolladores en el repo, y sirve de contexto para Claude cuando trabaje aquí. El qué es el proyecto está en [`README.md`](./README.md).
+
+**Para Claude:** sigue estas reglas en todo lo que hagas en el repo. Si una tarea choca con alguna, para y pregunta.
+
+---
+
+## Contexto rápido
+
+- Web de una fiesta de cumpleaños: landing con contador, confirmación de asistencia, estanco de broma (4–5 productos fijos, sin ventas) y canciones de Spotify.
+- Stack: Astro + Tailwind, Supabase, hosting en Vercel/Netlify.
+- Dos desarrolladores trabajando en paralelo. El objetivo de estas reglas es **no pisarnos**.
+- Idioma: código y nombres en inglés o español, pero el mismo en todo el repo *(pendiente de decidir)*. Commits y PRs en español.
+
+---
+
+## Reglas de ramas
+
+1. **Nunca se hace commit directo en `main`.** Todo entra por Pull Request revisada por el otro.
+   - Si el repo es privado con cuenta gratuita, GitHub no puede impedirlo: es un acuerdo entre nosotros.
+2. **Una rama por tarea**, con prefijo:
+   - `feat/` funcionalidad nueva (`feat/rsvp`, `feat/estanco`)
+   - `fix/` arreglo
+   - `chore/` configuración, dependencias
+   - `db/` migraciones de Supabase
+3. **Ramas cortas**: fusionar en uno o dos días. Si una tarea es más larga, partirla.
+4. Al fusionar: **Squash and merge** y borrar la rama.
+
+---
+
+## Flujo diario
+
+```bash
+# Empezar siempre desde main actualizado
+git switch main
+git pull
+
+# Crear la rama de la tarea
+git switch -c feat/nombre-tarea
+
+# Trabajar con commits pequeños
+git add .
+git commit -m "seccion: qué cambia"
+
+# Antes de abrir la PR, traer lo que haya fusionado el otro
+git fetch
+git rebase origin/main          # o: git merge origin/main (ver nota)
+
+# Subir y abrir la PR
+git push -u origin feat/nombre-tarea
+# tras un rebase hay que forzar, siempre con lease:
+git push --force-with-lease
+```
+
+**Nota:** `rebase` deja el historial más limpio, pero si uno de los dos no lo domina, usad `merge origin/main`, que perdona más los errores. *(Pendiente de decidir)*
+
+**Nunca** `git push --force` a secas, y nunca forzar sobre `main`.
+
+---
+
+## Pull Requests
+
+- Título: `[sección] qué hace`, por ejemplo `[estanco] listado de productos y selección`.
+- La descripción enlaza el issue: `Closes #3`.
+- El revisor mira la **preview de Vercel/Netlify**, no solo el diff.
+- PRs pequeñas. Si toca más de una sección, probablemente son dos PRs.
+
+---
+
+## Quién toca qué
+
+Cada uno es dueño de sus secciones y trabaja en sus carpetas:
+
+| Carpeta | Responsable |
+|---|---|
+| `src/components/common/`, `src/layouts/` | *(pendiente)* — diseño base |
+| `src/components/landing/` | *(pendiente)* |
+| `src/components/rsvp/` | *(pendiente)* |
+| `src/components/estanco/`, `src/data/estanco.json` | *(pendiente)* |
+| `src/components/spotify/` | *(pendiente)* |
+
+**Archivos compartidos: avisar antes de tocarlos.** Aquí salen casi todos los conflictos:
+- `src/layouts/`, `src/components/common/`
+- `tailwind.config.*`, `astro.config.*`
+- `package.json`, `package-lock.json`
+- `supabase/migrations/`
+
+**El diseño base se fusiona antes de empezar ninguna sección.** Si se hace en paralelo, acabamos con dos estilos distintos.
+
+**Para Claude:** no modifiques archivos de una sección que no sea la de la tarea actual, ni los compartidos, sin decirlo explícitamente.
+
+---
+
+## Conflictos habituales
+
+- **`package-lock.json`**: no resolver a mano. Quedarse con la versión de `main` y ejecutar `npm install`.
+- **Conflicto en un archivo compartido**: resolverlo hablando con el otro, no eligiendo "mi versión" sin mirar.
+
+---
+
+## Supabase
+
+- Cada uno trabaja con **su base local**: `supabase start` (necesita Docker). Nadie prueba contra producción.
+- **Cambios de esquema solo con migraciones**:
+  ```bash
+  supabase migration new nombre_descriptivo
+  ```
+  Nunca desde el panel web: esos cambios no quedan en el repo y el otro no se entera.
+- Las migraciones ya fusionadas en `main` **no se editan**. Si hay que corregir algo, se hace con una migración nueva.
+- Después de un `git pull` con migraciones nuevas:
+  ```bash
+  supabase db reset
+  ```
+- **RLS activado en todas las tablas** desde la migración que las crea. La clave `anon` está en el navegador: sin RLS, cualquiera puede leer o borrar todo.
+- **Solo una persona aplica a producción** (`supabase db push`): *(pendiente de decidir quién)*.
+
+---
+
+## Secretos y configuración
+
+- `.env` nunca va al repo (está en `.gitignore`).
+- `.env.example` sí va al repo, con las variables pero sin valores reales.
+- En el frontend solo la clave `anon` de Supabase. La `service_role` nunca sale del servidor.
+- Tokens de Spotify (si se integra la API): solo en Edge Functions de Supabase, nunca en el cliente.
+
+---
+
+## Coordinación
+
+- Un **issue por tarea**, con responsable asignado.
+- No usamos tablero de Projects: para dos personas acaba sin actualizarse.
+- Antes de empezar algo que toque archivos compartidos, avisar por el chat.
+
+---
+
+## Pendiente de acordar
+
+- [ ] Repo público o privado
+- [ ] `rebase` o `merge` para actualizar ramas
+- [ ] Reparto de carpetas y quién hace el diseño base
+- [ ] Quién aplica migraciones a producción
+- [ ] Idioma del código (inglés o español)
