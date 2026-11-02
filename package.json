@@ -12,8 +12,12 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.5",
     "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "supabase": "^3.0.0"
   }
 }

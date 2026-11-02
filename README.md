@@ -89,15 +89,16 @@ supabase/
 
 ---
 
-## Puesta en marcha (cuando exista el código)
+## Puesta en marcha
+
+Necesita Node 22.23.4 o superior (`nvm use` lee la versión de `.nvmrc`).
 
 ```bash
 git clone <repo>
-cd trio-feliz
+cd web-trio-cumple
 npm install
-cp .env.example .env      # rellenar con las claves de Supabase local
-supabase start            # necesita Docker
-npm run dev
+cp .env.example .env      # rellenar con la URL y la clave anon de trio-dev
+npm run dev               # http://localhost:4321
 ```
 
 La forma de trabajar entre los dos está en [`CLAUDE.md`](./CLAUDE.md).

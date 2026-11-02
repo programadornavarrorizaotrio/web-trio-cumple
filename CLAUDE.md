@@ -101,19 +101,23 @@ Cada uno es dueño de sus secciones y trabaja en sus carpetas:
 
 ## Supabase
 
-- Cada uno trabaja con **su base local**: `supabase start` (necesita Docker). Nadie prueba contra producción.
+- Dos proyectos en Supabase: **`trio-dev`** (desarrollo, compartido por los dos) y el de **producción**. Nadie prueba contra producción.
+- Sin Docker: el CLI va en las dependencias del proyecto y se usa con `npx supabase`. Para enlazarte a `trio-dev` (una vez):
+  ```bash
+  npx supabase login
+  npx supabase link --project-ref <ref-de-trio-dev>
+  ```
 - **Cambios de esquema solo con migraciones**:
   ```bash
-  supabase migration new nombre_descriptivo
+  npx supabase migration new nombre_descriptivo
+  npx supabase db push          # la aplica en el proyecto enlazado
   ```
   Nunca desde el panel web: esos cambios no quedan en el repo y el otro no se entera.
+- **`trio-dev` es compartido**: avisar por el chat antes de hacer `db push` de una migración, porque al otro le cambia la base en ese momento.
 - Las migraciones ya fusionadas en `main` **no se editan**. Si hay que corregir algo, se hace con una migración nueva.
-- Después de un `git pull` con migraciones nuevas:
-  ```bash
-  supabase db reset
-  ```
 - **RLS activado en todas las tablas** desde la migración que las crea. La clave `anon` está en el navegador: sin RLS, cualquiera puede leer o borrar todo.
-- **Solo una persona aplica a producción** (`supabase db push`): *(pendiente de decidir quién)*.
+- **Solo una persona aplica a producción** (`db push` enlazado al proyecto de producción): *(pendiente de decidir quién)*. Antes de cada `db push`, comprobar a qué proyecto estás enlazado.
+- Si algún día la base compartida estorba, se puede pasar a Supabase local con Docker (`npx supabase start`) sin cambiar nada más.
 
 ---
 
