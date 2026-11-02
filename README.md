@@ -97,9 +97,13 @@ Necesita Node 22.23.4 o superior (`nvm use` lee la versión de `.nvmrc`).
 git clone <repo>
 cd web-trio-cumple
 npm install
-cp .env.example .env      # rellenar con la URL y la clave anon de trio-dev
+npx vercel login          # con la cuenta compartida, no la personal
+npx vercel link           # proyecto web-trio-cumple (solo la primera vez)
+npx vercel env pull       # crea .env.local con la URL y la clave anon de trio-dev
 npm run dev               # http://localhost:4321
 ```
+
+Las variables viven en Vercel: **Development** y **Preview** apuntan a `trio-dev`; **Production**, al proyecto de producción. Si cambia alguna, basta con repetir `npx vercel env pull`.
 
 La forma de trabajar entre los dos está en [`CLAUDE.md`](./CLAUDE.md).
 
