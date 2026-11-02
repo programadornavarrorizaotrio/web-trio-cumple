@@ -109,6 +109,28 @@ La forma de trabajar entre los dos está en [`CLAUDE.md`](./CLAUDE.md).
 
 ---
 
+## Ideas
+
+Propuestas sin decidir ni asignar. Cuando una se apruebe, pasa a su sección y tiene su issue.
+
+Referencia visual de las dos: [infolavelada.com](https://www.infolavelada.com/). Tomamos la idea, no el diseño.
+
+### Presentación de los tres cumpleañeros
+- Los tres aparecen juntos, como en un cartel de combate.
+- Al pasar el ratón por uno, su foto aparece en grande con una pequeña animación (zoom, fundido o entrada lateral).
+- En móvil no hay hover: haría falta un toque o que se vayan alternando solos.
+- Necesita una foto de cada uno, a ser posible con fondo recortado (PNG).
+- Encaja en la **landing**, junto al contador.
+
+### Lista de invitados confirmados
+- Cuando un invitado confirma asistencia, aparece en un listado con su imagen, como las fichas de luchadores de un cartel.
+- Por decidir:
+  - **De dónde sale la imagen**: que la suba el invitado (Supabase Storage) o un avatar generado (iniciales, ilustración).
+  - **Privacidad**: es una lista pública con nombres y caras. Va ligada a la decisión del `noindex` y, si se puede, a que solo la vea quien tenga código.
+- Encaja en **confirmar asistencia**. Afecta al modelo de datos (campo de imagen en `invitados`).
+
+---
+
 ## Decisiones pendientes
 
 - [ ] **Identidad**: ¿código por invitado o nombre libre? *(bloquea el modelo de datos; decidir primero)*
