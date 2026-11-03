@@ -3,7 +3,7 @@ import Rotulo from '../common/Rotulo.astro';
 import Campo from '../common/Campo.astro';
 import Button from '../common/Button.astro';
 import Emblema from '../common/Emblema.astro';
-import Cromo from '../cromos/Cromo.astro';
+import Sobre from '../cromos/Sobre.astro';
 import FotosDemo from '../cromos/FotosDemo.astro';
 import { EXIGIR_REGISTRO } from './sesion';
 import { PIN_DEMO } from './datos';
@@ -13,6 +13,7 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 ---
 
 <FotosDemo />
+<Sobre />
 
 <div data-registro class="mx-auto w-full max-w-md">
 	{
@@ -122,25 +123,31 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 		<Button type="submit" tamano="lg" class="w-full">Activar mi cromo</Button>
 	</form>
 
-	<!-- Paso 3: abrir el sobre -->
+	<!-- Paso 3: abrir el sobre (con todos los cromos de quienes ya confirmaron) -->
 	<section data-paso="revelar" hidden class="mt-6 text-center">
 		<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Registrado!</p>
 
-		<div class="relative mt-5 [perspective:1000px]">
+		<!-- Viene: sobre con las cartas de los confirmados -->
+		<div data-viene hidden>
+			<p class="mt-3 text-crema/85">Tienes un sobre con los cromos de todos los que ya vienen.</p>
 			<button
 				type="button"
-				data-sobre
-				class="sobre relative mx-auto flex aspect-[3/4] w-56 flex-col items-center justify-center gap-4 overflow-hidden rounded-lg border-2 border-amarillo bg-granate-oscuro text-amarillo shadow-chapa"
+				data-abrir-sobre
+				class="mx-auto mt-6 block aspect-[11/18] w-44 rounded-lg border-2 border-amarillo bg-granate-oscuro text-amarillo shadow-chapa-amarillo transition-transform active:scale-95"
 			>
-				<span class="absolute inset-x-0 top-7 border-t-2 border-dashed border-amarillo/50" aria-hidden="true"></span>
-				<Emblema class="size-20" hueco="var(--color-granate-oscuro)" />
-				<span class="rotulo text-xl">Sobre de cromos</span>
-				<span class="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-crema/80">Toca para abrir</span>
+				<span class="flex size-full flex-col items-center justify-center gap-3">
+					<Emblema class="size-16" hueco="var(--color-granate-oscuro)" />
+					<span class="rotulo text-xl">Sobre de cromos</span>
+					<span class="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-crema/80">Toca para abrir</span>
+				</span>
 			</button>
+		</div>
 
-			<div data-revelado hidden class="revelado text-left">
-				<Cromo />
-			</div>
+		<!-- No viene: su cromo queda esperando -->
+		<div data-no-viene hidden>
+			<p class="mt-3 text-crema/85">
+				Tu cromo ya está guardado, pero el sobre es solo para quien viene. Si cambias de idea, confirma desde la web y se abre.
+			</p>
 		</div>
 
 		<div data-entrar hidden class="mt-8">
@@ -153,7 +160,8 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 	import { buscarInvitados, comprobarPin, registrar, type Coincidencia } from './datos';
 	import { guardarSesion, leerSesion } from './sesion';
 	import { guardarAsistencia, leerCampos } from '../rsvp/datos';
-	import { pintarCromo } from '../cromos/pintar';
+	import { obtenerAlbum } from '../cromos/datos';
+	import { abrirSobre } from '../cromos/sobre';
 	import type { Cromo } from '../cromos/tipos';
 
 	// Ya registrado en este móvil: directo a la fiesta
@@ -253,7 +261,7 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 			});
 			guardarSesion({ clave, id: elegido.id, nombre: elegido.nombre });
 			await guardarAsistencia(asistencia); // TODO(B): sobra cuando `registrar` la guarde en la BD
-			prepararSobre(cromo);
+			prepararSobre(cromo, asistencia.asiste);
 			irA('revelar');
 		} catch {
 			error.textContent = 'Este nombre ya está registrado. Si no has sido tú, habla con los organizadores.';
@@ -262,45 +270,23 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 	});
 
 	// --- Paso 3: abrir el sobre ---
-	function prepararSobre(cromo: Cromo) {
-		const sobre = $<HTMLButtonElement>('[data-sobre]');
-		sobre.addEventListener(
+	async function prepararSobre(cromo: Cromo, viene: boolean) {
+		$('[data-viene]').hidden = !viene;
+		$('[data-no-viene]').hidden = viene;
+		$('[data-entrar]').hidden = viene; // quien viene entra después de abrir el sobre
+		if (!viene) return;
+
+		const { cromos } = await obtenerAlbum();
+		// El suyo siempre va dentro, aunque la lista aún no lo traiga
+		const todos = cromos.some((c) => c.id === cromo.id) ? cromos : [...cromos, cromo];
+		$('[data-abrir-sobre]').addEventListener(
 			'click',
-			() => {
-				sobre.classList.add('abierto');
-				setTimeout(() => {
-					sobre.hidden = true;
-					$('[data-revelado]').hidden = false;
-					pintarCromo($('[data-revelado] [data-cromo]'), cromo);
-					$('[data-entrar]').hidden = false;
-				}, 450);
+			async () => {
+				await abrirSobre(todos, { propio: cromo.id });
+				$('[data-viene]').hidden = true;
+				$('[data-entrar]').hidden = false;
 			},
 			{ once: true },
 		);
 	}
 </script>
-
-<style>
-	.sobre.abierto {
-		animation: abrir 0.45s ease-in forwards;
-	}
-	@keyframes abrir {
-		30% {
-			transform: rotate(-4deg) scale(1.04);
-		}
-		to {
-			transform: translateY(-40%) scale(0.9);
-			opacity: 0;
-		}
-	}
-
-	.revelado:not([hidden]) {
-		animation: girar 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.2);
-	}
-	@keyframes girar {
-		from {
-			transform: rotateY(90deg) scale(0.8);
-			opacity: 0;
-		}
-	}
-</style>
