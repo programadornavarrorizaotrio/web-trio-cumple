@@ -1,0 +1,58 @@
+---
+// Móvil: carrusel deslizable con el siguiente elemento asomando y puntos debajo.
+// Desde sm: rejilla. Cada hijo debe llevar `w-full shrink-0 snap-center`.
+interface Props {
+	cantidad: number;
+	/** Columnas de la rejilla desde sm */
+	columnas?: string;
+	/** Puntos claros para fondos granate */
+	claro?: boolean;
+	class?: string;
+}
+
+const { cantidad, columnas = 'sm:grid-cols-3', claro = false, class: clase } = Astro.props;
+---
+
+<div data-carrusel-raiz class={clase}>
+	<div
+		data-carrusel
+		class:list={[
+			'-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-[11%] py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+			'sm:mx-0 sm:grid sm:gap-6 sm:overflow-visible sm:px-0 lg:gap-10',
+			columnas,
+		]}
+	>
+		<slot />
+	</div>
+
+	<div class="mt-2 flex justify-center gap-2 sm:hidden" aria-hidden="true">
+		{
+			Array.from({ length: cantidad }, (_, i) => (
+				<span
+					data-punto
+					class:list={['h-2 rounded-full transition-all', claro ? 'bg-amarillo' : 'bg-granate', i === 0 ? 'w-6' : 'w-2 opacity-30']}
+				/>
+			))
+		}
+	</div>
+</div>
+
+<script>
+	// Puntos: marca el elemento más centrado
+	document.querySelectorAll<HTMLElement>('[data-carrusel-raiz]').forEach((raiz) => {
+		const carrusel = raiz.querySelector<HTMLElement>('[data-carrusel]')!;
+		const puntos = raiz.querySelectorAll<HTMLElement>('[data-punto]');
+		carrusel.addEventListener(
+			'scroll',
+			() => {
+				const actual = Math.round(carrusel.scrollLeft / (carrusel.scrollWidth / puntos.length));
+				puntos.forEach((p, i) => {
+					p.classList.toggle('w-6', i === actual);
+					p.classList.toggle('w-2', i !== actual);
+					p.classList.toggle('opacity-30', i !== actual);
+				});
+			},
+			{ passive: true },
+		);
+	});
+</script>

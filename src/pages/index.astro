@@ -1,9 +1,47 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Section from '../components/common/Section.astro';
+import Portada from '../components/landing/Portada.astro';
+import Ventanas from '../components/landing/Ventanas.astro';
+import Asistencia from '../components/rsvp/Asistencia.astro';
+import Trio from '../components/trio/Trio.astro';
+
+// Home: portada, el trío, accesos a las secciones (cada una tiene su página) y asistencia.
 ---
 
 <Layout>
-	<main class="flex min-h-screen items-center justify-center">
-		<h1 class="text-4xl font-bold">Trio Feliz 2.0 🎂</h1>
+	<main>
+		<!-- landing: Persona A -->
+		<Portada />
+
+		<!-- trio: Persona A -->
+		<Section
+			id="trio"
+			antetitulo="Los cumpleañeros"
+			titulo="El trío"
+			subtitulo="Aunque estáis invitados por los tres, muchos solo conocéis a uno. Tres marcas, una fiesta."
+			class="!pb-0"
+		>
+			<Trio />
+		</Section>
+
+		<!-- landing: Persona A -->
+		<section aria-label="Secciones" class="px-4 py-12 sm:py-16">
+			<div class="mx-auto max-w-6xl">
+				<Ventanas />
+			</div>
+		</section>
+
+		<!-- rsvp: Persona B -->
+		<Section
+			id="asistencia"
+			antetitulo="RSVP"
+			titulo="¿Vienes o qué?"
+			subtitulo="Dinos si vienes, con cuánta gente y si hay alguna alergia. Lo puedes cambiar cuando quieras."
+			fondo="granate"
+			centrado
+		>
+			<Asistencia />
+		</Section>
 	</main>
 </Layout>

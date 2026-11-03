@@ -1,0 +1,18 @@
+---
+// Emblema de hoja con la "T", al estilo del rótulo de los estancos.
+// Hereda el color con `currentColor`; el recorte de la T usa `hueco`.
+interface Props {
+	hueco?: string;
+	class?: string;
+}
+
+const { hueco = 'var(--color-granate)', class: clase } = Astro.props;
+---
+
+<svg viewBox="0 0 100 100" class={clase} aria-hidden="true" fill="currentColor">
+	<!-- Hoja: borde superior recto, lado izquierdo curvo, lado derecho casi vertical -->
+	<path d="M4 4 H68 Q90 4 94 26 L98 96 H58 Q8 96 4 40 Z" />
+	<!-- T recortada -->
+	<rect x="42" y="22" width="60" height="16" fill={hueco} />
+	<rect x="42" y="22" width="18" height="76" fill={hueco} />
+</svg>

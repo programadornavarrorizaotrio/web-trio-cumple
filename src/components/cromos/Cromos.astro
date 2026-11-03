@@ -1,0 +1,110 @@
+---
+import Cromo from './Cromo.astro';
+import FotosDemo from './FotosDemo.astro';
+import Emblema from '../common/Emblema.astro';
+
+// Álbum de cromos estilo "selecciona tu luchador": cromo destacado arriba y rejilla debajo.
+// Cada número del álbum es un invitado; los que aún no se han registrado salen boca abajo.
+// Los datos llegan en el navegador (datos.ts), así que la rejilla se pinta desde el script.
+---
+
+<FotosDemo />
+
+<div data-album class="lg:grid lg:grid-cols-[22rem_1fr] lg:items-start lg:gap-10">
+	<div data-foco class="scroll-mt-20 lg:sticky lg:top-20">
+		<Cromo class="lg:grid-cols-1" />
+	</div>
+
+	<div class="mt-5 lg:mt-0">
+		<div class="flex items-end justify-between gap-3">
+			<p class="text-sm font-bold text-tinta-suave">
+				<span data-conseguidos class="rotulo text-3xl text-granate">0</span>
+				<span class="ml-0.5">de <span data-total>0</span> cromos</span>
+			</p>
+			<p class="text-xs font-bold uppercase tracking-[0.15em] text-tinta-suave">Toca uno</p>
+		</div>
+		<!-- Barra de progreso del álbum -->
+		<div class="mt-2 h-2 overflow-hidden rounded-full bg-granate/15" aria-hidden="true">
+			<div data-progreso class="h-full w-0 rounded-full bg-granate transition-[width] duration-700"></div>
+		</div>
+
+		<ul data-rejilla class="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 sm:gap-3" aria-label="Cromos del álbum"></ul>
+	</div>
+</div>
+
+<template data-plantilla-cromo>
+	<li>
+		<button
+			type="button"
+			aria-pressed="false"
+			class="relative block aspect-square w-full overflow-hidden rounded border-2 border-granate/20 bg-granate transition-transform active:scale-95 aria-pressed:border-amarillo aria-pressed:ring-2 aria-pressed:ring-granate aria-pressed:ring-offset-2 aria-pressed:ring-offset-crema"
+		>
+			<img data-c-foto alt="" loading="lazy" class="size-full object-cover" hidden />
+			<span data-c-inicial class="rotulo absolute inset-0 grid place-items-center pb-3 text-3xl text-amarillo"></span>
+			<span data-c-numero class="absolute inset-x-0 bottom-0 bg-granate-oscuro/85 py-0.5 text-center text-[0.6rem] font-black text-amarillo"
+			></span>
+		</button>
+	</li>
+</template>
+
+<!-- Hueco: invitado aún sin registrar (cromo boca abajo) -->
+<template data-plantilla-hueco>
+	<li
+		class="relative grid aspect-square place-items-center overflow-hidden rounded border-2 border-dashed border-granate/30 bg-crema-oscuro text-granate/25"
+	>
+		<Emblema class="size-9" hueco="var(--color-crema-oscuro)" />
+		<span data-c-numero class="absolute inset-x-0 bottom-0 py-0.5 text-center text-[0.6rem] font-black text-granate/50"></span>
+	</li>
+</template>
+
+<script>
+	import { obtenerAlbum } from './datos';
+	import { numeroCromo, pintarCromo, pintarFoto } from './pintar';
+	import { leerSesion } from '../registro/sesion';
+
+	const album = document.querySelector<HTMLElement>('[data-album]')!;
+	const rejilla = album.querySelector<HTMLUListElement>('[data-rejilla]')!;
+	const foco = album.querySelector<HTMLElement>('[data-foco]')!;
+	const tarjeta = foco.querySelector<HTMLElement>('[data-cromo]')!;
+	const plantilla = (nombre: string) =>
+		document.querySelector<HTMLTemplateElement>(`[data-plantilla-${nombre}]`)!.content.firstElementChild!;
+
+	const { cromos, total } = await obtenerAlbum();
+	const porNumero = new Map(cromos.map((c) => [c.numero, c]));
+
+	function seleccionar(id: string, desplazar = false) {
+		const c = cromos.find((x) => x.id === id);
+		if (!c) return;
+		pintarCromo(tarjeta, c);
+		rejilla.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+		// En móvil el destacado puede quedar fuera de pantalla al tocar abajo en la rejilla
+		if (desplazar && foco.getBoundingClientRect().top < 0) foco.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	rejilla.replaceChildren(
+		...Array.from({ length: total }, (_, i) => {
+			const numero = i + 1;
+			const c = porNumero.get(numero);
+			const li = (c ? plantilla('cromo') : plantilla('hueco')).cloneNode(true) as HTMLLIElement;
+			li.querySelector('[data-c-numero]')!.textContent = numeroCromo(numero);
+			if (!c) {
+				li.setAttribute('aria-label', `${numeroCromo(numero)}: sin descubrir`);
+				return li;
+			}
+			const boton = li.querySelector('button')!;
+			boton.dataset.id = c.id;
+			boton.setAttribute('aria-label', `${c.apodo} (${c.nombre})`);
+			pintarFoto(li.querySelector('img')!, li.querySelector<HTMLElement>('[data-c-inicial]')!, c);
+			boton.addEventListener('click', () => seleccionar(c.id, true));
+			return li;
+		}),
+	);
+
+	album.querySelector('[data-conseguidos]')!.textContent = String(cromos.length);
+	album.querySelector('[data-total]')!.textContent = String(total);
+	album.querySelector<HTMLElement>('[data-progreso]')!.style.width = `${total ? (cromos.length / total) * 100 : 0}%`;
+
+	// Destaca el cromo del propio invitado; si no lo encuentra, el primero
+	const inicial = cromos.find((c) => c.id === leerSesion()?.id) ?? cromos[0];
+	if (inicial) seleccionar(inicial.id);
+</script>

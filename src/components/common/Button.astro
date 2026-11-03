@@ -1,0 +1,37 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+// Si recibe `href` es un enlace; si no, un <button>.
+type Props = (HTMLAttributes<'a'> & HTMLAttributes<'button'>) & {
+	variante?: 'amarillo' | 'granate' | 'borde';
+	tamano?: 'md' | 'lg';
+};
+
+const { variante = 'amarillo', tamano = 'md', href, class: clase, ...resto } = Astro.props;
+
+const colores = {
+	amarillo: 'bg-amarillo text-granate-oscuro shadow-chapa-amarillo hover:bg-amarillo-claro',
+	granate: 'bg-granate text-amarillo shadow-chapa hover:bg-granate-claro',
+	borde: 'border-2 border-current bg-transparent hover:bg-amarillo hover:text-granate-oscuro hover:border-amarillo',
+};
+
+const tamanos = {
+	md: 'px-5 py-2.5 text-sm',
+	lg: 'px-8 py-4 text-base',
+};
+
+const clases = [
+	'inline-flex items-center justify-center gap-2 rounded font-black uppercase tracking-wider [font-stretch:115%]',
+	'transition-all duration-150 hover:-translate-y-0.5 active:translate-y-1 active:shadow-none',
+	'disabled:pointer-events-none disabled:opacity-50',
+	colores[variante],
+	tamanos[tamano],
+	clase,
+];
+
+const Etiqueta = href ? 'a' : 'button';
+---
+
+<Etiqueta href={href} class:list={clases} {...resto}>
+	<slot />
+</Etiqueta>

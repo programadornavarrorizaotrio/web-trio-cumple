@@ -1,0 +1,149 @@
+---
+import Rotulo from './Rotulo.astro';
+import Emblema from './Emblema.astro';
+import Hoja from './Hoja.astro';
+
+// Navegación: en escritorio, enlaces arriba; en móvil, barra de pestañas abajo (al alcance
+// del pulgar) con "Más" para el resto de secciones.
+const enlaces = [
+	{ href: '/', texto: 'Inicio' },
+	{ href: '/participantes', texto: 'Participantes' },
+	{ href: '/estanco', texto: 'Estanco' },
+	{ href: '/canciones', texto: 'Canciones' },
+	{ href: '/juegos', texto: 'Juegos' },
+	{ href: '/fotos', texto: 'Fotos' },
+];
+
+const pestanas = [
+	{ href: '/', texto: 'Inicio', icono: 'inicio' },
+	{ href: '/participantes', texto: 'Gente', icono: 'cromos' },
+	{ href: '/estanco', texto: 'Estanco', icono: 'estanco' },
+	{ href: '/canciones', texto: 'Música', icono: 'musica' },
+];
+
+const mas = [
+	{ href: '/#asistencia', emoji: '📝', texto: 'Asistencia', detalle: '¿Vienes o qué?' },
+	{ href: '/juegos', emoji: '🎲', texto: 'Juegos', detalle: 'Propón a qué jugamos' },
+	{ href: '/fotos', emoji: '📷', texto: 'Fotos', detalle: 'El carrete de la fiesta' },
+];
+
+const ruta = Astro.url.pathname.replace(/\/$/, '') || '/';
+const actual = (href: string) => ruta === href;
+const enMas = mas.some((m) => actual(m.href));
+---
+
+<header class="sticky top-0 z-40 bg-granate pt-[env(safe-area-inset-top)] text-crema shadow-chapa">
+	<nav class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4" aria-label="Principal">
+		<a href="/" aria-label="Trio Feliz, inicio"><Rotulo /></a>
+
+		<ul class="hidden gap-6 text-sm font-bold uppercase tracking-wider lg:flex">
+			{
+				enlaces.map((e) => (
+					<li>
+						<a
+							href={e.href}
+							aria-current={actual(e.href) ? 'page' : undefined}
+							class="decoration-2 underline-offset-8 hover:text-amarillo hover:underline aria-[current=page]:text-amarillo aria-[current=page]:underline"
+						>
+							{e.texto}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+</header>
+
+<!-- Barra de pestañas (móvil y tablet) -->
+<nav
+	aria-label="Secciones"
+	class="fixed inset-x-0 bottom-0 z-40 border-t-2 border-amarillo/40 bg-granate-oscuro pb-[env(safe-area-inset-bottom)] text-crema/70 lg:hidden"
+>
+	<ul class="mx-auto grid h-16 max-w-lg grid-cols-5">
+		{
+			pestanas.map((p) => (
+				<li>
+					<a
+						href={p.href}
+						aria-current={actual(p.href) ? 'page' : undefined}
+						class="flex h-full flex-col items-center justify-center gap-1 text-[0.65rem] font-bold uppercase tracking-wide active:bg-granate aria-[current=page]:text-amarillo"
+					>
+						{p.icono === 'inicio' && (
+							<svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+								<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" />
+							</svg>
+						)}
+						{p.icono === 'cromos' && (
+							<svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+								<rect x="3" y="6" width="11" height="15" rx="1.5" />
+								<path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h10A1.5 1.5 0 0 1 21 4.5v12a1.5 1.5 0 0 1-1.5 1.5H14" />
+							</svg>
+						)}
+						{p.icono === 'estanco' && <Emblema class="size-6" hueco="var(--color-granate-oscuro)" />}
+						{p.icono === 'musica' && (
+							<svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+								<path d="M9 18V5l11-2v13" />
+								<circle cx="6.5" cy="18" r="2.5" />
+								<circle cx="17.5" cy="16" r="2.5" />
+							</svg>
+						)}
+						{p.texto}
+					</a>
+				</li>
+			))
+		}
+		<li>
+			<button
+				type="button"
+				data-abrir-hoja="hoja-mas"
+				aria-haspopup="dialog"
+				class:list={[
+					'flex h-full w-full flex-col items-center justify-center gap-1 text-[0.65rem] font-bold uppercase tracking-wide active:bg-granate',
+					enMas && 'text-amarillo',
+				]}
+			>
+				<svg viewBox="0 0 24 24" class="size-6" fill="currentColor" aria-hidden="true">
+					<circle cx="5" cy="12" r="2" />
+					<circle cx="12" cy="12" r="2" />
+					<circle cx="19" cy="12" r="2" />
+				</svg>
+				Más
+			</button>
+		</li>
+	</ul>
+</nav>
+
+<Hoja id="hoja-mas" titulo="hoja-mas-titulo">
+	<div class="p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8">
+		<h2 id="hoja-mas-titulo" class="text-2xl text-granate">Más cosas</h2>
+		<ul class="mt-4 space-y-2">
+			{
+				mas.map((m) => (
+					<li>
+						<a
+							href={m.href}
+							data-cerrar-hoja
+							aria-current={actual(m.href) ? 'page' : undefined}
+							class="flex items-center gap-4 rounded-lg border-2 border-granate/15 bg-white px-4 py-3 active:bg-amarillo aria-[current=page]:border-granate"
+						>
+							<span class="text-3xl" aria-hidden="true">
+								{m.emoji}
+							</span>
+							<span>
+								<span class="rotulo block text-lg text-granate">{m.texto}</span>
+								<span class="block text-sm text-tinta-suave">{m.detalle}</span>
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</Hoja>
+
+<script>
+	// "Asistencia" apunta a un ancla de la home: si ya estás en ella, cierra la hoja al saltar
+	document.querySelectorAll<HTMLElement>('[data-cerrar-hoja]').forEach((enlace) =>
+		enlace.addEventListener('click', () => enlace.closest('dialog')?.close()),
+	);
+</script>

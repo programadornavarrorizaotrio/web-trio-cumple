@@ -1,0 +1,68 @@
+---
+import Campo from '../common/Campo.astro';
+
+// Campos de asistencia (¿vienes?, acompañantes, alergias) para meter dentro de un <form>.
+// Se usan en el registro y en la sección de asistencia. Leer con `leerCampos()` de datos.ts.
+const MAX_ACOMPANANTES = 5;
+const id = `acompanantes-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div data-campos-asistencia class="space-y-5">
+	<fieldset>
+		<legend class="text-xs font-black uppercase tracking-[0.2em] text-granate">¿Vienes?</legend>
+		<div class="mt-1.5 grid grid-cols-2 gap-3">
+			{
+				[
+					['si', '¡Sí, voy!'],
+					['no', 'No puedo'],
+				].map(([valor, texto]) => (
+					<label class="cursor-pointer">
+						<input type="radio" name="asiste" value={valor} required class="peer sr-only" />
+						<span class="block rounded border-2 border-granate/25 bg-white py-3.5 text-center font-black uppercase tracking-wider peer-checked:border-granate peer-checked:bg-granate peer-checked:text-amarillo peer-focus-visible:outline-3 peer-focus-visible:outline-amarillo">
+							{texto}
+						</span>
+					</label>
+				))
+			}
+		</div>
+	</fieldset>
+
+	<div data-solo-si hidden class="space-y-5">
+		<div>
+			<span id={id} class="text-xs font-black uppercase tracking-[0.2em] text-granate">Acompañantes</span>
+			<div class="mt-1.5 flex items-center gap-3" role="group" aria-labelledby={id}>
+				<button type="button" data-menos class="size-12 rounded border-2 border-granate/25 bg-white text-2xl font-black text-granate active:bg-amarillo" aria-label="Uno menos">−</button>
+				<input
+					name="acompanantes"
+					type="number"
+					inputmode="numeric"
+					min="0"
+					max={MAX_ACOMPANANTES}
+					value="0"
+					readonly
+					aria-labelledby={id}
+					class="rotulo w-14 bg-transparent text-center text-3xl text-granate"
+				/>
+				<button type="button" data-mas class="size-12 rounded border-2 border-granate/25 bg-white text-2xl font-black text-granate active:bg-amarillo" aria-label="Uno más">+</button>
+			</div>
+		</div>
+		<Campo etiqueta="Alergias o intolerancias" name="alergias" maxlength={120} placeholder="Ninguna" autocomplete="off" />
+	</div>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-campos-asistencia]').forEach((raiz) => {
+		const form = raiz.closest('form')!;
+		const numero = raiz.querySelector<HTMLInputElement>('input[name="acompanantes"]')!;
+		const cambiar = (d: number) => (numero.value = String(Math.min(Number(numero.max), Math.max(0, Number(numero.value) + d))));
+
+		raiz.querySelector('[data-menos]')!.addEventListener('click', () => cambiar(-1));
+		raiz.querySelector('[data-mas]')!.addEventListener('click', () => cambiar(1));
+
+		// Acompañantes y alergias solo si viene
+		const actualizar = () => (raiz.querySelector<HTMLElement>('[data-solo-si]')!.hidden = new FormData(form).get('asiste') !== 'si');
+		form.addEventListener('change', actualizar);
+		form.addEventListener('reset', () => setTimeout(actualizar));
+		form.addEventListener('rellenado', actualizar);
+	});
+</script>

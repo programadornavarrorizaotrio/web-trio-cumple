@@ -1,0 +1,41 @@
+---
+import Etiqueta from './Etiqueta.astro';
+
+// Bloque de sección de la home con ancla, antetítulo, título de rótulo y barra amarilla.
+interface Props {
+	id: string;
+	titulo: string;
+	antetitulo?: string;
+	subtitulo?: string;
+	fondo?: 'crema' | 'granate';
+	/** Cabecera centrada (para secciones con poco contenido) */
+	centrado?: boolean;
+	class?: string;
+}
+
+const { id, titulo, antetitulo, subtitulo, fondo = 'crema', centrado = false, class: clase } = Astro.props;
+const granate = fondo === 'granate';
+---
+
+<section
+	id={id}
+	class:list={['px-4 py-12 sm:py-24', granate ? 'bg-granate text-crema' : 'bg-crema', clase]}
+	aria-labelledby={`${id}-titulo`}
+>
+	<div class="mx-auto max-w-6xl">
+		<header class:list={['mb-8 sm:mb-14', centrado && 'text-center']}>
+			{antetitulo && <Etiqueta color={granate ? 'amarillo' : 'granate'} class="mb-4">{antetitulo}</Etiqueta>}
+			<h2 id={`${id}-titulo`} class:list={['text-3xl sm:text-5xl', granate ? 'text-amarillo' : 'text-granate']}>
+				{titulo}
+			</h2>
+			<span class:list={['mt-3 block h-1.5 w-24 sm:w-32', centrado && 'mx-auto', granate ? 'bg-amarillo' : 'bg-granate']} aria-hidden="true"
+			></span>
+			{
+				subtitulo && (
+					<p class:list={['mt-4 max-w-2xl sm:text-lg', centrado && 'mx-auto', granate ? 'text-crema/80' : 'text-tinta-suave']}>{subtitulo}</p>
+				)
+			}
+		</header>
+		<slot />
+	</div>
+</section>

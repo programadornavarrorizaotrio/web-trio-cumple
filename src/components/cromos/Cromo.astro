@@ -1,0 +1,65 @@
+---
+// Cromo grande (vacío). Lo rellena `pintarCromo()` de pintar.ts desde el navegador.
+// Se usa en el destacado del álbum y en la revelación del registro.
+interface Props {
+	class?: string;
+}
+
+const { class: clase } = Astro.props;
+---
+
+<article
+	data-cromo
+	class:list={[
+		'cromo relative grid grid-cols-[42%_1fr] items-center gap-4 overflow-hidden rounded-lg border-2 border-amarillo bg-granate p-3 text-crema shadow-chapa',
+		clase,
+	]}
+>
+	<div class="relative aspect-[3/4] overflow-hidden rounded border-2 border-amarillo bg-granate-oscuro">
+		<img data-c-foto alt="" class="size-full object-cover" hidden />
+		<span data-c-inicial class="rotulo absolute inset-0 grid place-items-center text-7xl text-amarillo"></span>
+		<span data-c-numero class="absolute left-1.5 top-1.5 rounded-sm bg-amarillo px-1.5 py-0.5 text-[0.65rem] font-black text-granate-oscuro"
+		></span>
+	</div>
+	<div class="min-w-0">
+		<p
+			data-c-especial
+			hidden
+			class="mb-2 inline-block rounded-sm bg-amarillo px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-[0.15em] text-granate-oscuro"
+		>
+			Edición especial
+		</p>
+		<p data-c-nombre class="text-xs font-bold uppercase tracking-[0.2em] text-amarillo-claro"></p>
+		<p data-c-apodo lang="es" class="rotulo mt-1 hyphens-auto text-xl text-amarillo sm:text-3xl"></p>
+		<p data-c-frase class="mt-2 text-sm leading-snug text-crema/85"></p>
+	</div>
+	<span class="brillo pointer-events-none absolute inset-0" aria-hidden="true"></span>
+</article>
+
+<style>
+	.cromo.entra {
+		animation: entra 0.35s ease-out;
+	}
+	@keyframes entra {
+		from {
+			opacity: 0.4;
+			transform: scale(0.97);
+		}
+	}
+
+	/* Brillo holográfico para los cromos de edición especial */
+	.cromo.es-especial .brillo {
+		background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.35) 45%, rgb(240 188 68 / 0.3) 52%, transparent 65%);
+		background-size: 250% 100%;
+		animation: brillo 3.5s ease-in-out infinite;
+		mix-blend-mode: overlay;
+	}
+	@keyframes brillo {
+		from {
+			background-position: 120% 0;
+		}
+		to {
+			background-position: -120% 0;
+		}
+	}
+</style>

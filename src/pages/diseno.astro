@@ -1,0 +1,102 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/common/Section.astro';
+import Button from '../components/common/Button.astro';
+import Card from '../components/common/Card.astro';
+import Etiqueta from '../components/common/Etiqueta.astro';
+import Sello from '../components/common/Sello.astro';
+import Marco from '../components/common/Marco.astro';
+import Rotulo from '../components/common/Rotulo.astro';
+import Emblema from '../components/common/Emblema.astro';
+
+// Guía de estilo interna: muestra los tokens y componentes comunes.
+const colores = [
+	'granate',
+	'granate-oscuro',
+	'granate-claro',
+	'amarillo',
+	'amarillo-claro',
+	'amarillo-oscuro',
+	'crema',
+	'crema-oscuro',
+	'tinta',
+	'tinta-suave',
+];
+---
+
+<Layout title="Guía de estilo · Trio Feliz" publica>
+	<main>
+		<Section id="rotulo" antetitulo="Marca" titulo="Rótulo" fondo="granate">
+			<div class="flex flex-wrap items-end gap-12">
+				<Rotulo tamano="lg" />
+				<Rotulo />
+				<Emblema class="size-16 text-amarillo" />
+				<Emblema class="size-16 text-granate-oscuro" />
+			</div>
+		</Section>
+
+		<Section id="colores" antetitulo="Tokens" titulo="Colores">
+			<div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
+				{
+					colores.map((c) => (
+						<div class="overflow-hidden rounded-lg border-2 border-granate/15 bg-crema">
+							<div class="h-16" style={`background: var(--color-${c})`} />
+							<p class="p-2 text-xs font-bold">{c}</p>
+						</div>
+					))
+				}
+			</div>
+		</Section>
+
+		<Section id="tipografia" antetitulo="Tokens" titulo="Tipografía" fondo="granate">
+			<div class="space-y-4">
+				<p class="rotulo text-4xl text-amarillo">rotulo · Archivo ancho 900</p>
+				<p class="text-xl">font-sans · Archivo normal: texto corrido, legible en móvil.</p>
+				<p class="text-sm font-bold uppercase tracking-[0.2em] text-amarillo-claro">Etiquetas en mayúsculas espaciadas</p>
+			</div>
+		</Section>
+
+		<Section id="componentes" antetitulo="common/" titulo="Componentes">
+			<div class="space-y-10">
+				<div class="flex flex-wrap items-center gap-4">
+					<Button>Amarillo</Button>
+					<Button variante="granate">Granate</Button>
+					<Button variante="borde" class="text-granate">Borde</Button>
+					<Button tamano="lg">Grande</Button>
+					<Button href="#componentes" variante="granate">Enlace</Button>
+					<Button disabled>Desactivado</Button>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-4">
+					<Etiqueta>Amarillo</Etiqueta>
+					<Etiqueta color="granate">Granate</Etiqueta>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-10">
+					<Sello arriba="Edición" centro="4ª" abajo="Trio Feliz" />
+					<Sello arriba="Invitado" centro="OK" abajo="Confirmado" color="granate" giro={8} />
+				</div>
+
+				<div class="grid gap-6 sm:grid-cols-2">
+					<Card>
+						<h3 class="text-xl text-granate">Card crema</h3>
+						<p class="mt-2">Contenedor básico sobre fondo crema.</p>
+					</Card>
+					<Card tono="granate">
+						<h3 class="text-xl text-amarillo">Card granate</h3>
+						<p class="mt-2">Para destacar, como el rótulo de la puerta.</p>
+					</Card>
+				</div>
+
+				<div class="grid gap-6 sm:grid-cols-2">
+					<Marco>
+						<p class="rotulo text-center text-xl text-granate">Marco granate</p>
+					</Marco>
+					<Marco color="amarillo">
+						<p class="rotulo text-center text-xl text-granate">Marco amarillo</p>
+					</Marco>
+				</div>
+			</div>
+		</Section>
+	</main>
+</Layout>

@@ -1,0 +1,24 @@
+---
+import Rotulo from './Rotulo.astro';
+import Advertencia from './Advertencia.astro';
+
+// Cajetilla de tabaco: banda con rótulo, imagen (slot) y advertencia sanitaria.
+// Sirve para la foto de la portada y para los productos del estanco.
+interface Props {
+	marca?: string;
+	advertencia: string;
+	class?: string;
+}
+
+const { marca = 'Trio Feliz', advertencia, class: clase } = Astro.props;
+---
+
+<figure class:list={['overflow-hidden rounded-lg border-2 border-amarillo bg-granate-oscuro p-2.5 shadow-chapa sm:p-3', clase]}>
+	<div class="flex justify-center pb-2.5 pt-1 sm:pb-3">
+		<Rotulo texto={marca} />
+	</div>
+	<div class="overflow-hidden rounded-sm border-2 border-amarillo">
+		<slot />
+	</div>
+	<Advertencia class="mt-2.5 sm:mt-3">{advertencia}</Advertencia>
+</figure>

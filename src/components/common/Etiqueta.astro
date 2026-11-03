@@ -1,0 +1,24 @@
+---
+// Etiqueta pequeña para antetítulos: "Sección 03", "Nuevo", "Agotado"...
+interface Props {
+	color?: 'amarillo' | 'granate';
+	class?: string;
+}
+
+const { color = 'amarillo', class: clase } = Astro.props;
+
+const colores = {
+	amarillo: 'bg-amarillo text-granate-oscuro',
+	granate: 'bg-granate text-amarillo',
+};
+---
+
+<span
+	class:list={[
+		'inline-block rounded-sm px-3 py-1 text-xs font-black uppercase tracking-[0.2em]',
+		colores[color],
+		clase,
+	]}
+>
+	<slot />
+</span>

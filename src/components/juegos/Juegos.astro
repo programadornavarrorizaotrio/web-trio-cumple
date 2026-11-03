@@ -1,0 +1,127 @@
+---
+import Button from '../common/Button.astro';
+import Campo from '../common/Campo.astro';
+import Hoja from '../common/Hoja.astro';
+import { MAX_JUEGOS } from './datos';
+
+// Juegos para la fiesta: lista de propuestas y formulario en una hoja inferior.
+const lugares = [
+	['dentro', '🏠 Dentro'],
+	['fuera', '🌳 Fuera'],
+	['igual', '🤷 Igual'],
+];
+---
+
+<div data-juegos>
+	<Button data-abrir-hoja="hoja-juego" aria-haspopup="dialog" tamano="lg" class="w-full sm:w-auto">+ Proponer un juego</Button>
+	<p class="mt-2 text-xs text-tinta-suave">Puedes proponer hasta {MAX_JUEGOS}.</p>
+
+	<ul data-lista class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></ul>
+</div>
+
+<template data-plantilla-juego>
+	<li class="rounded-lg border-2 border-granate/15 bg-white p-4 shadow-chapa">
+		<div class="flex items-start justify-between gap-3">
+			<h3 data-titulo class="text-xl text-granate"></h3>
+			<span data-mio hidden class="shrink-0 rounded-sm bg-amarillo px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider text-granate-oscuro">Tuyo</span>
+		</div>
+		<div class="mt-2 flex flex-wrap gap-2 text-xs font-bold">
+			<span data-jugadores class="rounded-full bg-crema-oscuro px-2.5 py-1"></span>
+			<span data-lugar class="rounded-full bg-crema-oscuro px-2.5 py-1"></span>
+		</div>
+		<details class="group mt-3">
+			<summary class="cursor-pointer list-none text-sm font-bold text-granate [&::-webkit-details-marker]:hidden">
+				<span class="group-open:hidden">Ver reglas ↓</span>
+				<span class="hidden group-open:inline">Ocultar reglas ↑</span>
+			</summary>
+			<p data-reglas class="mt-2 whitespace-pre-line text-sm leading-relaxed text-tinta-suave"></p>
+		</details>
+		<p data-autor class="mt-3 border-t-2 border-dashed border-granate/10 pt-2 text-xs text-tinta-suave"></p>
+	</li>
+</template>
+
+<Hoja id="hoja-juego" titulo="hoja-juego-titulo">
+	<form data-form-juego class="space-y-5 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<h3 id="hoja-juego-titulo" class="text-2xl text-granate">Proponer un juego</h3>
+
+		<Campo etiqueta="Nombre del juego" name="titulo" required maxlength={50} placeholder="Beer pong" autocomplete="off" />
+		<Campo etiqueta="Reglas" name="reglas" required maxlength={500} multilinea rows={4} placeholder="Cómo se juega, en pocas líneas" />
+
+		<div class="grid grid-cols-2 gap-3">
+			<Campo etiqueta="Mínimo" name="min" type="number" inputmode="numeric" min="1" max="50" value="2" required />
+			<Campo etiqueta="Máximo" name="max" type="number" inputmode="numeric" min="1" max="50" placeholder="Sin límite" />
+		</div>
+
+		<fieldset>
+			<legend class="text-xs font-black uppercase tracking-[0.2em] text-granate">¿Dónde?</legend>
+			<div class="mt-1.5 grid grid-cols-3 gap-2">
+				{
+					lugares.map(([valor, texto], i) => (
+						<label class="cursor-pointer">
+							<input type="radio" name="lugar" value={valor} checked={i === 2} class="peer sr-only" />
+							<span class="block rounded border-2 border-granate/25 bg-white py-3 text-center text-sm font-bold peer-checked:border-granate peer-checked:bg-granate peer-checked:text-amarillo">
+								{texto}
+							</span>
+						</label>
+					))
+				}
+			</div>
+		</fieldset>
+
+		<p data-error hidden role="alert" class="text-sm font-bold text-granate"></p>
+		<Button type="submit" tamano="lg" class="w-full">Proponer</Button>
+	</form>
+</Hoja>
+
+<script>
+	import { listarJuegos, proponerJuego, textoJugadores, textoLugar, MAX_JUEGOS, type Juego, type Lugar } from './datos';
+	import { invitadoActual } from '../registro/sesion';
+
+	const lista = document.querySelector<HTMLUListElement>('[data-juegos] [data-lista]')!;
+	const plantilla = document.querySelector<HTMLTemplateElement>('[data-plantilla-juego]')!.content.firstElementChild!;
+	const form = document.querySelector<HTMLFormElement>('[data-form-juego]')!;
+	const error = form.querySelector<HTMLElement>('[data-error]')!;
+
+	function tarjeta(j: Juego) {
+		const li = plantilla.cloneNode(true) as HTMLLIElement;
+		const poner = (sel: string, texto: string) => (li.querySelector(`[data-${sel}]`)!.textContent = texto);
+		poner('titulo', j.titulo);
+		poner('jugadores', `👥 ${textoJugadores(j)}`);
+		poner('lugar', textoLugar[j.lugar]);
+		poner('reglas', j.reglas);
+		poner('autor', `Propuesto por ${j.autor}`);
+		li.querySelector<HTMLElement>('[data-mio]')!.hidden = !j.mio;
+		return li;
+	}
+
+	lista.replaceChildren(...(await listarJuegos()).map(tarjeta));
+
+	form.addEventListener('submit', async (ev) => {
+		ev.preventDefault();
+		const datos = new FormData(form);
+		const min = Number(datos.get('min'));
+		const max = datos.get('max') ? Number(datos.get('max')) : null;
+		error.hidden = true;
+		if (max !== null && max < min) {
+			error.textContent = 'El máximo no puede ser menor que el mínimo.';
+			error.hidden = false;
+			return;
+		}
+		try {
+			const nuevo = await proponerJuego({
+				titulo: String(datos.get('titulo')).trim(),
+				reglas: String(datos.get('reglas')).trim(),
+				minJugadores: min,
+				maxJugadores: max,
+				lugar: datos.get('lugar') as Lugar,
+				autor: invitadoActual()?.nombre ?? 'Invitado',
+			});
+			lista.prepend(tarjeta(nuevo));
+			form.reset();
+			form.closest('dialog')!.close();
+		} catch {
+			error.textContent = `Ya has propuesto ${MAX_JUEGOS} juegos.`;
+			error.hidden = false;
+		}
+	});
+</script>

@@ -1,1 +1,17 @@
-[]
+[
+	{ "slug": "marlboro-red", "categoria": "cigarrillos", "marca": "Marlboro", "nombre": "Red · 20 uds", "precio": 6.3, "fondo": "#c8102e", "texto": "#ffffff", "advertencia": "Fumar mata" },
+	{ "slug": "marlboro-gold", "categoria": "cigarrillos", "marca": "Marlboro", "nombre": "Gold · 20 uds", "precio": 6.3, "fondo": "#f3efe6", "texto": "#9a7b2f", "advertencia": "Fumar mata" },
+	{ "slug": "winston", "categoria": "cigarrillos", "marca": "Winston", "nombre": "Classic · 20 uds", "precio": 5.6, "fondo": "#c8102e", "texto": "#ffffff", "advertencia": "Fumar provoca cáncer" },
+	{ "slug": "camel", "categoria": "cigarrillos", "marca": "Camel", "nombre": "Blue · 20 uds", "precio": 5.7, "fondo": "#d9b36c", "texto": "#1d3b6f", "advertencia": "Fumar obstruye las arterias" },
+	{ "slug": "lucky-strike", "categoria": "cigarrillos", "marca": "Lucky Strike", "nombre": "Red · 20 uds", "precio": 5.6, "fondo": "#ffffff", "texto": "#d71920", "advertencia": "Fumar mata" },
+	{ "slug": "chesterfield", "categoria": "cigarrillos", "marca": "Chesterfield", "nombre": "Red · 20 uds", "precio": 5.4, "fondo": "#9e1b32", "texto": "#f3e2b0", "advertencia": "Fumar perjudica a quien te rodea" },
+	{ "slug": "ducados", "categoria": "cigarrillos", "marca": "Ducados", "nombre": "Rubio · 20 uds", "precio": 5.1, "fondo": "#1e4fa0", "texto": "#ffffff", "advertencia": "Fumar provoca cáncer" },
+	{ "slug": "fortuna", "categoria": "cigarrillos", "marca": "Fortuna", "nombre": "Rojo · 20 uds", "precio": 5.3, "fondo": "#e4002b", "texto": "#ffffff", "advertencia": "Fumar mata" },
+	{ "slug": "pueblo", "categoria": "liar", "marca": "Pueblo", "nombre": "Tabaco de liar · 30 g", "precio": 6.2, "fondo": "#2f5d3a", "texto": "#f3e2b0", "advertencia": "Fumar provoca cáncer" },
+	{ "slug": "golden-virginia", "categoria": "liar", "marca": "Golden Virginia", "nombre": "Tabaco de liar · 30 g", "precio": 6.8, "fondo": "#14532d", "texto": "#e6c36a", "advertencia": "Fumar obstruye las arterias" },
+	{ "slug": "smoking", "categoria": "liar", "marca": "Smoking", "nombre": "Papel Classic · 60 hojas", "precio": 0.75, "fondo": "#1f2a44", "texto": "#ffffff", "advertencia": "Liar con prisa perjudica tu dignidad" },
+	{ "slug": "ocb-filtros", "categoria": "liar", "marca": "OCB", "nombre": "Filtros Slim · 120 uds", "precio": 1.2, "fondo": "#111111", "texto": "#ffffff", "advertencia": "Sin filtros no hay paraíso" },
+	{ "slug": "montecristo", "categoria": "puros", "marca": "Montecristo", "nombre": "Nº 4 · 1 puro", "precio": 9.5, "fondo": "#6b3e1f", "texto": "#f3e2b0", "advertencia": "Fumar puros no te convierte en Churchill" },
+	{ "slug": "farias", "categoria": "puros", "marca": "Farias", "nombre": "Superfinos · 5 uds", "precio": 6.0, "fondo": "#8b5a2b", "texto": "#fff3d6", "advertencia": "Fumar mata, aunque sea en la boda" },
+	{ "slug": "clipper", "categoria": "accesorios", "marca": "Clipper", "nombre": "Mechero recargable", "precio": 1.5, "fondo": "#f0bc44", "texto": "#561a26", "advertencia": "Prestar el mechero es perderlo" }
+]

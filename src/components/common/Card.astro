@@ -1,0 +1,18 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'div'> & {
+	tono?: 'crema' | 'granate';
+};
+
+const { tono = 'crema', class: clase, ...resto } = Astro.props;
+
+const tonos = {
+	crema: 'bg-crema text-tinta border-granate/15',
+	granate: 'bg-granate text-crema border-amarillo/30',
+};
+---
+
+<div class:list={['rounded-lg border-2 p-5 shadow-chapa sm:p-6', tonos[tono], clase]} {...resto}>
+	<slot />
+</div>

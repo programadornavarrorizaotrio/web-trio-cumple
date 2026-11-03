@@ -1,0 +1,21 @@
+---
+// Marco de rótulo: chapa de color con filete interior, para cromos, cajetillas y entradas.
+interface Props {
+	color?: 'granate' | 'amarillo';
+	class?: string;
+}
+
+const { color = 'granate', class: clase } = Astro.props;
+
+const estilos = {
+	granate: { fuera: 'bg-granate shadow-chapa', filete: 'border-amarillo' },
+	amarillo: { fuera: 'bg-amarillo shadow-chapa-amarillo', filete: 'border-granate' },
+};
+const e = estilos[color];
+---
+
+<div class:list={['rounded-lg p-2', e.fuera, clase]}>
+	<div class:list={['h-full rounded border-2 bg-crema p-4', e.filete]}>
+		<slot />
+	</div>
+</div>

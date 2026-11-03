@@ -1,0 +1,34 @@
+---
+import Emblema from './Emblema.astro';
+
+// Rótulo de estanco: emblema + texto en amarillo con la barra subrayada.
+interface Props {
+	texto?: string;
+	tamano?: 'sm' | 'md' | 'lg';
+	vertical?: boolean;
+	class?: string;
+}
+
+const { texto = 'Trio Feliz', tamano = 'sm', vertical = false, class: clase } = Astro.props;
+
+const tamanos = {
+	sm: { emblema: 'size-7', texto: 'text-lg', barra: 'h-1' },
+	md: { emblema: 'size-14 sm:size-20', texto: 'text-4xl sm:text-6xl', barra: 'h-1.5 sm:h-2' },
+	lg: { emblema: 'size-28 sm:size-40', texto: 'text-4xl sm:text-7xl', barra: 'h-2 sm:h-3' },
+};
+const t = tamanos[tamano];
+---
+
+<span
+	class:list={[
+		'inline-flex text-amarillo',
+		vertical ? 'flex-col items-center gap-4 sm:gap-6' : 'items-end gap-2',
+		clase,
+	]}
+>
+	<Emblema class={t.emblema} />
+	<span class="flex flex-col">
+		<span class:list={['rotulo', t.texto]}>{texto}</span>
+		<span class:list={['mt-1 w-full bg-amarillo sm:mt-2', t.barra]} aria-hidden="true"></span>
+	</span>
+</span>

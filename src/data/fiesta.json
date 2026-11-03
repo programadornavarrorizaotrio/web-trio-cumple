@@ -1,0 +1,25 @@
+{
+	"_nota": "VALORES DE EJEMPLO: cambiar cuando el tercer cumpleañero confirme fecha y lugar",
+	"edicion": 4,
+	"inicio": "2027-02-27T19:30:00+01:00",
+	"llegada": "16:00",
+	"fin": "2027-02-28T04:00:00+01:00",
+	"zonaHoraria": "Europe/Madrid",
+	"lugar": {
+		"nombre": "Restaurante La Charca",
+		"mapa": "https://www.google.com/maps/search/?api=1&query=Restaurante+La+Charca"
+	},
+	"estanco": {
+		"_nota": "Después de esta fecha no se puede reservar (el estanquero hace el pedido)",
+		"cierreReservas": "2027-02-20T23:59:00+01:00"
+	},
+	"spotify": {
+		"_nota": "playlist: id de la lista (open.spotify.com/playlist/<id>). invitacion: enlace de 'Invitar colaboradores' de Spotify",
+		"playlist": null,
+		"invitacion": null
+	},
+	"fotos": {
+		"abiertasDesde": "2027-02-27T16:00:00+01:00",
+		"abiertasHasta": "2027-03-07T23:59:00+01:00"
+	}
+}

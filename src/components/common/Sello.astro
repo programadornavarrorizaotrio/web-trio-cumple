@@ -1,0 +1,33 @@
+---
+// Chapa circular ligeramente girada, como una pegatina en el escaparate. Ej.: "4ª edición".
+interface Props {
+	arriba: string;
+	centro: string;
+	abajo?: string;
+	color?: 'amarillo' | 'granate';
+	giro?: number;
+	class?: string;
+}
+
+const { arriba, centro, abajo, color = 'amarillo', giro = -12, class: clase } = Astro.props;
+
+const colores = {
+	amarillo: 'bg-amarillo text-granate-oscuro ring-amarillo',
+	granate: 'bg-granate text-amarillo ring-granate',
+};
+---
+
+<div
+	class:list={[
+		'inline-flex size-32 flex-col items-center justify-center rounded-full text-center',
+		'border-2 border-dashed border-current ring-4 ring-offset-0 shadow-chapa',
+		colores[color],
+		clase,
+	]}
+	style={`transform: rotate(${giro}deg)`}
+	aria-label={[arriba, centro, abajo].filter(Boolean).join(' ')}
+>
+	<span class="text-[0.65rem] font-bold uppercase tracking-[0.2em]">{arriba}</span>
+	<span class:list={['rotulo my-1', centro.length > 3 ? 'text-xl' : 'text-3xl']}>{centro}</span>
+	{abajo && <span class="text-[0.65rem] font-bold uppercase tracking-[0.2em]">{abajo}</span>}
+</div>

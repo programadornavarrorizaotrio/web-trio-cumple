@@ -1,0 +1,67 @@
+---
+// Ventana modal sobre <dialog>: hoja que sube desde abajo en móvil y ventana centrada desde sm.
+// Se abre con cualquier elemento `data-abrir-hoja="<id>"`; se cierra con Esc, tocando fuera
+// o con un <form method="dialog"> dentro.
+interface Props {
+	id: string;
+	/** id del título de la hoja, para aria-labelledby */
+	titulo: string;
+	/** Asa clara para hojas que empiezan con una foto oscura */
+	asaClara?: boolean;
+	class?: string;
+}
+
+const { id, titulo, asaClara = false, class: clase } = Astro.props;
+---
+
+<dialog
+	id={id}
+	aria-labelledby={titulo}
+	class:list={[
+		'hoja mb-0 mt-auto max-h-[92dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-2xl border-2 border-b-0 border-amarillo bg-crema p-0 text-tinta shadow-chapa',
+		'backdrop:bg-granate-oscuro/80 backdrop:backdrop-blur-sm',
+		'sm:m-auto sm:w-[calc(100%-2rem)] sm:max-w-lg sm:rounded-lg sm:border-b-2',
+		clase,
+	]}
+>
+	<span
+		class:list={[
+			'absolute left-1/2 top-2 z-10 h-1.5 w-12 -translate-x-1/2 rounded-full sm:hidden',
+			asaClara ? 'bg-crema/70' : 'bg-tinta/25',
+		]}
+		aria-hidden="true"></span>
+	<slot />
+</dialog>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-abrir-hoja]').forEach((boton) => {
+		const hoja = document.getElementById(boton.dataset.abrirHoja!) as HTMLDialogElement | null;
+		boton.addEventListener('click', () => hoja?.showModal());
+	});
+
+	// El clic en el fondo oscuro llega al propio <dialog>
+	document.querySelectorAll<HTMLDialogElement>('dialog.hoja').forEach((hoja) => {
+		hoja.addEventListener('click', (ev) => {
+			if (ev.target === hoja) hoja.close();
+		});
+	});
+</script>
+
+<style>
+	.hoja[open] {
+		animation: subir 0.28s ease-out;
+	}
+	@keyframes subir {
+		from {
+			transform: translateY(100%);
+		}
+	}
+	@media (min-width: 40rem) {
+		@keyframes subir {
+			from {
+				opacity: 0;
+				transform: translateY(1rem) scale(0.97);
+			}
+		}
+	}
+</style>

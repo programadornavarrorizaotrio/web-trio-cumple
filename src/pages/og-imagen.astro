@@ -1,0 +1,45 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '../styles/global.css';
+import { Image } from 'astro:assets';
+import fiesta from '../data/fiesta.json';
+import fotoTrio from '../assets/foto_trio.jpg';
+import Rotulo from '../components/common/Rotulo.astro';
+import Cajetilla from '../components/common/Cajetilla.astro';
+import Sello from '../components/common/Sello.astro';
+
+// Plantilla de la imagen de vista previa (og:image) a 1200×630.
+// Para regenerar public/og.png: abrir /og-imagen con la ventana a 1200×630 y capturarla.
+const fecha = new Intl.DateTimeFormat('es-ES', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'long',
+	timeZone: fiesta.zonaHoraria,
+}).format(new Date(fiesta.inicio));
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Imagen de vista previa</title>
+	</head>
+	<body class="m-0 overflow-hidden">
+		<div class="relative flex h-[630px] w-[1200px] items-center gap-16 overflow-hidden bg-granate px-20 text-crema">
+			<div class="flex-1">
+				<p class="text-2xl font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Estás invitado!</p>
+				<div class="mt-6 whitespace-nowrap [&_.rotulo]:!text-7xl [&_svg]:!size-24">
+					<Rotulo tamano="lg" />
+				</div>
+				<p class="mt-10 text-4xl font-bold first-letter:uppercase">{fecha}</p>
+				<p class="mt-2 text-2xl text-crema/80">{fiesta.edicion}ª edición · Llegada desde las {fiesta.llegada}</p>
+			</div>
+			<div class="relative w-[340px] shrink-0">
+				<Cajetilla class="rotate-3" advertencia="Esta fiesta perjudica seriamente tu resaca">
+					<Image src={fotoTrio} alt="" width={680} class="aspect-[4/5] w-full object-cover object-top" />
+				</Cajetilla>
+				<Sello arriba="Edición" centro={`${fiesta.edicion}ª`} abajo="Trio Feliz" class="absolute -left-12 -top-8" />
+			</div>
+		</div>
+	</body>
+</html>
