@@ -158,18 +158,49 @@ private/         ← (ignorado) CSV de invitados
 ---
 
 ## Puesta en marcha (cuando exista el código)
+## Puesta en marcha
+
+Necesita Node 22.23.4 o superior (`nvm use` lee la versión de `.nvmrc`).
 
 ```bash
 git clone <repo>
-cd trio-feliz
+cd web-trio-cumple
 npm install
 cp .env.example .env      # rellenar con las claves de Supabase local
 supabase start            # necesita Docker
 npm run dev
 npm run check            # tipos y errores de Astro (también se ejecuta en `npm run build`)
+npx vercel login          # con la cuenta compartida, no la personal
+npx vercel link           # proyecto web-trio-cumple (solo la primera vez)
+npx vercel env pull       # crea .env.local con la URL y la clave anon de trio-dev
+npm run dev               # http://localhost:4321
 ```
 
+Las variables viven en Vercel: **Development** y **Preview** apuntan a `trio-dev`; **Production**, al proyecto de producción. Si cambia alguna, basta con repetir `npx vercel env pull`.
+
 La forma de trabajar entre los dos está en [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## Ideas
+
+Propuestas sin decidir ni asignar. Cuando una se apruebe, pasa a su sección y tiene su issue.
+
+Referencia visual de las dos: [infolavelada.com](https://www.infolavelada.com/). Tomamos la idea, no el diseño.
+
+### Presentación de los tres cumpleañeros
+- Los tres aparecen juntos, como en un cartel de combate.
+- Al pasar el ratón por uno, su foto aparece en grande con una pequeña animación (zoom, fundido o entrada lateral).
+- En móvil no hay hover: haría falta un toque o que se vayan alternando solos.
+- Necesita una foto de cada uno, a ser posible con fondo recortado (PNG).
+- Encaja en la **landing**, junto al contador.
+
+### Lista de invitados confirmados
+- Cuando un invitado confirma asistencia, aparece en un listado con su imagen, como las fichas de luchadores de un cartel.
+- Por decidir:
+  - **De dónde sale la imagen**: que la suba el invitado (Supabase Storage) o un avatar generado (iniciales, ilustración).
+  - **Privacidad**: es una lista pública con nombres y caras. Va ligada a la decisión del `noindex` y, si se puede, a que solo la vea quien tenga código.
+- Encaja en **confirmar asistencia**. Afecta al modelo de datos (campo de imagen en `invitados`).
 
 ---
 
