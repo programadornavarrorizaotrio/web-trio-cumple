@@ -3,6 +3,7 @@
 // TODO(B): borrar este archivo cuando existan las RPC y apuntar datos.ts a src/lib/supabase.ts.
 import trio from '../../data/trio.json';
 import type { Album, Cromo } from './tipos';
+import { invitadoActual } from '../registro/sesion';
 
 interface InvitadoDemo {
 	id: string;
@@ -10,7 +11,7 @@ interface InvitadoDemo {
 	nombre: string;
 	especial?: boolean;
 	/** Si viene relleno, el invitado ya estaba registrado */
-	cromo?: { apodo: string; frase: string | null };
+	cromo?: DatosCromo;
 }
 
 const INVITADOS: InvitadoDemo[] = [
@@ -42,7 +43,14 @@ const INVITADOS: InvitadoDemo[] = [
 
 const CLAVE_DEMO = 'trio-demo-registros';
 
-function registrosLocales(): Record<string, { apodo: string; frase: string | null }> {
+interface DatosCromo {
+	apodo: string;
+	frase: string | null;
+	/** Si confirmó que viene. Solo los confirmados salen en el álbum */
+	asiste?: boolean;
+}
+
+function registrosLocales(): Record<string, DatosCromo> {
 	try {
 		return JSON.parse(localStorage.getItem(CLAVE_DEMO) ?? '{}');
 	} catch {
@@ -56,7 +64,7 @@ function fotosDemo(): Record<string, string> {
 	return json ? JSON.parse(json) : {};
 }
 
-function aCromo(inv: InvitadoDemo, datos: { apodo: string; frase: string | null }): Cromo {
+function aCromo(inv: InvitadoDemo, datos: DatosCromo): Cromo {
 	return {
 		id: inv.id,
 		numero: inv.numero,
@@ -82,7 +90,7 @@ export async function demoBuscar(texto: string) {
 		.map((i) => ({ id: i.id, nombre: i.nombre, registrado: Boolean(i.cromo || locales[i.id]) }));
 }
 
-export async function demoRegistrar(id: string, datos: { apodo: string; frase: string | null }) {
+export async function demoRegistrar(id: string, datos: DatosCromo) {
 	const inv = INVITADOS.find((i) => i.id === id);
 	const locales = registrosLocales();
 	if (!inv || inv.cromo || locales[id]) throw new Error('ya-registrado');
@@ -90,11 +98,24 @@ export async function demoRegistrar(id: string, datos: { apodo: string; frase: s
 	return { clave: `demo-${id}-${Date.now()}`, cromo: aCromo(inv, datos) };
 }
 
+/** Respuesta que el invitado actual guardó en el módulo de asistencia (`rsvp/datos.ts`) */
+function asistenciaPropia(): boolean | undefined {
+	try {
+		return JSON.parse(localStorage.getItem('trio-demo-asistencia') ?? 'null')?.asiste;
+	} catch {
+		return undefined;
+	}
+}
+
+// Solo los confirmados: es lo que hará la RPC `listar_cromos`.
 export async function demoAlbum(): Promise<Album> {
 	const locales = registrosLocales();
+	const yo = invitadoActual()?.id;
 	const cromos = INVITADOS.flatMap((i) => {
 		const datos = i.cromo ?? locales[i.id];
-		return datos ? [aCromo(i, datos)] : [];
+		if (!datos) return [];
+		const asiste = i.id === yo ? (asistenciaPropia() ?? datos.asiste ?? true) : (datos.asiste ?? true);
+		return asiste ? [aCromo(i, datos)] : [];
 	});
 	return { cromos, total: INVITADOS.length };
 }
