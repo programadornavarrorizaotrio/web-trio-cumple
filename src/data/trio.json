@@ -1,0 +1,35 @@
+[
+	{
+		"slug": "pencho",
+		"nombre": "Pencho",
+		"foto": "pencho.jpg",
+		"encuadre": "50% 62%",
+		"edad": 23,
+		"lema": "La Diversión",
+		"descripcion": "La triple M. Melómano, Metrosexual y Master de Teleco en 4 años. (Y también manco por lo visto). Fran y yo somos primos.",
+		"aficiones": ["🎮 Gaming", "💻 Programación", "🥁 Porrompompero", "🎵 Música", "🏃 Deporte"],
+		"advertencia": "Escuchar sus playlists puede crear dependencia"
+	},
+	{
+		"slug": "fran",
+		"nombre": "Fran",
+		"foto": "fran.jpg",
+		"encuadre": "top",
+		"edad": 23,
+		"lema": "La Resolución",
+		"descripcion": "Estudio Repro, es decir, hago niños por encargo. Me han dado permiso carcelario en el Miras para celebrar con los otros dos mentecatos. La última vez fui el único superviviente; este año somos un team. Sí, soy primo de Pencho.",
+		"aficiones": ["🧬 Biología", "🧪 Química", "🏐 Volley", "📚 Lector empedernido", "⬛ Ser Negro"],
+		"advertencia": "Producto fabricado con permiso carcelario"
+	},
+	{
+		"slug": "juan",
+		"nombre": "Juan",
+		"foto": "juan.jpg",
+		"encuadre": "top",
+		"edad": 23,
+		"lema": "La Presión",
+		"descripcion": "Para algunos Juanmi, para otros Juanito, para todos: \"¿Quién coño le ha dado otra cerveza al gilipollas ese?\". Soy el primo subnormal.",
+		"aficiones": ["💻 Programación", "🏸 Deportista masculino", "🎮 E-sports", "🎵 Música poco masculina", "💅🏻 Twink"],
+		"advertencia": "Las autoridades recomiendan no darle otra cerveza"
+	}
+]

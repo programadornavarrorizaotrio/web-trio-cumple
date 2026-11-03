@@ -1,0 +1,73 @@
+---
+import fiesta from '../../data/fiesta.json';
+
+// Cuenta atrás hasta `fiesta.inicio`. El HTML trae las cajas vacías y el script las rellena.
+const unidades = [
+	{ clave: 'dias', texto: 'Días' },
+	{ clave: 'horas', texto: 'Horas' },
+	{ clave: 'minutos', texto: 'Min' },
+	{ clave: 'segundos', texto: 'Seg' },
+];
+---
+
+<div data-contador data-inicio={fiesta.inicio} aria-live="polite">
+	<div data-estado="cuenta" class="grid grid-cols-4 gap-2 sm:gap-3">
+		{
+			unidades.map((u) => (
+				<div class="rounded bg-amarillo px-1 py-3 text-center text-granate-oscuro shadow-chapa-amarillo sm:py-4">
+					<span data-unidad={u.clave} class="rotulo block text-3xl tabular-nums sm:text-5xl">
+						--
+					</span>
+					<span class="mt-1 block text-[0.65rem] font-bold uppercase tracking-[0.2em] sm:text-xs">{u.texto}</span>
+				</div>
+			))
+		}
+	</div>
+	<p data-estado="hoy" hidden class="rotulo rounded bg-amarillo py-6 text-center text-4xl text-granate-oscuro sm:text-6xl">
+		¡Es hoy!
+	</p>
+	<p data-estado="pasado" hidden class="rotulo rounded bg-amarillo py-6 text-center text-3xl text-granate-oscuro sm:text-5xl">
+		¡Gracias por venir!
+	</p>
+</div>
+
+<script>
+	// Pasadas estas horas desde el inicio, la fiesta se da por terminada
+	const DURACION_HORAS = 14;
+
+	document.querySelectorAll<HTMLElement>('[data-contador]').forEach((raiz) => {
+		const inicio = new Date(raiz.dataset.inicio!).getTime();
+		const estados = raiz.querySelectorAll<HTMLElement>('[data-estado]');
+		const campo = (clave: string) => raiz.querySelector<HTMLElement>(`[data-unidad="${clave}"]`)!;
+		const campos = {
+			dias: campo('dias'),
+			horas: campo('horas'),
+			minutos: campo('minutos'),
+			segundos: campo('segundos'),
+		};
+
+		const mostrar = (estado: string) => estados.forEach((el) => (el.hidden = el.dataset.estado !== estado));
+		const dos = (n: number) => String(n).padStart(2, '0');
+
+		function actualizar() {
+			const restante = inicio - Date.now();
+
+			if (restante <= 0) {
+				const terminada = -restante > DURACION_HORAS * 3_600_000;
+				mostrar(terminada ? 'pasado' : 'hoy');
+				clearInterval(intervalo);
+				return;
+			}
+
+			const s = Math.floor(restante / 1000);
+			campos.dias.textContent = String(Math.floor(s / 86_400));
+			campos.horas.textContent = dos(Math.floor((s % 86_400) / 3600));
+			campos.minutos.textContent = dos(Math.floor((s % 3600) / 60));
+			campos.segundos.textContent = dos(s % 60);
+			mostrar('cuenta');
+		}
+
+		const intervalo = setInterval(actualizar, 1000);
+		actualizar();
+	});
+</script>

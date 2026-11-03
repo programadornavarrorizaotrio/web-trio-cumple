@@ -1,1 +1,96 @@
 @import "tailwindcss";
+
+/* === Tokens: rótulo de estanco (granate y amarillo "TABACOS") === */
+@theme {
+	/* Granate del rótulo */
+	--color-granate: #742434;
+	--color-granate-oscuro: #561a26;
+	--color-granate-claro: #8e3345;
+
+	/* Amarillo del rótulo */
+	--color-amarillo: #f0bc44;
+	--color-amarillo-claro: #f7d88c;
+	--color-amarillo-oscuro: #c9962a;
+
+	/* Mostrador: fondos claros y texto */
+	--color-crema: #fbf4e4;
+	--color-crema-oscuro: #f1e4c6;
+	--color-tinta: #2a1116;
+	--color-tinta-suave: #6b4a50;
+
+	/* Tipografía: Archivo variable; en ancho máximo imita el rótulo */
+	--font-sans: "Archivo Variable", system-ui, sans-serif;
+	--font-rotulo: "Archivo Variable", system-ui, sans-serif;
+
+	--shadow-chapa: 0 4px 0 0 var(--color-granate-oscuro);
+	--shadow-chapa-amarillo: 0 4px 0 0 var(--color-amarillo-oscuro);
+}
+
+/* Rótulo: letra ancha y gruesa en mayúsculas, como "TABACOS" */
+@utility rotulo {
+	font-family: var(--font-rotulo);
+	font-stretch: 125%;
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	line-height: 0.95;
+}
+
+/* === Base === */
+@layer base {
+	html {
+		scroll-behavior: smooth;
+		scroll-padding-top: 4.5rem; /* altura del Nav fijo */
+	}
+
+	body {
+		@apply bg-crema font-sans text-tinta antialiased;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	/* Móvil: sin retraso de doble toque en controles */
+	a,
+	button,
+	summary,
+	label {
+		touch-action: manipulation;
+	}
+
+	/* iOS hace zoom al enfocar campos de menos de 16px */
+	input,
+	select,
+	textarea {
+		font-size: max(16px, 1em);
+	}
+
+	h1,
+	h2,
+	h3 {
+		@apply rotulo;
+	}
+
+	/* No hacer scroll de la página con un <dialog> modal abierto */
+	body:has(dialog[open]) {
+		overflow: hidden;
+	}
+
+	::selection {
+		@apply bg-amarillo text-granate-oscuro;
+	}
+
+	:focus-visible {
+		@apply outline-3 outline-offset-2 outline-amarillo;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html {
+			scroll-behavior: auto;
+		}
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+}

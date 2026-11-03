@@ -1,0 +1,101 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import trio from '../../data/trio.json';
+import Cajetilla from '../common/Cajetilla.astro';
+import Etiqueta from '../common/Etiqueta.astro';
+import Button from '../common/Button.astro';
+import Hoja from '../common/Hoja.astro';
+import Carrusel from '../common/Carrusel.astro';
+
+// Cada cumpleañero es una "marca" de tabaco: cajetilla en el carrusel y ficha en una hoja.
+// `encuadre` en trio.json es el object-position de su foto.
+const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
+const foto = (archivo: string) => fotos[`../../assets/trio/${archivo}`].default;
+---
+
+<Carrusel cantidad={trio.length}>
+	{
+		trio.map((p, i) => (
+			<button
+				type="button"
+				data-abrir-hoja={`ficha-${p.slug}`}
+				class:list={[
+					'group block w-full shrink-0 snap-center text-left transition-transform duration-300 hover:-translate-y-2 hover:rotate-0',
+					i % 2 === 0 ? '-rotate-1' : 'rotate-1',
+				]}
+				aria-haspopup="dialog"
+			>
+				<Cajetilla marca={p.nombre} advertencia={p.advertencia}>
+					<div class="relative">
+						<Image
+							src={foto(p.foto)}
+							alt={`Foto de ${p.nombre}`}
+							widths={[320, 480, 640]}
+							sizes="(min-width: 640px) 33vw, 100vw"
+							class="aspect-[3/4] w-full object-cover"
+							style={`object-position: ${p.encuadre}`}
+						/>
+						<Etiqueta class="absolute bottom-3 left-3">{p.lema}</Etiqueta>
+						<span class="absolute right-3 top-3 rounded-sm bg-granate-oscuro/85 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-amarillo opacity-90 transition-opacity group-hover:opacity-100">
+							Ver ficha
+						</span>
+					</div>
+				</Cajetilla>
+			</button>
+		))
+	}
+</Carrusel>
+
+{
+	trio.map((p) => (
+		<Hoja id={`ficha-${p.slug}`} titulo={`ficha-${p.slug}-nombre`} asaClara>
+			<div class="relative">
+				<Image
+					src={foto(p.foto)}
+					alt=""
+					widths={[480, 800]}
+					sizes="(min-width: 640px) 512px, 100vw"
+					class="h-60 w-full object-cover sm:h-80"
+					style={`object-position: ${p.encuadre}`}
+				/>
+				<div class="absolute inset-0 bg-gradient-to-t from-granate-oscuro via-granate-oscuro/30 to-transparent" />
+				<form method="dialog" class="absolute right-3 top-3">
+					<button
+						class="flex size-10 items-center justify-center rounded-full bg-granate-oscuro/80 text-lg font-bold text-amarillo hover:bg-granate"
+						aria-label="Cerrar"
+					>
+						✕
+					</button>
+				</form>
+				<div class="absolute bottom-4 left-5 right-5">
+					<Etiqueta>{p.lema}</Etiqueta>
+					<h3 id={`ficha-${p.slug}-nombre`} class="mt-2 text-4xl text-amarillo">
+						{p.nombre}
+					</h3>
+					<p class="mt-1 text-sm font-bold text-crema/90">Cumple {p.edad} años</p>
+				</div>
+			</div>
+
+			<div class="space-y-6 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
+				<div>
+					<h4 class="text-xs font-black uppercase tracking-[0.2em] text-granate">Composición</h4>
+					<p class="mt-2 leading-relaxed">{p.descripcion}</p>
+				</div>
+				<div>
+					<h4 class="text-xs font-black uppercase tracking-[0.2em] text-granate">Aficiones</h4>
+					<ul class="mt-3 flex flex-wrap gap-2">
+						{p.aficiones.map((a) => (
+							<li class="rounded-full border-2 border-granate/20 bg-crema-oscuro px-3 py-1.5 text-sm font-semibold">{a}</li>
+						))}
+					</ul>
+				</div>
+				<form method="dialog">
+					<Button variante="granate" class="w-full">
+						Cerrar
+					</Button>
+				</form>
+			</div>
+		</Hoja>
+	))
+}

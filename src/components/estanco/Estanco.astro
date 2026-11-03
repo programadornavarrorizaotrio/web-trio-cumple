@@ -1,0 +1,185 @@
+---
+import productos from '../../data/estanco.json';
+import fiesta from '../../data/fiesta.json';
+import Advertencia from '../common/Advertencia.astro';
+import { MAX_POR_PRODUCTO, euros } from './datos';
+
+// Estanco: productos reales con precio. Cada invitado reserva hasta MAX_POR_PRODUCTO de cada uno
+// y el estanquero lo lleva a la fiesta. No hay pago online: se paga allí.
+const categorias = [
+	['todo', 'Todo'],
+	['cigarrillos', 'Cigarrillos'],
+	['liar', 'Liar'],
+	['puros', 'Puros'],
+	['accesorios', 'Accesorios'],
+];
+
+const cierre = new Intl.DateTimeFormat('es-ES', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'long',
+	hour: '2-digit',
+	minute: '2-digit',
+	timeZone: fiesta.zonaHoraria,
+}).format(new Date(fiesta.estanco.cierreReservas));
+---
+
+<div data-estanco data-cierre={fiesta.estanco.cierreReservas}>
+	<p data-aviso-abierto class="mb-4 text-sm font-bold text-amarillo-claro">⏳ Reservas abiertas hasta el {cierre}</p>
+	<p data-aviso-cerrado hidden class="mb-4 rounded border-2 border-amarillo px-4 py-3 text-center text-sm font-bold">
+		🔒 Reservas cerradas: el estanquero ya ha hecho el pedido. Lo que tengas reservado te lo lleva a la fiesta.
+	</p>
+
+	<!-- Filtros -->
+	<div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar productos">
+		{
+			categorias.map(([valor, texto], i) => (
+				<button
+					type="button"
+					data-filtro={valor}
+					aria-pressed={i === 0 ? 'true' : 'false'}
+					class="shrink-0 rounded-full border-2 border-amarillo/50 px-4 py-2 text-sm font-bold aria-pressed:border-amarillo aria-pressed:bg-amarillo aria-pressed:text-granate-oscuro"
+				>
+					{texto}
+				</button>
+			))
+		}
+	</div>
+
+	<!-- Productos -->
+	<ul class="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
+		{
+			productos.map((p) => (
+				<li data-producto={p.slug} data-categoria={p.categoria} data-precio={p.precio} data-nombre={`${p.marca} ${p.nombre}`}>
+					<article class="rounded-lg border-2 border-amarillo bg-granate-oscuro p-1.5 shadow-chapa">
+						<div
+							class="relative flex aspect-[4/5] flex-col items-center justify-center rounded-sm px-2 text-center"
+							style={`background:${p.fondo};color:${p.texto}`}
+						>
+							<p class:list={['rotulo leading-none', p.marca.replace(' ', '').length > 9 && !p.marca.includes(' ') ? 'text-sm' : 'text-lg']}>{p.marca}</p>
+							<p class="mt-1.5 text-[0.7rem] font-bold leading-tight opacity-90">{p.nombre}</p>
+							<p class="rotulo mt-4 text-2xl">{euros(p.precio)}</p>
+							<span
+								data-mis-unidades
+								hidden
+								class="absolute -right-2 -top-2 grid size-8 rotate-12 place-items-center rounded-full bg-amarillo text-sm font-black text-granate-oscuro shadow-chapa-amarillo"
+							/>
+						</div>
+						<Advertencia class="mt-1.5 grid min-h-9 place-items-center !px-1.5 !py-1 !text-[0.55rem]">{p.advertencia}</Advertencia>
+					</article>
+
+					<div class="mt-2 flex items-center justify-between gap-1">
+						<button type="button" data-menos class="size-11 rounded bg-crema/15 text-xl font-black active:bg-amarillo active:text-granate-oscuro disabled:opacity-30" aria-label={`Quitar ${p.marca}`}>
+							−
+						</button>
+						<span data-cantidad class="rotulo text-2xl text-amarillo" aria-live="polite">0</span>
+						<button
+							type="button"
+							data-mas
+							class="size-11 rounded bg-amarillo text-xl font-black text-granate-oscuro active:translate-y-0.5 disabled:bg-crema/15 disabled:text-crema/40"
+							aria-label={`Añadir ${p.marca}`}
+						>
+							+
+						</button>
+					</div>
+					<p class="mt-1 text-center text-xs text-crema/75">
+						🔥 <span data-total>0</span> reservadas
+					</p>
+				</li>
+			))
+		}
+	</ul>
+
+	<p class="mt-6 text-center text-xs text-crema/70">
+		Máximo {MAX_POR_PRODUCTO} de cada producto por persona. Precios orientativos: se paga en la fiesta.
+	</p>
+
+	<!-- Resumen fijo abajo -->
+	<details data-reserva hidden class="group sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] mt-6 lg:bottom-3 rounded-lg bg-amarillo text-granate-oscuro shadow-chapa">
+		<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+			<span>
+				<span class="block text-[0.65rem] font-black uppercase tracking-[0.2em]">Tu reserva</span>
+				<span data-r-unidades class="font-bold"></span>
+			</span>
+			<span class="flex items-center gap-2">
+				<span data-r-total class="rotulo text-2xl"></span>
+				<span class="text-sm transition-transform group-open:rotate-180" aria-hidden="true">▲</span>
+			</span>
+		</summary>
+		<ul data-r-lista class="divide-y-2 divide-dashed divide-granate/20 border-t-2 border-granate/20 px-4 pb-2 text-sm"></ul>
+	</details>
+</div>
+
+<script>
+	import { estadoEstanco, reservar, euros, MAX_POR_PRODUCTO, type EstadoEstanco } from './datos';
+	import { EXIGIR_REGISTRO } from '../registro/sesion';
+
+	const raiz = document.querySelector<HTMLElement>('[data-estanco]')!;
+	const productos = [...raiz.querySelectorAll<HTMLElement>('[data-producto]')];
+	const resumen = raiz.querySelector<HTMLDetailsElement>('[data-reserva]')!;
+
+	function pintar({ mias, totales }: EstadoEstanco) {
+		let unidades = 0;
+		let total = 0;
+		const lineas: HTMLLIElement[] = [];
+
+		for (const li of productos) {
+			const slug = li.dataset.producto!;
+			const n = mias[slug] ?? 0;
+			li.querySelector('[data-cantidad]')!.textContent = String(n);
+			li.querySelector('[data-total]')!.textContent = String(totales[slug] ?? 0);
+			li.querySelector<HTMLButtonElement>('[data-menos]')!.disabled = cerrado || n === 0;
+			li.querySelector<HTMLButtonElement>('[data-mas]')!.disabled = cerrado || n >= MAX_POR_PRODUCTO;
+			const insignia = li.querySelector<HTMLElement>('[data-mis-unidades]')!;
+			insignia.hidden = n === 0;
+			insignia.textContent = `×${n}`;
+
+			if (n) {
+				const precio = Number(li.dataset.precio);
+				unidades += n;
+				total += n * precio;
+				const linea = document.createElement('li');
+				linea.className = 'flex justify-between gap-3 py-2';
+				linea.append(
+					Object.assign(document.createElement('span'), { textContent: `${n} × ${li.dataset.nombre}` }),
+					Object.assign(document.createElement('span'), { textContent: euros(n * precio), className: 'font-bold' }),
+				);
+				lineas.push(linea);
+			}
+		}
+
+		resumen.hidden = unidades === 0;
+		if (!unidades) resumen.open = false;
+		resumen.querySelector('[data-r-unidades]')!.textContent = `${unidades} producto${unidades === 1 ? '' : 's'}`;
+		resumen.querySelector('[data-r-total]')!.textContent = euros(total);
+		resumen.querySelector('[data-r-lista]')!.replaceChildren(...lineas);
+	}
+
+	// Cierre de reservas (en pruebas se puede forzar con ?estanco=cerrado)
+	const forzado = new URLSearchParams(location.search).get('estanco') === 'cerrado' && (import.meta.env.DEV || !EXIGIR_REGISTRO);
+	const cerrado = forzado || Date.now() > new Date(raiz.dataset.cierre!).getTime();
+	raiz.querySelector<HTMLElement>('[data-aviso-abierto]')!.hidden = cerrado;
+	raiz.querySelector<HTMLElement>('[data-aviso-cerrado]')!.hidden = !cerrado;
+
+	let estado = await estadoEstanco();
+	pintar(estado);
+
+	for (const li of productos) {
+		const slug = li.dataset.producto!;
+		const cambiar = async (d: number) => {
+			estado = await reservar(slug, (estado.mias[slug] ?? 0) + d);
+			pintar(estado);
+		};
+		li.querySelector('[data-menos]')!.addEventListener('click', () => cambiar(-1));
+		li.querySelector('[data-mas]')!.addEventListener('click', () => cambiar(1));
+	}
+
+	// Filtros por categoría
+	raiz.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((boton, _, todos) =>
+		boton.addEventListener('click', () => {
+			todos.forEach((b) => b.setAttribute('aria-pressed', String(b === boton)));
+			const filtro = boton.dataset.filtro;
+			productos.forEach((li) => (li.hidden = filtro !== 'todo' && li.dataset.categoria !== filtro));
+		}),
+	);
+</script>

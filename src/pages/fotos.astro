@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/common/Section.astro';
+import Fotos from '../components/fotos/Fotos.astro';
+---
+
+<Layout title="Fotos · Trio Feliz">
+	<main>
+		<h1 class="sr-only">Fotos de la fiesta</h1>
+		<Section
+			id="fotos"
+			antetitulo="Carrete"
+			titulo="Fotos de la fiesta"
+			subtitulo="Todo lo que pase en la fiesta, en un mismo carrete. Sube las tuyas y llévate las de los demás."
+		>
+			<Fotos />
+		</Section>
+	</main>
+</Layout>

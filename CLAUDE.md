@@ -8,7 +8,10 @@ Este archivo explica cómo trabajamos los dos desarrolladores en el repo, y sirv
 
 ## Contexto rápido
 
-- Web de una fiesta de cumpleaños: landing con contador, confirmación de asistencia, estanco de broma (4–5 productos fijos, sin ventas) y canciones de Spotify.
+- Web de una fiesta de cumpleaños, **una página por sección**: inicio (contador, asistencia, accesos y el trío), participantes (álbum de cromos, la principal), estanco (productos reales con precio, reservas de hasta 2 por producto, se paga en la fiesta), canciones, juegos y fotos. Detalle en `README.md`.
+- **Móvil primero**: los invitados abren el enlace desde WhatsApp. Las clases base son para móvil (~375px) y `sm:`/`lg:` amplían. Toda PR se revisa primero en el móvil.
+- Identidad: registro en `/registro` buscando tu nombre; devuelve una clave de sesión que se guarda en el móvil. Sin registro no se ve nada. El navegador nunca accede a tablas: solo a RPC que validan la clave.
+- `private/` (lista de invitados) nunca va al repo.
 - Stack: Astro + Tailwind, Supabase, hosting en Vercel/Netlify.
 - Dos desarrolladores trabajando en paralelo. El objetivo de estas reglas es **no pisarnos**.
 - Idioma: código y nombres en inglés o español, pero el mismo en todo el repo *(pendiente de decidir)*. Commits y PRs en español.
@@ -74,14 +77,20 @@ Cada uno es dueño de sus secciones y trabaja en sus carpetas:
 
 | Carpeta | Responsable |
 |---|---|
-| `src/components/common/`, `src/layouts/` | *(pendiente)* — diseño base |
-| `src/components/landing/` | *(pendiente)* |
-| `src/components/rsvp/` | *(pendiente)* |
-| `src/components/estanco/`, `src/data/estanco.json` | *(pendiente)* |
-| `src/components/spotify/` | *(pendiente)* |
+| `src/components/common/`, `src/layouts/`, `src/styles/` | Jawi (A) — diseño base |
+| `src/components/landing/`, `src/data/fiesta.json`, `src/data/trio.json`, `src/assets/` | Jawi (A) |
+| `src/components/rsvp/` | *compañero* (B) |
+| `src/components/estanco/`, `src/data/estanco.json`, `src/pages/estanco.astro` | *compañero* (B) |
+| `src/components/spotify/`, `src/pages/canciones.astro` | Jawi (A) |
+| `src/components/trio/` | Jawi (A) |
+| `src/components/cromos/`, `src/pages/participantes.astro`, `src/components/registro/`, `src/pages/registro.astro` | Jawi (A) |
+| `src/components/juegos/`, `src/pages/juegos.astro` | *compañero* (B) |
+| `src/components/fotos/`, `src/pages/fotos.astro` | Jawi (A) |
+| `supabase/` (migraciones, seed, funciones), `src/lib/`, `scripts/` | *compañero* (B) — único que toca la BD |
 
 **Archivos compartidos: avisar antes de tocarlos.** Aquí salen casi todos los conflictos:
 - `src/layouts/`, `src/components/common/`
+- `src/lib/`, `src/data/fiesta.json`, `src/pages/index.astro`
 - `tailwind.config.*`, `astro.config.*`
 - `package.json`, `package-lock.json`
 - `supabase/migrations/`
@@ -138,6 +147,6 @@ Cada uno es dueño de sus secciones y trabaja en sus carpetas:
 
 - [ ] Repo público o privado
 - [ ] `rebase` o `merge` para actualizar ramas
-- [ ] Reparto de carpetas y quién hace el diseño base
+- [x] Reparto de carpetas y quién hace el diseño base (A: diseño y secciones visuales; B: datos y formularios)
 - [ ] Quién aplica migraciones a producción
 - [ ] Idioma del código (inglés o español)

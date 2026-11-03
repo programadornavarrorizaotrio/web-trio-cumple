@@ -1,0 +1,139 @@
+---
+import { Image } from 'astro:assets';
+import fiesta from '../../data/fiesta.json';
+import fotoTrio from '../../assets/foto_trio.jpg';
+import Rotulo from '../common/Rotulo.astro';
+import Button from '../common/Button.astro';
+import Cajetilla from '../common/Cajetilla.astro';
+import Sello from '../common/Sello.astro';
+import Contador from './Contador.astro';
+
+// Fecha legible en hora de Madrid, calculada en el build: "sábado, 27 de febrero"
+const fecha = new Intl.DateTimeFormat('es-ES', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'long',
+	timeZone: fiesta.zonaHoraria,
+}).format(new Date(fiesta.inicio));
+
+// Hora de llegada del día de la fiesta, con la zona de `inicio`
+const llegada = `${fiesta.inicio.slice(0, 11)}${fiesta.llegada}:00${fiesta.inicio.slice(19)}`;
+---
+
+<section id="inicio" data-llegada={llegada} class="relative overflow-hidden bg-granate px-4 pb-14 pt-8 text-crema sm:pb-20 sm:pt-16">
+	<div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+		<!-- Texto -->
+		<div>
+			<p data-saludo class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Estás invitado!</p>
+
+			<h1 class="mt-5">
+				<Rotulo tamano="md" />
+				<span class="sr-only">Trio Feliz, {fiesta.edicion}ª edición</span>
+			</h1>
+
+			<p data-cta="antes" class="mt-5 max-w-xl text-crema/85 sm:mt-6 sm:text-xl">
+				Expendeduría oficial de fiestas. Estamos bastante seguros de que no tienes nada mejor que hacer el{' '}
+				<strong class="text-amarillo">{fecha}</strong>.
+			</p>
+			<p data-cta="fiesta" hidden class="mt-5 max-w-xl text-crema/85 sm:mt-6 sm:text-xl">
+				<strong class="text-amarillo">¡Hoy es el día!</strong> Haz fotos, súbelas al carrete y busca a la gente en el álbum.
+			</p>
+
+			<!-- Datos de la fiesta: filas compactas en móvil, tres columnas desde sm -->
+			<dl class="mt-6 max-w-xl divide-y-2 divide-dashed divide-amarillo/30 rounded border-2 border-amarillo/40 text-sm sm:mt-8 sm:grid sm:grid-cols-3 sm:divide-x-2 sm:divide-y-0">
+				<div class="flex items-baseline justify-between gap-4 px-4 py-3 sm:block">
+					<dt class="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-amarillo-claro">Cuándo</dt>
+					<dd class="text-right font-bold first-letter:uppercase sm:mt-1 sm:text-left">{fecha}</dd>
+				</div>
+				<div class="flex items-baseline justify-between gap-4 px-4 py-3 sm:block">
+					<dt class="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-amarillo-claro">Llegada</dt>
+					<dd class="text-right font-bold sm:mt-1 sm:text-left">Desde las {fiesta.llegada}</dd>
+				</div>
+				<div class="flex items-baseline justify-between gap-4 px-4 py-3 sm:block">
+					<dt class="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-amarillo-claro">Dónde</dt>
+					<dd class="text-right font-bold sm:mt-1 sm:text-left">
+						<a href={fiesta.lugar.mapa} target="_blank" rel="noopener" class="underline decoration-amarillo underline-offset-4 hover:text-amarillo">
+							{fiesta.lugar.nombre}
+						</a>
+					</dd>
+				</div>
+			</dl>
+
+			<div class="mt-3 grid max-w-xl grid-cols-2 gap-3">
+				<a
+					href="/fiesta.ics"
+					class="flex items-center justify-center gap-2 rounded border-2 border-amarillo/40 px-3 py-3 text-sm font-bold active:bg-amarillo active:text-granate-oscuro"
+				>
+					<span aria-hidden="true">📅</span> Al calendario
+				</a>
+				<a
+					href={fiesta.lugar.mapa}
+					target="_blank"
+					rel="noopener"
+					class="flex items-center justify-center gap-2 rounded border-2 border-amarillo/40 px-3 py-3 text-sm font-bold active:bg-amarillo active:text-granate-oscuro"
+				>
+					<span aria-hidden="true">📍</span> Cómo llegar
+				</a>
+			</div>
+
+			<div class="mt-6 max-w-xl sm:mt-8">
+				<Contador />
+			</div>
+
+			<div data-cta="antes" class="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4 [&>*]:whitespace-nowrap">
+				<Button href="#asistencia" tamano="lg" class="w-full sm:w-auto">Confirmar asistencia</Button>
+				<Button href="/participantes" variante="borde" tamano="lg" class="w-full text-amarillo sm:w-auto">Ver participantes</Button>
+			</div>
+			<!-- El día de la fiesta (desde la hora de llegada) -->
+			<div data-cta="fiesta" hidden class="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4 [&>*]:whitespace-nowrap">
+				<Button href="/fotos" tamano="lg" class="w-full sm:w-auto">📷 Sube tus fotos</Button>
+				<Button href="/participantes" variante="borde" tamano="lg" class="w-full text-amarillo sm:w-auto">Ver participantes</Button>
+			</div>
+		</div>
+
+		<!-- Cajetilla con la foto -->
+		<div class="relative mx-auto w-full max-w-[19rem] sm:max-w-sm lg:max-w-md">
+			<Cajetilla
+				class="rotate-2 transition-transform duration-300 hover:rotate-0"
+				advertencia="Las autoridades sanitarias advierten: esta fiesta perjudica seriamente tu resaca"
+			>
+				<Image
+					src={fotoTrio}
+					alt="Los tres cumpleañeros con corbata, puro y copa en la mano"
+					widths={[400, 640, 900]}
+					sizes="(min-width: 1024px) 448px, (min-width: 640px) 384px, 100vw"
+					class="aspect-[4/5] w-full object-cover object-top"
+					loading="eager"
+					fetchpriority="high"
+				/>
+			</Cajetilla>
+			<Sello
+				arriba="Edición"
+				centro={`${fiesta.edicion}ª`}
+				abajo="Trio Feliz"
+				class="absolute -left-3 -top-10 scale-75 sm:-right-8 sm:-top-6 sm:left-auto sm:scale-100"
+			/>
+		</div>
+	</div>
+</section>
+
+<script>
+	import { leerSesion, EXIGIR_REGISTRO } from '../registro/sesion';
+
+	// El día de la fiesta cambian el texto y los botones (en pruebas: ?fiesta=hoy)
+	const portada = document.querySelector<HTMLElement>('#inicio')!;
+	const forzado = new URLSearchParams(location.search).get('fiesta') === 'hoy' && (import.meta.env.DEV || !EXIGIR_REGISTRO);
+	function comprobarDia() {
+		const esDia = forzado || Date.now() >= new Date(portada.dataset.llegada!).getTime();
+		portada.querySelectorAll<HTMLElement>('[data-cta]').forEach((el) => (el.hidden = (el.dataset.cta === 'fiesta') !== esDia));
+		return esDia;
+	}
+	if (!comprobarDia()) {
+		const intervalo = setInterval(() => comprobarDia() && clearInterval(intervalo), 30_000);
+	}
+
+	// "¡Hola, Marta! Estás invitada…" con el nombre de la sesión
+	const sesion = leerSesion();
+	const saludo = document.querySelector('[data-saludo]');
+	if (sesion && saludo) saludo.textContent = `¡Hola, ${sesion.nombre.split(' ')[0]}! Estás invitado`;
+</script>

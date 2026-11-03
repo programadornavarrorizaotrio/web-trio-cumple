@@ -1,23 +1,95 @@
 ---
+import '@fontsource-variable/archivo/wdth.css';
 import '../styles/global.css';
+import Nav from '../components/common/Nav.astro';
+import { CLAVE_SESION, EXIGIR_REGISTRO } from '../components/registro/sesion';
 
 interface Props {
 	title?: string;
+	description?: string;
+	/** Se puede ver sin registrarse (registro, guía de estilo) */
+	publica?: boolean;
+	sinNav?: boolean;
 }
 
-const { title = 'Trio Feliz 2.0' } = Astro.props;
+const {
+	title = 'Trio Feliz 2.0',
+	description = 'Estás invitado a la 4ª edición del Trio Feliz. Regístrate, pasa por el estanco y activa tu cromo.',
+	publica = false,
+	sinNav = false,
+} = Astro.props;
+
+// Base para URLs absolutas (og:image). Sin `site` configurado, la de la propia página.
+const base = Astro.site ?? Astro.url;
 ---
 
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="theme-color" content="#742434" />
+		<meta name="description" content={description} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="apple-mobile-web-app-title" content="Trio Feliz" />
 		<meta name="generator" content={Astro.generator} />
+
+		<!-- Vista previa al compartir el enlace (WhatsApp) -->
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="es_ES" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={new URL(Astro.url.pathname, base)} />
+		<!-- Imagen generada desde /og-imagen (ver README) -->
+		<meta property="og:image" content={new URL('/og.jpg', base)} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Invitación a la 4ª edición del Trio Feliz" />
+		<meta name="twitter:card" content="summary_large_image" />
+
 		<title>{title}</title>
+
+		{
+			EXIGIR_REGISTRO && !publica && (
+				<script is:inline define:vars={{ clave: CLAVE_SESION }}>
+					// Sin registrarse no se ve nada: se corta antes de pintar la página
+					try {
+						if (!localStorage.getItem(clave)) location.replace('/registro');
+					} catch (e) {
+						location.replace('/registro');
+					}
+				</script>
+			)
+		}
 	</head>
-	<body>
+	<body class:list={['flex min-h-dvh flex-col', !sinNav && 'pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0']}>
+		{!sinNav && <Nav />}
 		<slot />
+		<footer class="mt-auto bg-granate-oscuro px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 text-center text-sm text-amarillo-claro">
+			<p>Trio Feliz · 4ª edición · Hecho a mano, sin gluten y con poca vergüenza</p>
+			<p data-salir hidden class="mt-3 text-xs text-crema/70">
+				¿No eres <span data-salir-nombre></span>?
+				<button type="button" class="font-bold text-amarillo underline underline-offset-4">Salir</button>
+			</p>
+		</footer>
+
+		<script>
+			import { leerSesion, borrarSesion, EXIGIR_REGISTRO } from '../components/registro/sesion';
+
+			// "¿No eres Marta? Salir": por si el móvil es de otra persona
+			const sesion = leerSesion();
+			const salir = document.querySelector<HTMLElement>('[data-salir]');
+			if (sesion && salir) {
+				salir.querySelector('[data-salir-nombre]')!.textContent = sesion.nombre.split(' ')[0];
+				salir.hidden = false;
+				salir.querySelector('button')!.addEventListener('click', () => {
+					borrarSesion();
+					location.replace(EXIGIR_REGISTRO ? '/registro' : '/');
+				});
+			}
+		</script>
 	</body>
 </html>

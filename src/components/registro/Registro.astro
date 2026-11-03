@@ -1,0 +1,306 @@
+---
+import Rotulo from '../common/Rotulo.astro';
+import Campo from '../common/Campo.astro';
+import Button from '../common/Button.astro';
+import Emblema from '../common/Emblema.astro';
+import Cromo from '../cromos/Cromo.astro';
+import FotosDemo from '../cromos/FotosDemo.astro';
+import { EXIGIR_REGISTRO } from './sesion';
+import { PIN_DEMO } from './datos';
+import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
+
+// Registro en tres pasos: buscar tu nombre → tus datos → abrir el sobre con tu cromo.
+---
+
+<FotosDemo />
+
+<div data-registro class="mx-auto w-full max-w-md">
+	{
+		!EXIGIR_REGISTRO && (
+			<div class="mb-6 flex items-center justify-between gap-3 rounded border-2 border-dashed border-amarillo/60 px-4 py-3 text-sm">
+				<span>
+					<strong class="text-amarillo">Modo pruebas:</strong> el registro no es obligatorio. PIN: {PIN_DEMO}
+				</span>
+				<a href="/" class="shrink-0 rounded bg-amarillo px-3 py-2 font-bold text-granate-oscuro">Ir a la web →</a>
+			</div>
+		)
+	}
+	<div class="flex justify-center">
+		<Rotulo tamano="md" />
+	</div>
+
+	<!-- Progreso -->
+	<ol class="mx-auto mt-6 flex max-w-60 items-center gap-2" aria-label="Pasos del registro">
+		{
+			['Búscate', 'Tus datos', 'Tu cromo'].map((texto, i) => (
+				<li data-marca={i} class="flex-1" aria-label={`Paso ${i + 1}: ${texto}`}>
+					<span class:list={['block h-1.5 rounded-full transition-colors', i === 0 ? 'bg-amarillo' : 'bg-crema/25']} />
+				</li>
+			))
+		}
+	</ol>
+
+	<!-- Paso 1: buscar -->
+	<section data-paso="buscar" class="mt-6 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
+		<h1 class="text-2xl text-granate">Antes de pasar…</h1>
+
+		<!-- PIN de la fiesta -->
+		<form data-bloque-pin class="mt-4">
+			<label for="pin" class="text-xs font-black uppercase tracking-[0.2em] text-granate">Código de la fiesta</label>
+			<div class="mt-1.5 flex gap-2">
+				<input
+					id="pin"
+					data-pin
+					inputmode="numeric"
+					autocomplete="one-time-code"
+					maxlength="8"
+					required
+					placeholder="••••"
+					class="rotulo block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-4 py-3 text-center text-2xl tracking-[0.4em] text-granate placeholder:text-tinta-suave/40 focus:border-granate focus:outline-none"
+				/>
+				<Button type="submit" class="shrink-0">Entrar</Button>
+			</div>
+			<p class="mt-1 text-xs text-tinta-suave">Viene en el mensaje de invitación.</p>
+			<p data-pin-error hidden role="alert" class="mt-2 text-sm font-bold text-granate">Ese código no es. Míralo otra vez en el mensaje.</p>
+		</form>
+
+		<div data-bloque-buscar hidden>
+			<p class="mt-2 text-tinta-suave">Búscate en la lista de invitados. Cada nombre solo se puede registrar una vez.</p>
+
+			<label class="mt-5 block">
+				<span class="sr-only">Tu nombre</span>
+				<input
+					data-buscador
+					type="search"
+					autocomplete="off"
+					autocapitalize="words"
+					enterkeyhint="search"
+					placeholder="Escribe tu nombre…"
+					class="block w-full rounded border-2 border-granate/25 bg-white px-4 py-3.5 text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none"
+				/>
+			</label>
+
+			<ul data-resultados class="mt-3 space-y-2"></ul>
+			<p data-sin-resultados hidden class="mt-4 text-sm text-tinta-suave">
+				No te encontramos. Prueba con tu apellido o escribe a los organizadores.
+			</p>
+		</div>
+	</section>
+
+	<template data-plantilla-resultado>
+		<li>
+			<button
+				type="button"
+				class="flex w-full items-center justify-between gap-3 rounded border-2 border-granate/15 bg-white px-4 py-3.5 text-left font-bold active:bg-amarillo disabled:bg-crema-oscuro disabled:text-tinta-suave"
+			>
+				<span data-nombre class="min-w-0 truncate"></span>
+				<span data-accion class="shrink-0 text-xs font-black uppercase tracking-wider text-granate">Soy yo →</span>
+			</button>
+		</li>
+	</template>
+
+	<!-- Paso 2: datos -->
+	<form data-paso="datos" hidden class="mt-6 space-y-5 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
+		<button type="button" data-atras class="text-sm font-bold text-granate underline underline-offset-4">← No soy yo</button>
+
+		<h2 class="text-2xl text-granate">¡Hola, <span data-nombre-elegido></span>!</h2>
+
+		<Campo etiqueta="Apodo para tu cromo" name="apodo" required maxlength={20} placeholder="El Gamba" autocomplete="off" />
+		<Campo
+			etiqueta="Frase"
+			name="frase"
+			maxlength={60}
+			placeholder="Vengo por el estanco"
+			autocomplete="off"
+			ayuda="Opcional. Saldrá en tu cromo."
+		/>
+
+		<CamposAsistencia />
+
+		<p data-error hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
+
+		<Button type="submit" tamano="lg" class="w-full">Activar mi cromo</Button>
+	</form>
+
+	<!-- Paso 3: abrir el sobre -->
+	<section data-paso="revelar" hidden class="mt-6 text-center">
+		<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Registrado!</p>
+
+		<div class="relative mt-5 [perspective:1000px]">
+			<button
+				type="button"
+				data-sobre
+				class="sobre relative mx-auto flex aspect-[3/4] w-56 flex-col items-center justify-center gap-4 overflow-hidden rounded-lg border-2 border-amarillo bg-granate-oscuro text-amarillo shadow-chapa"
+			>
+				<span class="absolute inset-x-0 top-7 border-t-2 border-dashed border-amarillo/50" aria-hidden="true"></span>
+				<Emblema class="size-20" hueco="var(--color-granate-oscuro)" />
+				<span class="rotulo text-xl">Sobre de cromos</span>
+				<span class="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-crema/80">Toca para abrir</span>
+			</button>
+
+			<div data-revelado hidden class="revelado text-left">
+				<Cromo />
+			</div>
+		</div>
+
+		<div data-entrar hidden class="mt-8">
+			<Button href="/" tamano="lg" class="w-full">Entrar a la fiesta</Button>
+		</div>
+	</section>
+</div>
+
+<script>
+	import { buscarInvitados, comprobarPin, registrar, type Coincidencia } from './datos';
+	import { guardarSesion, leerSesion } from './sesion';
+	import { guardarAsistencia, leerCampos } from '../rsvp/datos';
+	import { pintarCromo } from '../cromos/pintar';
+	import type { Cromo } from '../cromos/tipos';
+
+	// Ya registrado en este móvil: directo a la fiesta
+	if (leerSesion()) location.replace('/');
+
+	const raiz = document.querySelector<HTMLElement>('[data-registro]')!;
+	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => raiz.querySelector<T>(sel)!;
+	const pasos = ['buscar', 'datos', 'revelar'] as const;
+
+	function irA(paso: (typeof pasos)[number]) {
+		raiz.querySelectorAll<HTMLElement>('[data-paso]').forEach((el) => (el.hidden = el.dataset.paso !== paso));
+		const n = pasos.indexOf(paso);
+		raiz.querySelectorAll('[data-marca] span').forEach((barra, i) => {
+			barra.classList.toggle('bg-amarillo', i <= n);
+			barra.classList.toggle('bg-crema/25', i > n);
+		});
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	// --- Paso 1a: PIN de la fiesta (se puede traer en el enlace: /registro?pin=…) ---
+	const formPin = $<HTMLFormElement>('[data-bloque-pin]');
+	const campoPin = $<HTMLInputElement>('[data-pin]');
+	let pin = '';
+
+	async function validarPin(valor: string) {
+		const ok = await comprobarPin(valor);
+		$('[data-pin-error]').hidden = ok;
+		if (!ok) return;
+		pin = valor.trim();
+		formPin.hidden = true;
+		$('[data-bloque-buscar]').hidden = false;
+		buscador.focus();
+	}
+
+	formPin.addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		validarPin(campoPin.value);
+	});
+
+	// --- Paso 1b: buscar ---
+	const buscador = $<HTMLInputElement>('[data-buscador]');
+	const resultados = $<HTMLUListElement>('[data-resultados]');
+	const plantilla = document.querySelector<HTMLTemplateElement>('[data-plantilla-resultado]')!.content.firstElementChild!;
+	let elegido: Coincidencia | null = null;
+	let espera: number | undefined;
+
+	function pintarResultados(lista: Coincidencia[]) {
+		resultados.replaceChildren(
+			...lista.map((inv) => {
+				const li = plantilla.cloneNode(true) as HTMLLIElement;
+				const boton = li.querySelector('button')!;
+				li.querySelector('[data-nombre]')!.textContent = inv.nombre;
+				if (inv.registrado) {
+					boton.disabled = true;
+					li.querySelector('[data-accion]')!.textContent = 'Ya registrado';
+				}
+				boton.addEventListener('click', () => {
+					elegido = inv;
+					$('[data-nombre-elegido]').textContent = inv.nombre.split(' ')[0];
+					irA('datos');
+				});
+				return li;
+			}),
+		);
+		$('[data-sin-resultados]').hidden = lista.length > 0 || buscador.value.trim().length < 2;
+	}
+
+	buscador.addEventListener('input', () => {
+		clearTimeout(espera);
+		espera = window.setTimeout(async () => pintarResultados(await buscarInvitados(pin, buscador.value)), 200);
+	});
+
+	const pinEnlace = new URLSearchParams(location.search).get('pin');
+	if (pinEnlace) {
+		campoPin.value = pinEnlace;
+		validarPin(pinEnlace);
+	}
+
+	// --- Paso 2: datos ---
+	const form = $<HTMLFormElement>('[data-paso="datos"]');
+	$('[data-atras]').addEventListener('click', () => irA('buscar'));
+
+	form.addEventListener('submit', async (ev) => {
+		ev.preventDefault();
+		if (!elegido) return;
+		const datos = new FormData(form);
+		const asistencia = leerCampos(form);
+		const texto = (nombre: string) => String(datos.get(nombre) ?? '').trim() || null;
+		const error = $('[data-error]');
+		error.hidden = true;
+
+		try {
+			const { clave, cromo } = await registrar(pin, elegido.id, {
+				apodo: texto('apodo')!,
+				frase: texto('frase'),
+				...asistencia,
+			});
+			guardarSesion({ clave, id: elegido.id, nombre: elegido.nombre });
+			await guardarAsistencia(asistencia); // TODO(B): sobra cuando `registrar` la guarde en la BD
+			prepararSobre(cromo);
+			irA('revelar');
+		} catch {
+			error.textContent = 'Este nombre ya está registrado. Si no has sido tú, habla con los organizadores.';
+			error.hidden = false;
+		}
+	});
+
+	// --- Paso 3: abrir el sobre ---
+	function prepararSobre(cromo: Cromo) {
+		const sobre = $<HTMLButtonElement>('[data-sobre]');
+		sobre.addEventListener(
+			'click',
+			() => {
+				sobre.classList.add('abierto');
+				setTimeout(() => {
+					sobre.hidden = true;
+					$('[data-revelado]').hidden = false;
+					pintarCromo($('[data-revelado] [data-cromo]'), cromo);
+					$('[data-entrar]').hidden = false;
+				}, 450);
+			},
+			{ once: true },
+		);
+	}
+</script>
+
+<style>
+	.sobre.abierto {
+		animation: abrir 0.45s ease-in forwards;
+	}
+	@keyframes abrir {
+		30% {
+			transform: rotate(-4deg) scale(1.04);
+		}
+		to {
+			transform: translateY(-40%) scale(0.9);
+			opacity: 0;
+		}
+	}
+
+	.revelado:not([hidden]) {
+		animation: girar 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+	}
+	@keyframes girar {
+		from {
+			transform: rotateY(90deg) scale(0.8);
+			opacity: 0;
+		}
+	}
+</style>

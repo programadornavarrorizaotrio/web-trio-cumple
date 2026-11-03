@@ -1,0 +1,18 @@
+---
+// Advertencia sanitaria de cajetilla: recuadro blanco con borde negro y texto en negrita.
+interface Props {
+	class?: string;
+}
+
+const { class: clase } = Astro.props;
+---
+
+<p
+	class:list={[
+		'border-[3px] border-black bg-white px-3 py-2 text-center font-black uppercase leading-tight text-black',
+		'text-xs sm:text-sm',
+		clase,
+	]}
+>
+	<slot />
+</p>

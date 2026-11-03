@@ -1,0 +1,26 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+// Campo de formulario con etiqueta y texto de ayuda. El resto de atributos van al <input>
+// (o al <textarea> si `multilinea`).
+type Props = HTMLAttributes<'input'> &
+	Pick<HTMLAttributes<'textarea'>, 'rows'> & {
+		etiqueta: string;
+		ayuda?: string;
+		multilinea?: boolean;
+	};
+
+const { etiqueta, ayuda, multilinea = false, class: clase, ...input } = Astro.props;
+
+const estilos = [
+	'mt-1.5 block w-full rounded border-2 border-granate/25 bg-white px-3 py-3 text-tinta placeholder:text-tinta-suave/50',
+	'focus:border-granate focus:outline-none',
+	'file:mr-3 file:rounded file:border-0 file:bg-granate file:px-3 file:py-2 file:text-sm file:font-bold file:text-amarillo',
+];
+---
+
+<label class:list={['block', clase]}>
+	<span class="text-xs font-black uppercase tracking-[0.2em] text-granate">{etiqueta}</span>
+	{multilinea ? <textarea class:list={[estilos, 'resize-y']} rows={3} {...(input as HTMLAttributes<'textarea'>)} /> : <input class:list={estilos} {...input} />}
+	{ayuda && <span class="mt-1 block text-xs text-tinta-suave">{ayuda}</span>}
+</label>

@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/common/Section.astro';
+import Estanco from '../components/estanco/Estanco.astro';
+---
+
+<Layout title="Estanco · Trio Feliz">
+	<main class="min-h-dvh bg-granate">
+		<h1 class="sr-only">El estanco</h1>
+		<Section
+			id="estanco"
+			antetitulo="Expendeduría nº 3"
+			titulo="El estanco"
+			subtitulo="Uno de los tres tiene estanco. Reserva lo que quieras y te lo llevamos a la fiesta: allí lo pagas."
+			fondo="granate"
+		>
+			<Estanco />
+		</Section>
+	</main>
+</Layout>

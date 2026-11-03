@@ -1,0 +1,240 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import fiesta from '../../data/fiesta.json';
+import Marco from '../common/Marco.astro';
+import huerto1 from '../../assets/demo/huerto1.jpeg';
+import huerto2 from '../../assets/demo/huerto2.jpeg';
+import fiestaEnrique from '../../assets/demo/enrique_fiesta.png';
+import fotoTrio from '../../assets/foto_trio.jpg';
+
+// Carrete de la fiesta: subir fotos dentro de la ventana de fechas y galería con visor.
+// El estado depende de la hora, así que se calcula en el navegador.
+
+// TODO(B7): quitar la galería de ejemplo cuando exista `listar_fotos`.
+const galeriaDemo = await Promise.all(
+	[
+		[fotoTrio, 'Juan'],
+		[huerto1, 'Fran'],
+		[fiestaEnrique, 'Pencho'],
+		[huerto2, 'Marta López'],
+	].map(async ([src, autor], i) => ({
+		id: `demo-${i}`,
+		url: (await getImage({ src: src as ImageMetadata, width: 1200, format: 'webp' })).src,
+		autor,
+	})),
+);
+
+const formato = (iso: string) =>
+	new Intl.DateTimeFormat('es-ES', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+		hour: '2-digit',
+		minute: '2-digit',
+		timeZone: fiesta.zonaHoraria,
+	}).format(new Date(iso));
+---
+
+<script type="application/json" id="fotos-galeria-demo" set:html={JSON.stringify(galeriaDemo)} />
+
+<div data-carrete data-desde={fiesta.fotos.abiertasDesde} data-hasta={fiesta.fotos.abiertasHasta}>
+	<!-- Estados del carrete (el script deja visible uno) -->
+	<div data-estado="proximamente" hidden>
+		<Marco>
+			<div class="py-4 text-center">
+				<p class="text-5xl" aria-hidden="true">📷</p>
+				<p class="rotulo mt-3 text-xl text-granate">El carrete aún está cerrado</p>
+				<p class="mt-2 text-sm text-tinta-suave">
+					Se abre el <strong class="first-letter:uppercase">{formato(fiesta.fotos.abiertasDesde)}</strong>. Ese día podrás subir tus
+					fotos aquí.
+				</p>
+			</div>
+		</Marco>
+	</div>
+
+	<div data-estado="abierto" hidden>
+		<label
+			class="flex cursor-pointer flex-col items-center gap-1 rounded-lg bg-amarillo px-5 py-6 text-center text-granate-oscuro shadow-chapa-amarillo active:translate-y-1 active:shadow-none"
+		>
+			<span class="text-4xl" aria-hidden="true">📷</span>
+			<span class="rotulo text-2xl">Subir fotos</span>
+			<span class="text-sm font-bold">Haz una o elige varias de la galería</span>
+			<input data-subir type="file" accept="image/*" multiple class="sr-only" />
+		</label>
+		<p class="mt-2 text-center text-xs text-tinta-suave">
+			Abierto hasta el <span class="first-letter:lowercase">{formato(fiesta.fotos.abiertasHasta)}</span>
+		</p>
+		<ul data-subidas class="mt-4 space-y-2"></ul>
+	</div>
+
+	<div data-estado="cerrado" hidden>
+		<p class="rounded border-2 border-dashed border-granate/30 px-4 py-3 text-center text-sm font-bold text-tinta-suave">
+			El carrete ya está cerrado. ¡Gracias por las fotos!
+		</p>
+	</div>
+
+	<!-- Galería -->
+	<div data-galeria-caja hidden class="mt-8">
+		<p class="text-xs font-black uppercase tracking-[0.2em] text-granate">
+			<span data-cuenta>0</span> fotos
+		</p>
+		<ul data-galeria class="mt-3 grid grid-cols-3 gap-1 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6"></ul>
+		<p data-vacia hidden class="mt-3 text-sm text-tinta-suave">Aún no hay fotos. ¡Estrena el carrete!</p>
+	</div>
+</div>
+
+<template data-plantilla-miniatura>
+	<li>
+		<button type="button" class="block aspect-square w-full overflow-hidden rounded-sm bg-crema-oscuro active:opacity-80">
+			<img alt="" loading="lazy" class="size-full object-cover" />
+		</button>
+	</li>
+</template>
+
+<template data-plantilla-subida>
+	<li class="flex items-center gap-3 rounded border-2 border-granate/15 bg-white p-2">
+		<img alt="" class="size-12 shrink-0 rounded-sm object-cover" />
+		<span data-nombre class="min-w-0 flex-1 truncate text-sm font-bold"></span>
+		<span data-progreso class="shrink-0 text-xs font-black uppercase tracking-wider text-tinta-suave">En cola</span>
+	</li>
+</template>
+
+<!-- Visor a pantalla completa: se desliza entre fotos -->
+<dialog
+	data-visor
+	aria-label="Visor de fotos"
+	class="m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden border-0 bg-black p-0 text-crema backdrop:bg-black"
+>
+	<div class="absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-2 bg-gradient-to-b from-black/80 to-transparent px-3 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))]">
+		<span data-contador class="text-sm font-bold"></span>
+		<div class="flex items-center gap-2">
+			<button type="button" data-descargar class="rounded bg-crema/15 px-3 py-2 text-sm font-bold">Descargar</button>
+			<form method="dialog">
+				<button class="flex size-10 items-center justify-center rounded-full bg-crema/15 text-lg font-bold" aria-label="Cerrar">✕</button>
+			</form>
+		</div>
+	</div>
+	<ul data-pista class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"></ul>
+</dialog>
+
+<template data-plantilla-diapositiva>
+	<li class="relative grid h-full w-screen shrink-0 snap-center place-items-center">
+		<img alt="" class="max-h-[85dvh] max-w-full object-contain" />
+		<p data-autor class="absolute inset-x-0 bottom-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8 text-center text-sm font-bold"></p>
+	</li>
+</template>
+
+<script>
+	import { estadoFotos } from './ventana';
+	import { listarFotos, subirFoto, type Foto } from './datos';
+	import { reducirImagen } from './imagen';
+	import { leerSesion, EXIGIR_REGISTRO } from '../registro/sesion';
+
+	const raiz = document.querySelector<HTMLElement>('[data-carrete]')!;
+	const plantilla = (nombre: string) =>
+		document.querySelector<HTMLTemplateElement>(`[data-plantilla-${nombre}]`)!.content.firstElementChild!.cloneNode(true) as HTMLElement;
+
+	// --- Estado según fechas (en pruebas se puede forzar con ?carrete=abierto|cerrado|proximamente) ---
+	const forzado = new URLSearchParams(location.search).get('carrete');
+	const estado =
+		(import.meta.env.DEV || !EXIGIR_REGISTRO) && forzado
+			? forzado
+			: estadoFotos({ abiertasDesde: raiz.dataset.desde, abiertasHasta: raiz.dataset.hasta });
+	raiz.querySelectorAll<HTMLElement>('[data-estado]').forEach((el) => (el.hidden = el.dataset.estado !== estado));
+
+	// --- Galería ---
+	const galeria = raiz.querySelector<HTMLUListElement>('[data-galeria]')!;
+	let fotos: Foto[] = [];
+
+	function pintarGaleria() {
+		galeria.replaceChildren(
+			...fotos.map((f, i) => {
+				const li = plantilla('miniatura');
+				const img = li.querySelector('img')!;
+				img.src = f.url;
+				img.alt = `Foto de ${f.autor}`;
+				li.querySelector('button')!.addEventListener('click', () => abrirVisor(i));
+				return li;
+			}),
+		);
+		raiz.querySelector('[data-cuenta]')!.textContent = String(fotos.length);
+		raiz.querySelector<HTMLElement>('[data-vacia]')!.hidden = fotos.length > 0;
+	}
+
+	if (estado === 'abierto' || estado === 'cerrado') {
+		raiz.querySelector<HTMLElement>('[data-galeria-caja]')!.hidden = false;
+		fotos = await listarFotos();
+		pintarGaleria();
+	}
+
+	// --- Subida ---
+	const lista = raiz.querySelector<HTMLUListElement>('[data-subidas]')!;
+	raiz.querySelector<HTMLInputElement>('[data-subir]')!.addEventListener('change', async (ev) => {
+		const input = ev.target as HTMLInputElement;
+		const archivos = [...(input.files ?? [])];
+		input.value = '';
+		const autor = leerSesion()?.nombre ?? 'Invitado';
+
+		const filas = archivos.map((archivo) => {
+			const li = plantilla('subida');
+			li.querySelector('img')!.src = URL.createObjectURL(archivo);
+			li.querySelector('[data-nombre]')!.textContent = archivo.name;
+			lista.prepend(li);
+			return { archivo, estado: li.querySelector<HTMLElement>('[data-progreso]')! };
+		});
+
+		// De una en una: en móvil con mala cobertura es más fiable que todas a la vez
+		for (const { archivo, estado } of filas) {
+			try {
+				estado.textContent = 'Reduciendo…';
+				const imagen = await reducirImagen(archivo);
+				estado.textContent = 'Subiendo…';
+				fotos.unshift(await subirFoto(imagen, autor));
+				pintarGaleria();
+				estado.textContent = '✓ Subida';
+				estado.classList.replace('text-tinta-suave', 'text-granate');
+			} catch {
+				estado.textContent = 'Error';
+				estado.classList.replace('text-tinta-suave', 'text-red-700');
+			}
+		}
+	});
+
+	// --- Visor ---
+	const visor = document.querySelector<HTMLDialogElement>('[data-visor]')!;
+	const pista = visor.querySelector<HTMLUListElement>('[data-pista]')!;
+	const contador = visor.querySelector<HTMLElement>('[data-contador]')!;
+	const actual = () => Math.round(pista.scrollLeft / pista.clientWidth);
+
+	function abrirVisor(indice: number) {
+		pista.replaceChildren(
+			...fotos.map((f) => {
+				const li = plantilla('diapositiva');
+				const img = li.querySelector('img')!;
+				img.src = f.url;
+				img.alt = `Foto de ${f.autor}`;
+				li.querySelector('[data-autor]')!.textContent = `📷 ${f.autor}`;
+				return li;
+			}),
+		);
+		visor.showModal();
+		pista.scrollTo({ left: indice * pista.clientWidth, behavior: 'instant' });
+		contador.textContent = `${indice + 1} / ${fotos.length}`;
+	}
+
+	pista.addEventListener('scroll', () => (contador.textContent = `${actual() + 1} / ${fotos.length}`), { passive: true });
+
+	// Descarga como archivo (un <a download> no funciona con imágenes de otro dominio)
+	visor.querySelector('[data-descargar]')!.addEventListener('click', async () => {
+		const foto = fotos[actual()];
+		if (!foto) return;
+		const blob = await (await fetch(foto.url)).blob();
+		const enlace = Object.assign(document.createElement('a'), {
+			href: URL.createObjectURL(blob),
+			download: `trio-feliz-${actual() + 1}.${blob.type.split('/')[1] ?? 'jpg'}`,
+		});
+		enlace.click();
+		URL.revokeObjectURL(enlace.href);
+	});
+</script>
