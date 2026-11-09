@@ -1,5 +1,6 @@
 ---
 import fiesta from '../../data/fiesta.json';
+import Cabezas from './Cabezas.astro';
 import './riverland.css';
 
 // Cabecera de /canciones: cartel de festival (cromo rosa y neón sobre seda negra).
@@ -57,21 +58,7 @@ const fecha = (opciones: Intl.DateTimeFormatOptions) =>
 			</p>
 			<p class="rv-neon text-xs font-bold uppercase tracking-[0.25em] min-[360px]:text-sm min-[360px]:tracking-[0.3em] sm:text-base">{fiesta.lugar.nombre}</p>
 		</div>
-
-		<!-- Estrella y frase -->
-		<svg class="mx-auto mt-10 size-7 drop-shadow-[0_0_6px_#fff]" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
-			<path d="M12 0C12.6 8 16 11.4 24 12 16 12.6 12.6 16 12 24 11.4 16 8 12.6 0 12 8 11.4 11.4 8 12 0Z"></path>
-		</svg>
-		<div class="mt-4 text-3xl font-black uppercase leading-none sm:text-5xl">
-			<p class="flex items-center gap-3">
-				<span class="h-0.5 flex-1 bg-white/90" aria-hidden="true"></span>
-				La música
-			</p>
-			<p class="mt-1 flex items-center gap-3">
-				la ponéis
-				<span class="h-0.5 flex-1 bg-white/90" aria-hidden="true"></span>
-			</p>
-			<p class="mt-1 text-right text-xl sm:text-3xl">vosotros</p>
-		</div>
 	</div>
+
+	<Cabezas />
 </header>
