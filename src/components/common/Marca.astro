@@ -18,6 +18,7 @@ const color: Record<Tema, string> = {
 	estanco: 'text-amarillo',
 	cartas: 'text-crema',
 	riverland: 'text-crema',
+	charca: 'text-amarillo',
 };
 ---
 
@@ -35,6 +36,15 @@ const color: Record<Tema, string> = {
 						<rect x="6" y="2" width="20" height="28" rx="3" fill="currentColor" />
 						<rect x="9" y="5" width="14" height="22" rx="1.5" fill="#2d5fae" />
 						<path d="M16 9 l2 4.2 4.6.6-3.3 3.2.8 4.6L16 19.4 11.9 21.6l.8-4.6-3.3-3.2 4.6-.6z" fill="currentColor" />
+					</g>
+				)}
+				{tema === 'charca' && (
+					<g>
+						<!-- Nenúfar con su flor -->
+						<ellipse cx="16" cy="19" rx="14" ry="8" fill="currentColor" />
+						<path d="M16 19 L29 14.5" stroke="var(--color-granate)" stroke-width="2.4" stroke-linecap="round" />
+						<circle cx="11" cy="15" r="4" fill="#ff7fa8" />
+						<circle cx="11" cy="15" r="1.6" fill="#ffcf5c" />
 					</g>
 				)}
 				{tema === 'riverland' && (

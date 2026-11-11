@@ -260,8 +260,8 @@ const luciernagas = [
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		/* Cabe entre la barra de arriba (3,5 rem) y la de abajo del móvil (~4,75 rem + zona segura) */
-		min-height: calc(100svh - 8.25rem - env(safe-area-inset-bottom));
+		/* Cabe bajo la barra de arriba (3,5 rem) */
+		min-height: calc(100svh - 3.5rem);
 		/* Arriba aire; abajo sitio para el agua y la rana (alto de la imagen = 1,18 × ancho) */
 		padding: 2.5rem 1rem calc(var(--alto-agua) + var(--rw) * 0.85);
 	}
@@ -657,9 +657,6 @@ const luciernagas = [
 		.rec {
 			--rw: 13.2rem;
 			--agua: 4rem;
-		}
-		.fase {
-			min-height: calc(100svh - 3.5rem); /* en escritorio no hay barra inferior */
 		}
 		.f0 {
 			--x: 22%;
