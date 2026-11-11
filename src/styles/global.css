@@ -189,3 +189,17 @@
 :root[data-tema='riverland'] header[data-barra] {
 	box-shadow: 0 2px 0 0 #0b0b0b;
 }
+
+/* === Paleta de la charca (Trioland) ===
+ * No es un tema de página: se activa con la clase .selva en el contenedor que la use
+ * (portada y escena del trío de la home). Las secciones oscuras de la charca leen estas variables.
+ */
+.selva {
+	--c-bosque: #0e2a1f;
+	--c-hoja: #1d6b45;
+	--c-lima: #c6f26b;
+	--c-agua: #0f7a72;
+	--c-flor: #ff7fa8;
+	--c-sol: #ffcf5c;
+	--c-crema: #fff4d6;
+}

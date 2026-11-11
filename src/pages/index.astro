@@ -14,16 +14,8 @@ import Trio from '../components/trio/Trio.astro';
 		<!-- landing: Persona A -->
 		<Portada />
 
-		<!-- trio: Persona A -->
-		<Section
-			id="trio"
-			antetitulo="Los cumpleañeros"
-			titulo="El trío"
-			subtitulo="Aunque estáis invitados por los tres, muchos solo conocéis a uno. Tres marcas, una fiesta."
-			class="!pb-0"
-		>
-			<Trio />
-		</Section>
+		<!-- trio: Persona A (escena a sangre, lleva su propio <section id="trio">) -->
+		<Trio />
 
 		<!-- landing: Persona A -->
 		<section aria-label="Secciones" class="px-4 py-12 sm:py-16">

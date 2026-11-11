@@ -51,6 +51,8 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<div class="mece">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-1" cx="45%" cy="40%" r="70%">
@@ -61,9 +63,6 @@ const luciernagas = [
 				<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
 				<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-1)" stroke="#14502f" stroke-width="1.2"></path>
 			</svg>
-			<i class="onda"></i>
-			<p data-cta="antes" class="bocadillo der">Estoy bastante seguro de que no tienes nada mejor que hacer ese día... <br />Pasa, pasa… y no toques el nenúfar.</p>
-			<p data-cta="fiesta" hidden class="bocadillo der">¡Hoy es! Saca el móvil, anda, que no se hacen fotos solas.</p>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -77,6 +76,10 @@ const luciernagas = [
 					/>
 				</div>
 			</div>
+			</div>
+			<i class="onda"></i>
+			<p data-cta="antes" class="bocadillo der">Estoy bastante seguro de que no tienes nada mejor que hacer ese día... <br />Pasa, pasa… y no toques el nenúfar.</p>
+			<p data-cta="fiesta" hidden class="bocadillo der">¡Hoy es! Saca el móvil, anda, que no se hacen fotos solas.</p>
 		</div>
 	</section>
 
@@ -120,6 +123,8 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<div class="mece">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-2" cx="45%" cy="40%" r="70%">
@@ -134,8 +139,6 @@ const luciernagas = [
 					<circle r="3" fill="#ffcf5c"></circle>
 				</g>
 			</svg>
-			<i class="onda"></i>
-			<p class="bocadillo izq">¿Cómo coño se va a llamar así el sitio?.</p>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -148,6 +151,9 @@ const luciernagas = [
 					/>
 				</div>
 			</div>
+			</div>
+			<i class="onda"></i>
+			<p class="bocadillo izq">¿Cómo coño se va a llamar así el sitio?.</p>
 		</div>
 	</section>
 
@@ -192,6 +198,8 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<div class="mece">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-3" cx="45%" cy="40%" r="70%">
@@ -202,19 +210,6 @@ const luciernagas = [
 				<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
 				<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-3)" stroke="#14502f" stroke-width="1.2"></path>
 			</svg>
-			<i class="onda"></i>
-			<!-- El texto depende de si ha confirmado (data-resp: ninguna | si | no; lo decide el script del final).
-			     El envoltorio con data-cta lo gestiona Portada (antes / día de la fiesta); los de dentro, el script. -->
-			<div data-cta="antes">
-				<p data-resp="ninguna" class="bocadillo der">Tic, tac… Es solo cuestión de tiempo... ¿Has confirmado ya o qué?</p>
-				<p data-resp="si" hidden class="bocadillo der">Tic, tac… Ya estás apuntado, así me gusta. Y no llegues tarde.</p>
-				<p data-resp="no" hidden class="bocadillo der">¿Que no vienes? Tú sabrás… Aún estás a tiempo de cambiar de opinión.</p>
-			</div>
-			<div data-cta="fiesta" hidden>
-				<p data-resp="ninguna" class="bocadillo der">Es solo cuestión de tiempo</p>
-				<p data-resp="si" hidden class="bocadillo der">Ya empezó y tú ya estabas apuntado. ¡A disfrutar!</p>
-				<p data-resp="no" hidden class="bocadillo der">Dijiste que no venías… y aquí estás. Anda, pásate.</p>
-			</div>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -226,6 +221,20 @@ const luciernagas = [
 						loading="lazy"
 					/>
 				</div>
+			</div>
+			</div>
+			<i class="onda"></i>
+			<!-- El texto depende de si ha confirmado (data-resp: ninguna | si | no; lo decide el script del final).
+			     El envoltorio con data-cta lo gestiona Portada (antes / día de la fiesta); los de dentro, el script. -->
+			<div data-cta="antes">
+				<p data-resp="ninguna" class="bocadillo der">Tic, tac… <br /> Es solo cuestión de tiempo... <br />¿Has confirmado ya o qué?</p>
+				<p data-resp="si" hidden class="bocadillo der">Tic, tac… <br /> Ya estás apuntado, así me gusta. <br /> Y no llegues tarde.</p>
+				<p data-resp="no" hidden class="bocadillo der">¿Que no vienes? Tú sabrás… Aún estás a tiempo de cambiar de opinión.</p>
+			</div>
+			<div data-cta="fiesta" hidden>
+				<p data-resp="ninguna" class="bocadillo der">Es solo cuestión de tiempo</p>
+				<p data-resp="si" hidden class="bocadillo der">Ya empezó y tú ya estabas apuntado. ¡A disfrutar!</p>
+				<p data-resp="no" hidden class="bocadillo der">Dijiste que no venías… y aquí estás. Anda, pásate.</p>
 			</div>
 		</div>
 	</section>
@@ -391,6 +400,9 @@ const luciernagas = [
 		width: var(--rw);
 		margin-left: calc(var(--rw) / -2);
 		z-index: 1;
+	}
+	.mece {
+		position: relative;
 	}
 	.nenufar {
 		display: block;
@@ -668,20 +680,20 @@ const luciernagas = [
 		.reflejos {
 			animation: reflejos 5s linear infinite;
 		}
-		.nenufar {
+		/* Nenúfar y rana se mecen juntos */
+		.mece {
 			animation: mecer 6s ease-in-out infinite;
 		}
-		.f1 .nenufar {
+		.f1 .mece {
 			animation-delay: -2s;
 		}
-		.f2 .nenufar {
+		.f2 .mece {
 			animation-delay: -4s;
 		}
 		.luciernagas i {
 			animation: parpadeo 2.6s ease-in-out infinite;
 			animation-delay: var(--d);
 		}
-		.flota,
 		.titulo {
 			animation: flotar 4.5s ease-in-out 1.3s infinite;
 		}

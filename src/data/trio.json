@@ -1,8 +1,10 @@
 [
 	{
 		"slug": "pencho",
+		"poster": "modelos/pencho-poster.png",
 		"nombre": "Pencho",
 		"foto": "pencho.jpg",
+		"modelo": "modelos/pencho3d-chibi.glb",
 		"encuadre": "50% 62%",
 		"edad": 23,
 		"lema": "La Diversión",
@@ -12,8 +14,10 @@
 	},
 	{
 		"slug": "fran",
+		"poster": "modelos/fran-poster.png",
 		"nombre": "Fran",
 		"foto": "fran.jpg",
+		"modelo": "modelos/fran3d.glb",
 		"encuadre": "top",
 		"edad": 23,
 		"lema": "La Resolución",
@@ -23,8 +27,10 @@
 	},
 	{
 		"slug": "juan",
+		"poster": "modelos/juan-poster.png",
 		"nombre": "Juan",
 		"foto": "juan.jpg",
+		"modelo": "modelos/juan3d.glb",
 		"encuadre": "top",
 		"edad": 23,
 		"lema": "La Presión",

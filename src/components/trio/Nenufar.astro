@@ -1,0 +1,21 @@
+---
+// Nenúfar de la charca. Su degradado (#hoja-trio) lo define Trio.astro una sola vez.
+interface Props {
+	class?: string;
+	flor?: boolean;
+}
+const { class: clase, flor = false } = Astro.props;
+---
+
+<svg class:list={['nenufar', clase]} viewBox="0 0 120 50" aria-hidden="true">
+	<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
+	<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-trio)" stroke="#14502f" stroke-width="1.2"></path>
+	{
+		flor && (
+			<g transform="translate(86 17)">
+				<circle r="6" fill="#ff7fa8" />
+				<circle r="3" fill="#ffcf5c" />
+			</g>
+		)
+	}
+</svg>
