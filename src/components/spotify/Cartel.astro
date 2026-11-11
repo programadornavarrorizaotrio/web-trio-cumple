@@ -1,0 +1,64 @@
+---
+import fiesta from '../../data/fiesta.json';
+import Cabezas from './Cabezas.astro';
+import './riverland.css';
+
+// Cabecera de /canciones: cartel de festival (cromo rosa y neón sobre seda negra).
+const inicio = new Date(fiesta.inicio);
+const fecha = (opciones: Intl.DateTimeFormatOptions) =>
+	new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, ...opciones }).format(inicio);
+---
+
+<header class="rv relative isolate overflow-hidden bg-(--rv-negro) px-4 pb-14 pt-8 text-white sm:pb-20 sm:pt-14">
+	<!-- Seda ondulada -->
+	<svg
+		class="absolute inset-0 -z-10 size-full [mask-image:radial-gradient(ellipse_90%_70%_at_75%_45%,#000_25%,transparent_75%)]"
+		viewBox="0 0 400 600"
+		preserveAspectRatio="none"
+		aria-hidden="true"
+	>
+		<defs>
+			<filter id="rv-seda" x="0" y="0" width="100%" height="100%">
+				<feTurbulence type="fractalNoise" baseFrequency="0.004 0.05" numOctaves="2" seed="7" />
+				<feColorMatrix type="matrix" values="0 0 0 0 0.75  0 0 0 0 0.05  0 0 0 0 0.45  2.4 0 0 0 -0.95" />
+			</filter>
+		</defs>
+		<rect width="400" height="600" filter="url(#rv-seda)" />
+	</svg>
+	<div class="absolute -right-24 top-1/3 -z-10 size-80 rounded-full bg-(--rv-neon)/20 blur-3xl" aria-hidden="true"></div>
+
+	<!-- Red en la esquina -->
+	<svg class="absolute -left-4 -top-2 -z-10 w-44 opacity-60 sm:w-72" viewBox="0 0 200 140" aria-hidden="true">
+		<defs>
+			<pattern id="rv-red" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+				<path d="M0 0H11M0 0V11" fill="none" stroke="#fff" stroke-width="0.8"></path>
+			</pattern>
+			<clipPath id="rv-red-corte">
+				<path d="M0 0H200C175 35 125 80 50 100 30 106 12 120 0 140Z"></path>
+			</clipPath>
+		</defs>
+		<rect width="200" height="140" fill="url(#rv-red)" clip-path="url(#rv-red-corte)"></rect>
+	</svg>
+
+	<div class="mx-auto max-w-3xl">
+		<!-- Tubo de neón -->
+		<div class="rv-tubo rv-zumbido mx-auto h-2.5 w-4/5 rounded-full sm:h-3" aria-hidden="true"></div>
+
+		<!-- Logo en el panel metálico -->
+		<div class="rv-panel mt-5 rounded-xl px-2 py-6 sm:px-8 sm:py-10">
+			<h1 class="rv-cromo rv-parpadeo text-center text-[12vw] sm:text-8xl">
+				Trioland <span class="sr-only">· Canciones</span>
+			</h1>
+		</div>
+
+		<!-- Cartel colgante con la fecha -->
+		<div class="rv-luces mx-auto w-fit px-4 pb-5 pt-3 text-center min-[360px]:px-6 sm:px-10">
+			<p class="rv-neon text-base font-black uppercase leading-tight tracking-wider [font-stretch:115%] min-[360px]:text-lg sm:text-2xl">
+				{`${fecha({ weekday: 'long' })} ${fecha({ day: 'numeric' })} · ${fecha({ month: 'long' })}`}
+			</p>
+			<p class="rv-neon text-xs font-bold uppercase tracking-[0.25em] min-[360px]:text-sm min-[360px]:tracking-[0.3em] sm:text-base">{fiesta.lugar.nombre}</p>
+		</div>
+	</div>
+
+	<Cabezas />
+</header>

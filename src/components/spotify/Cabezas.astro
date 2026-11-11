@@ -1,0 +1,314 @@
+---
+import { Image } from 'astro:assets';
+import fiesta from '../../data/fiesta.json';
+import trio from '../../data/trio.json';
+import { GRUPOS } from './datos';
+import './riverland.css';
+
+// Cartel de /canciones: los tres cumpleañeros como cabezas de cartel y, entre foto y foto,
+// los invitados que han confirmado (se rellenan en el navegador con obtenerConfirmados()).
+const anio = new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, year: 'numeric' }).format(new Date(fiesta.inicio));
+
+const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
+const foto = (archivo: string) => fotos[`../../assets/trio/${archivo}`].default;
+
+// Recuadros de "foco" como en el cartel: punto de la foto (fracciones de la imagen original)
+// y, si lo lleva, lo que "detecta" al aparecer
+type Foco = { punto: [number, number]; texto?: string };
+const focos: Record<string, Foco[]> = {
+	pencho: [
+		{ punto: [0.48, 0.5], texto: 'mirada.seductora.detectada' }, // un ojo
+		{ punto: [0.135, 0.635] }, // el otro
+	],
+	fran: [
+		{ punto: [0.565, 0.455], texto: 'nacionalidad.detectada' }, // la barba
+		{ punto: [0.26, 0.79] }, // el brazo
+	],
+	juan: [
+		{ punto: [0.43, 0.5], texto: 'mancha.detectada' }, // la camiseta
+		{ punto: [0.48, 0.14], texto: 'kalimotxo.detectado' }, // el vaso
+	],
+};
+
+// Fracciones x/y de un `object-position` ("top", "50% 62%"...)
+function fraccionesEncuadre(encuadre: string): [number, number] {
+	let x = 0.5;
+	let y = 0.5;
+	const porcentajes: number[] = [];
+	for (const t of encuadre.split(/\s+/)) {
+		if (t === 'top') y = 0;
+		else if (t === 'bottom') y = 1;
+		else if (t === 'left') x = 0;
+		else if (t === 'right') x = 1;
+		else if (t.endsWith('%')) porcentajes.push(parseFloat(t) / 100);
+	}
+	if (porcentajes.length > 0) x = porcentajes[0];
+	if (porcentajes.length > 1) y = porcentajes[1];
+	return [x, y];
+}
+
+// Dónde cae el foco dentro de una tarjeta de proporción `aspecto` (ancho/alto) con object-fit: cover
+function posicionFoco(img: ImageMetadata, encuadre: string, [fx, fy]: [number, number], aspecto: number) {
+	const escala = Math.max(aspecto / img.width, 1 / img.height);
+	const [w, h] = [img.width * escala, img.height * escala];
+	const [ex, ey] = fraccionesEncuadre(encuadre);
+	const x = ((aspecto - w) * ex + fx * w) / aspecto;
+	const y = (1 - h) * ey + fy * h;
+	const recorta = (v: number) => Math.min(0.88, Math.max(0.12, v));
+	return [recorta(x), recorta(y)];
+}
+
+function datosFoco(p: (typeof trio)[number], aspectoMovil: number) {
+	const lista = focos[p.slug];
+	if (!lista) return null;
+	const img = foto(p.foto);
+	const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+	const recuadros = lista.map(({ punto, texto }, n) => {
+		const [x, y] = posicionFoco(img, p.encuadre, punto, aspectoMovil);
+		const [sx, sy] = posicionFoco(img, p.encuadre, punto, 4 / 5);
+		return {
+			x,
+			y,
+			sx,
+			sy,
+			texto: texto && `> ${texto}`,
+			// El texto se escribe hacia dentro de la tarjeta para que no se corte en los bordes
+			// (clases escritas enteras para que Tailwind las vea)
+			claseTexto: [
+				x > 0.5 ? 'right-0' : 'left-0',
+				y > 0.7 ? 'bottom-full' : 'top-full',
+				sx > 0.5 ? 'sm:right-0 sm:left-auto' : 'sm:left-0 sm:right-auto',
+				sy > 0.7 ? 'sm:bottom-full sm:top-auto' : 'sm:top-full sm:bottom-auto',
+			],
+			// Los siguientes recuadros aparecen con un poco de retraso
+			estilo: `--x: ${pct(x)}; --y: ${pct(y)}; --sx: ${pct(sx)}; --sy: ${pct(sy)}; --letras: ${(texto?.length ?? 0) + 2}; --retraso: ${n * 0.18}s`,
+		};
+	});
+	// El nombre va abajo; si algún foco cae abajo a la izquierda, se pasa a la derecha para no taparlo
+	const abajoIzquierda = recuadros.some((r) => r.y > 0.6 && r.x < 0.5);
+	const abajoIzquierdaSm = recuadros.some((r) => r.sy > 0.6 && r.sx < 0.5);
+	return {
+		recuadros,
+		claseNombre: [
+			abajoIzquierda ? 'right-2 items-end' : 'left-2 items-start',
+			abajoIzquierdaSm ? 'sm:right-2 sm:left-auto sm:items-end' : 'sm:left-2 sm:right-auto sm:items-start',
+		],
+	};
+}
+---
+
+<div class="rv mx-auto mt-12 max-w-3xl px-4 text-white" aria-label="Cartel de Trioland">
+	<!-- El cartel (lo que se descarga) -->
+	<div data-cartel class="relative isolate overflow-hidden bg-(--rv-negro) p-3 sm:p-5">
+		<!-- Hilos discontinuos con puntos verdes -->
+		<svg class="pointer-events-none absolute inset-0 -z-10 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+			<g fill="none" stroke="rgb(255 255 255 / 0.3)" stroke-width="1.2" stroke-dasharray="6 7">
+				<path d="M-5 8C25 18 55 4 105 26" vector-effect="non-scaling-stroke"></path>
+				<path d="M88-5C70 25 98 48 62 70S18 88 42 105" vector-effect="non-scaling-stroke"></path>
+				<path d="M-5 52C18 44 38 64 72 56" vector-effect="non-scaling-stroke"></path>
+			</g>
+		</svg>
+		<span class="rv-punto left-[30%] top-[3%]" aria-hidden="true"></span>
+		<span class="rv-punto right-[22%] top-[32%]" aria-hidden="true"></span>
+		<span class="rv-punto left-[12%] top-[50%]" aria-hidden="true"></span>
+		<span class="rv-punto right-[38%] top-[72%]" aria-hidden="true"></span>
+
+		<div class="grid grid-cols-[1fr_auto] gap-3 sm:gap-5">
+			<div>
+					<!-- Cabecera del line-up -->
+					<div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+						<div class="space-y-1.5">
+							<p><span class="rv-tag whitespace-nowrap">Trio Feliz</span></p>
+							<p><span class="rv-tag whitespace-nowrap">Line up A-Z</span></p>
+						</div>
+						<span class="rv-tag ml-auto whitespace-nowrap">{anio}</span>
+					</div>
+
+					<!-- Cabezas de cartel -->
+					<h2 class="mt-6 text-base"><span class="rv-tag rv-tag-lg whitespace-nowrap">Cabezas de cartel</span></h2>
+					<ul class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-2">
+						{
+							trio.map((p, i) => {
+								const foco = datosFoco(p, 1);
+								return (
+									<li data-tarjeta class="rv-duo rv-tarjeta relative overflow-hidden rounded-2xl">
+										<Image
+											src={foto(p.foto)}
+											alt={`${p.nombre}, cumpleañero`}
+											widths={[360, 720]}
+											sizes="(min-width: 640px) 33vw, 100vw"
+											class="aspect-square w-full object-cover sm:aspect-[4/5]"
+											style={`object-position: ${p.encuadre}`}
+											draggable="false"
+										/>
+										{foco?.recuadros.map((r, n) => (
+											<span
+												class="rv-foco absolute left-(--x) top-(--y) size-12 -translate-x-1/2 -translate-y-1/2 border-2 border-white sm:left-(--sx) sm:top-(--sy) sm:size-14"
+												style={r.estilo}
+												aria-hidden="true"
+											>
+												<span class:list={['rv-punto', (i + n) % 2 ? '-bottom-1.5 -right-1.5' : '-left-1.5 -top-1.5']} />
+												{r.texto && <span class:list={['rv-foco-texto rv-mono absolute my-1.5', r.claseTexto]}>{r.texto}</span>}
+											</span>
+										))}
+										<span class:list={['absolute bottom-2 flex flex-col', foco?.claseNombre ?? 'left-2 items-start']}>
+											<span class="rv-tag">{p.nombre}</span>
+											<span class="rv-tag rv-tag-negro text-xs">{p.lema}</span>
+										</span>
+									</li>
+								);
+							})
+						}
+					</ul>
+
+					<!-- Invitados confirmados, por grupo (se rellenan en el navegador) -->
+					<div class="mt-10 space-y-8">
+						{
+							GRUPOS.map(([clave, titulo]) => (
+								<section data-grupo={clave} hidden class="rv-mono uppercase">
+									<h3 class="text-base"><span class="rv-tag">{titulo}</span></h3>
+									<div data-filas class="mt-2 space-y-1 text-sm leading-snug min-[400px]:text-base sm:space-y-1.5 sm:text-xl" />
+								</section>
+							))
+						}
+					</div>
+
+			</div>
+
+			<!-- Rótulo vertical a la derecha (se repite para llenar el alto, ver script) -->
+			<div data-marca class="rv-marca flex flex-row items-center justify-between gap-8 overflow-hidden text-[3rem] [writing-mode:vertical-rl] rotate-180 sm:text-[5.5rem]" aria-hidden="true">
+				<span data-marca-copia>Trioland</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Descargar el cartel como imagen -->
+	<button
+		type="button"
+		data-descargar
+		class="rv-mono mt-5 flex w-full items-center justify-center gap-2 border-2 border-(--rv-rosa) bg-(--rv-rosa) px-5 py-4 font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-(--rv-rosa) active:bg-black active:text-(--rv-rosa) disabled:pointer-events-none disabled:opacity-40"
+	>
+		Descargar cartel <span aria-hidden="true">↓</span>
+	</button>
+	<p data-descargar-error hidden role="alert" class="rv-mono mt-2 text-sm font-bold uppercase text-(--rv-rosa)"></p>
+</div>
+
+<script>
+	import { obtenerConfirmados } from './datos';
+
+	// Cabezas de cartel: el recuadro aparece (con glitch) la primera vez que pasas el ratón
+	// o pulsas la foto, y ya se queda
+	document.querySelectorAll<HTMLElement>('[data-tarjeta]').forEach((tarjeta) => {
+		const activar = () => tarjeta.setAttribute('data-visto', '');
+		tarjeta.addEventListener('pointerenter', (ev) => ev.pointerType === 'mouse' && activar());
+		tarjeta.addEventListener('pointerdown', activar);
+		tarjeta.addEventListener('contextmenu', (ev) => ev.preventDefault());
+	});
+
+	// Invitados confirmados: un bloque por grupo, como el cartel (sin orden, filas repartidas
+	// a todo el ancho con un punto entre nombre y nombre). Se barajan con semilla fija
+	// para que el cartel no cambie en cada visita.
+	// Nombres por fila: 3 en móvil, 5 en pantallas anchas (si no, quedan muy separados)
+	const ancha = window.matchMedia('(min-width: 640px)');
+	function barajar<T>(lista: T[], semilla = 7): T[] {
+		const r = () => {
+			semilla = (semilla + 0x6d2b79f5) | 0;
+			let t = Math.imul(semilla ^ (semilla >>> 15), 1 | semilla);
+			t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+			return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+		};
+		const copia = [...lista];
+		for (let i = copia.length - 1; i > 0; i--) {
+			const j = Math.floor(r() * (i + 1));
+			[copia[i], copia[j]] = [copia[j], copia[i]];
+		}
+		return copia;
+	}
+
+	const confirmados = await obtenerConfirmados();
+	function pintarGrupos() {
+		const porFila = ancha.matches ? 5 : 3;
+		document.querySelectorAll<HTMLElement>('[data-grupo]').forEach((seccion) => {
+			const nombres = barajar(confirmados.filter((c) => c.grupo === seccion.dataset.grupo).map((c) => c.nombre));
+			const filas = seccion.querySelector<HTMLElement>('[data-filas]')!;
+			filas.replaceChildren();
+			for (let i = 0; i < nombres.length; i += porFila) {
+				const fila = document.createElement('p');
+				fila.className = i + porFila > nombres.length ? 'flex items-baseline gap-3' : 'flex items-baseline justify-between gap-1'; // la última fila, si no se llena, se queda a la izquierda
+				nombres.slice(i, i + porFila).forEach((nombre, n) => {
+					if (n > 0) {
+						const punto = document.createElement('span');
+						punto.className = 'text-white/60';
+						punto.textContent = '·';
+						punto.setAttribute('aria-hidden', 'true');
+						fila.append(punto);
+					}
+					const span = document.createElement('span');
+					span.className = 'whitespace-nowrap';
+					span.textContent = nombre;
+					fila.append(span);
+				});
+				filas.append(fila);
+			}
+			seccion.hidden = nombres.length === 0;
+		});
+	}
+	pintarGrupos();
+	ancha.addEventListener('change', pintarGrupos);
+
+	// Rótulo vertical: se repite las veces que quepa para llenar el alto del cartel
+	const cartel = document.querySelector<HTMLElement>('[data-cartel]')!;
+	const marca = cartel.querySelector<HTMLElement>('[data-marca]')!;
+	function ajustarMarca() {
+		const copias = marca.querySelectorAll('[data-marca-copia]');
+		copias.forEach((c, i) => i > 0 && c.remove());
+		const una = marca.firstElementChild as HTMLElement;
+		const hueco = una.getBoundingClientRect().height + 32; // 32 = gap-8
+		const veces = Math.max(1, Math.floor(cartel.clientHeight / hueco));
+		for (let i = 1; i < veces; i++) marca.append(una.cloneNode(true));
+	}
+	ajustarMarca();
+	let ancho = cartel.clientWidth;
+	new ResizeObserver(() => {
+		// Solo al cambiar el ancho: al repetir el rótulo el alto no cambia
+		if (cartel.clientWidth !== ancho) {
+			ancho = cartel.clientWidth;
+			ajustarMarca();
+		}
+	}).observe(cartel);
+	// Los nombres de los invitados llegan después y alargan el cartel
+	// (solo se observa esa zona: si se observara el rótulo, al repetirlo se dispararía en bucle)
+	new MutationObserver(ajustarMarca).observe(document.querySelector('[data-grupo]')!.parentElement!, {
+		childList: true,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ['hidden'],
+	});
+
+	// Descargar el cartel como PNG. La librería se carga solo al pulsar (no va en el bundle).
+	const botonDescarga = document.querySelector<HTMLButtonElement>('[data-descargar]')!;
+	const errorDescarga = document.querySelector<HTMLElement>('[data-descargar-error]')!;
+	botonDescarga.addEventListener('click', async () => {
+		const texto = botonDescarga.innerHTML;
+		botonDescarga.disabled = true;
+		botonDescarga.textContent = 'Preparando…';
+		errorDescarga.hidden = true;
+		try {
+			const url = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
+			const { toBlob } = await import(/* @vite-ignore */ url);
+			const blob: Blob | null = await toBlob(cartel, { pixelRatio: 2, backgroundColor: '#08020b' });
+			if (!blob) throw new Error('sin imagen');
+			const enlace = document.createElement('a');
+			enlace.href = URL.createObjectURL(blob);
+			enlace.download = 'cartel-trioland.png';
+			enlace.click();
+			setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+		} catch {
+			errorDescarga.textContent = 'No se ha podido crear la imagen. Haz una captura de pantalla del cartel.';
+			errorDescarga.hidden = false;
+		} finally {
+			botonDescarga.disabled = false;
+			botonDescarga.innerHTML = texto;
+		}
+	});
+</script>

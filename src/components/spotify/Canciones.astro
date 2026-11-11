@@ -1,79 +1,172 @@
 ---
 import fiesta from '../../data/fiesta.json';
-import Button from '../common/Button.astro';
-import Campo from '../common/Campo.astro';
-import Marco from '../common/Marco.astro';
+import trio from '../../data/trio.json';
 import { MAX_CANCIONES } from './datos';
+import Tocadiscos from './Tocadiscos.astro';
+import './riverland.css';
 
-// Gramola: lista colaborativa de Spotify + propuestas para quien no tiene Spotify.
+// Trioland: las canciones en formato line-up de festival: lista colaborativa de Spotify, propuestas para quien
+// no tiene Spotify y los tres cumpleañeros como cabezas de cartel.
 const playlist = fiesta.spotify.playlist as string | null;
 const invitacion = fiesta.spotify.invitacion as string | null;
+
+const inicio = new Date(fiesta.inicio);
+const fecha = (opciones: Intl.DateTimeFormatOptions) =>
+	new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, ...opciones }).format(inicio);
+const dia = `${fecha({ weekday: 'long' })} ${fecha({ day: 'numeric' })} de ${fecha({ month: 'long' })}`;
+
+const lineup = [
+	['Lives', trio.map((p) => p.nombre).join(' · ')],
+	['DJ sets', `Tú · hasta ${MAX_CANCIONES} temas`],
+	['Escenario', fiesta.lugar.nombre],
+];
+
+const entrada = [
+	'mt-1.5 block w-full rounded-none border-2 border-(--rv-rosa) bg-black px-3 py-3 rv-mono uppercase text-white',
+	'placeholder:normal-case placeholder:text-white/35 focus:border-white focus:shadow-[0_0_14px_var(--rv-neon)] focus:outline-none',
+	'disabled:opacity-40',
+];
 ---
 
-<div class="space-y-8 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-start lg:gap-10 lg:space-y-0">
-	<!-- Lista de Spotify -->
-	<div>
-		{
-			playlist ? (
-				<iframe
-					src={`https://open.spotify.com/embed/playlist/${playlist}?utm_source=generator&theme=0`}
-					title="Lista de canciones de la fiesta en Spotify"
-					class="h-[380px] w-full rounded-xl border-0 shadow-chapa"
-					allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-					loading="lazy"
-				/>
-			) : (
-				<Marco>
-					<div class="py-6 text-center">
-						<p class="text-5xl" aria-hidden="true">
-							🎶
-						</p>
-						<p class="rotulo mt-3 text-xl text-granate">La gramola se enchufa pronto</p>
-						<p class="mt-2 text-sm text-tinta-suave">Aquí saldrá la lista de Spotify de la fiesta.</p>
+<section class="rv relative isolate overflow-hidden bg-(--rv-negro) px-4 pb-16 pt-12 text-white sm:pb-24" aria-labelledby="rv-lineup">
+	<!-- Hilos discontinuos con puntos verdes -->
+	<svg class="pointer-events-none absolute inset-0 -z-10 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+		<g fill="none" stroke="rgb(255 255 255 / 0.3)" stroke-width="1.2" stroke-dasharray="6 7" vector-effect="non-scaling-stroke">
+			<path d="M-5 6C25 16 55 2 105 24" vector-effect="non-scaling-stroke"></path>
+			<path d="M88-5C70 25 98 48 62 70S18 88 42 105" vector-effect="non-scaling-stroke"></path>
+			<path d="M-5 52C18 44 38 64 72 56" vector-effect="non-scaling-stroke"></path>
+		</g>
+	</svg>
+	<span class="rv-punto left-[30%] top-[2.6%]" aria-hidden="true"></span>
+	<span class="rv-punto right-[14%] top-[30%]" aria-hidden="true"></span>
+	<span class="rv-punto left-[16%] top-[50.5%]" aria-hidden="true"></span>
+	<span class="rv-punto right-[38%] top-[69%]" aria-hidden="true"></span>
+
+	<div class="mx-auto max-w-6xl lg:grid lg:grid-cols-[auto_1fr] lg:gap-12">
+		<h2 id="rv-lineup" class="rv-marca text-[11.5vw] sm:text-8xl lg:sticky lg:top-24 lg:rotate-180 lg:self-start lg:text-[7.5rem] lg:[writing-mode:vertical-rl]">
+			Canciones
+		</h2>
+
+		<div class="mt-6 lg:mt-0">
+			<p class="mt-6"><span class="rv-tag rv-tag-lg">{dia}</span></p>
+			<dl class="rv-mono mt-3 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1.5 uppercase">
+				{
+					lineup.map(([etiqueta, valor]) => (
+						<>
+							<dt class="pt-0.5 text-xs text-(--rv-rosa)">{etiqueta}</dt>
+							<dd class="text-sm sm:text-base">{valor}</dd>
+						</>
+					))
+				}
+			</dl>
+
+			<div class="mt-12 space-y-12 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-start lg:gap-10 lg:space-y-0">
+				<!-- 01 · Lista de Spotify -->
+				<div>
+					<h3 class="text-base"><span class="rv-tag rv-tag-lg">01 · La lista</span></h3>
+					<p class="rv-mono mt-2 text-sm text-white/70">Lo que va a sonar. Si tienes Spotify, mete tus temas directamente.</p>
+
+					<div class="mt-5">
+						<Tocadiscos conLista={!!playlist} />
 					</div>
-				</Marco>
-			)
-		}
 
-		{
-			invitacion && (
-				<Button href={invitacion} target="_blank" rel="noopener" tamano="lg" variante="granate" class="mt-4 w-full">
-					Añadir canciones en Spotify
-				</Button>
-			)
-		}
-	</div>
+					<div class="relative mt-6 border-2 border-(--rv-rosa) p-1">
+						<span class="absolute -left-2 -top-2 size-3.5 border-2 border-(--rv-rosa) bg-black" aria-hidden="true"></span>
+						<span class="absolute -bottom-2 -right-2 size-3.5 border-2 border-(--rv-rosa) bg-black" aria-hidden="true"></span>
+						{
+							playlist ? (
+								<iframe
+									data-spotify={`spotify:playlist:${playlist}`}
+									src={`https://open.spotify.com/embed/playlist/${playlist}?utm_source=generator&theme=0`}
+									title="Lista de canciones de la fiesta en Spotify"
+									class="block h-[380px] w-full border-0"
+									allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+									loading="lazy"
+								/>
+							) : (
+								<div class="flex min-h-64 flex-col items-center justify-center gap-4 bg-(--rv-morado) px-4 py-10 text-center">
+									<p class="rv-mono text-xs uppercase tracking-[0.3em] text-(--rv-rosa)">Spotify · sin señal</p>
+									<p class="rv-neon rv-parpadeo text-3xl font-black uppercase leading-none [font-stretch:115%]">
+										La gramola
+										<br />
+										se enchufa pronto
+									</p>
+									<p class="rv-mono text-sm text-white/60">Aquí saldrá la lista de la fiesta.</p>
+								</div>
+							)
+						}
+					</div>
 
-	<!-- Propuestas sin Spotify -->
-	<div class="rounded-lg border-2 border-granate/15 bg-crema-oscuro/60 p-5">
-		<h3 class="text-xl text-granate">¿Sin Spotify?</h3>
-		<p class="mt-1 text-sm text-tinta-suave">
-			Propón hasta {MAX_CANCIONES} canciones y las añadimos nosotros.
-		</p>
+					{
+						invitacion && (
+							<a
+								href={invitacion}
+								target="_blank"
+								rel="noopener"
+								class="rv-mono mt-5 flex w-full items-center justify-center gap-2 border-2 border-(--rv-rosa) bg-(--rv-rosa) px-5 py-4 font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-(--rv-rosa) active:bg-black active:text-(--rv-rosa)"
+							>
+								Añadir en Spotify <span aria-hidden="true">↗</span>
+							</a>
+						)
+					}
+				</div>
 
-		<form data-form-cancion class="mt-4 space-y-4">
-			<Campo etiqueta="Canción" name="titulo" required maxlength={80} placeholder="Porompompero" autocomplete="off" />
-			<Campo etiqueta="Artista" name="artista" required maxlength={80} placeholder="Manolo Escobar" autocomplete="off" />
-			<p data-error hidden role="alert" class="text-sm font-bold text-granate"></p>
-			<Button type="submit" class="w-full">Proponer</Button>
-		</form>
+				<!-- 02 · Propuestas sin Spotify -->
+				<div>
+					<h3 class="text-base"><span class="rv-tag rv-tag-lg">02 · ¿Sin Spotify?</span></h3>
+					<p class="rv-mono mt-2 text-sm text-white/70">Propón hasta {MAX_CANCIONES} canciones y las metemos nosotros.</p>
 
-		<div data-mias hidden class="mt-6">
-			<p class="flex items-baseline justify-between text-xs font-black uppercase tracking-[0.2em] text-granate">
-				Tus propuestas <span data-quedan class="tracking-normal text-tinta-suave"></span>
+					<form data-form-cancion class="mt-4 space-y-4">
+						<label class="block">
+							<span class="rv-mono text-xs font-bold uppercase tracking-[0.2em] text-(--rv-rosa)">Canción</span>
+							<input class:list={entrada} name="titulo" required maxlength={80} placeholder="Porompompero" autocomplete="off" />
+						</label>
+						<label class="block">
+							<span class="rv-mono text-xs font-bold uppercase tracking-[0.2em] text-(--rv-rosa)">Artista</span>
+							<input class:list={entrada} name="artista" required maxlength={80} placeholder="Manolo Escobar" autocomplete="off" />
+						</label>
+						<p data-error hidden role="alert" class="rv-mono text-sm font-bold uppercase text-(--rv-rosa)"></p>
+						<button
+							type="submit"
+							class="rv-mono flex w-full items-center justify-center gap-2 border-2 border-(--rv-rosa) bg-(--rv-rosa) px-5 py-3.5 font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-(--rv-rosa) active:bg-black active:text-(--rv-rosa) disabled:pointer-events-none disabled:opacity-40"
+						>
+							Proponer <span aria-hidden="true">→</span>
+						</button>
+					</form>
+
+					<div class="mt-8">
+						<p class="flex items-baseline justify-between gap-3">
+							<span class="rv-tag">Tu DJ set</span>
+							<span data-quedan class="rv-mono text-xs uppercase text-white/60"></span>
+						</p>
+						<ol data-lista class="rv-mono mt-3 divide-y divide-dashed divide-white/25 border-y border-dashed border-white/25"></ol>
+					</div>
+				</div>
+			</div>
+
+			<p class="mt-10 flex justify-end">
+				<span class="rv-mono border-2 border-(--rv-rosa) px-3 py-1 text-base uppercase tracking-wider text-(--rv-rosa) sm:text-lg">
+					Trio Feliz · {fiesta.edicion}ª edición
+				</span>
 			</p>
-			<ol data-lista class="mt-2 divide-y-2 divide-dashed divide-granate/15 rounded border-2 border-granate/15 bg-white"></ol>
 		</div>
 	</div>
-</div>
+</section>
 
 <template data-plantilla-cancion>
-	<li class="flex items-center gap-3 px-3 py-2.5">
-		<span data-num class="rotulo w-6 text-center text-lg text-granate/40"></span>
+	<li class="flex items-baseline gap-3 py-2.5">
+		<span data-num class="w-6 shrink-0 text-xs text-(--rv-rosa)"></span>
 		<span class="min-w-0">
-			<span data-titulo class="block truncate font-bold"></span>
-			<span data-artista class="block truncate text-sm text-tinta-suave"></span>
+			<span data-titulo class="block truncate font-bold uppercase"></span>
+			<span data-artista class="block truncate text-xs uppercase text-white/60"></span>
 		</span>
+	</li>
+</template>
+
+<template data-plantilla-hueco>
+	<li class="flex items-baseline gap-3 py-2.5 text-white/30">
+		<span data-num class="w-6 shrink-0 text-xs"></span>
+		<span class="uppercase tracking-[0.3em]">· · · libre</span>
 	</li>
 </template>
 
@@ -81,25 +174,32 @@ const invitacion = fiesta.spotify.invitacion as string | null;
 	import { MAX_CANCIONES, misCanciones, proponerCancion, type Cancion } from './datos';
 
 	const form = document.querySelector<HTMLFormElement>('[data-form-cancion]')!;
-	const caja = document.querySelector<HTMLElement>('[data-mias]')!;
-	const lista = caja.querySelector<HTMLOListElement>('[data-lista]')!;
+	const lista = document.querySelector<HTMLOListElement>('[data-lista]')!;
+	const quedanTexto = document.querySelector<HTMLElement>('[data-quedan]')!;
 	const plantilla = document.querySelector<HTMLTemplateElement>('[data-plantilla-cancion]')!.content.firstElementChild!;
+	const hueco = document.querySelector<HTMLTemplateElement>('[data-plantilla-hueco]')!.content.firstElementChild!;
 	const error = form.querySelector<HTMLElement>('[data-error]')!;
 	const enviar = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
 
+	let total = 0;
+
+	// Siempre se pintan MAX_CANCIONES huecos: los propuestos y los que quedan libres
 	function pintar(canciones: Cancion[]) {
-		caja.hidden = canciones.length === 0;
+		total = canciones.length;
 		lista.replaceChildren(
-			...canciones.map((c, i) => {
-				const li = plantilla.cloneNode(true) as HTMLLIElement;
-				li.querySelector('[data-num]')!.textContent = String(i + 1);
-				li.querySelector('[data-titulo]')!.textContent = c.titulo;
-				li.querySelector('[data-artista]')!.textContent = c.artista;
+			...Array.from({ length: MAX_CANCIONES }, (_, i) => {
+				const c = canciones[i];
+				const li = (c ? plantilla : hueco).cloneNode(true) as HTMLLIElement;
+				li.querySelector('[data-num]')!.textContent = String(i + 1).padStart(2, '0');
+				if (c) {
+					li.querySelector('[data-titulo]')!.textContent = c.titulo;
+					li.querySelector('[data-artista]')!.textContent = c.artista;
+				}
 				return li;
 			}),
 		);
-		const quedan = MAX_CANCIONES - canciones.length;
-		caja.querySelector('[data-quedan]')!.textContent = quedan > 0 ? `Te quedan ${quedan}` : 'Completo';
+		const quedan = MAX_CANCIONES - total;
+		quedanTexto.textContent = quedan === 0 ? 'Completo' : quedan === 1 ? 'Queda 1 hueco' : `Quedan ${quedan} huecos`;
 		form.querySelectorAll('input, button').forEach((el) => ((el as HTMLInputElement).disabled = quedan <= 0));
 	}
 
@@ -122,7 +222,7 @@ const invitacion = fiesta.spotify.invitacion as string | null;
 			error.textContent = `Ya has propuesto ${MAX_CANCIONES} canciones.`;
 			error.hidden = false;
 		} finally {
-			enviar.disabled = lista.children.length >= MAX_CANCIONES;
+			enviar.disabled = total >= MAX_CANCIONES;
 		}
 	});
 </script>
