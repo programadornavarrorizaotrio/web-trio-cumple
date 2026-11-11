@@ -1,6 +1,8 @@
 ---
 import Cromo from './Cromo.astro';
 import FotosDemo from './FotosDemo.astro';
+import Sobre from './Sobre.astro';
+import Button from '../common/Button.astro';
 import Emblema from '../common/Emblema.astro';
 
 // Álbum de cromos estilo "selecciona tu luchador": cromo destacado arriba y rejilla debajo.
@@ -9,10 +11,11 @@ import Emblema from '../common/Emblema.astro';
 ---
 
 <FotosDemo />
+<Sobre />
 
 <div data-album class="lg:grid lg:grid-cols-[22rem_1fr] lg:items-start lg:gap-10">
 	<div data-foco class="scroll-mt-20 lg:sticky lg:top-20">
-		<Cromo class="lg:grid-cols-1" />
+		<Cromo />
 	</div>
 
 	<div class="mt-5 lg:mt-0">
@@ -23,6 +26,12 @@ import Emblema from '../common/Emblema.astro';
 			</p>
 			<p class="text-xs font-bold uppercase tracking-[0.15em] text-tinta-suave">Toca uno</p>
 		</div>
+		<!-- Sobre: solo para quien ha confirmado que viene -->
+		<Button data-abrir-sobre variante="granate" class="mt-4 w-full" hidden>🎴 Abrir mi sobre</Button>
+		<p data-sin-sobre hidden class="mt-4 rounded border-2 border-dashed border-granate/30 px-4 py-3 text-sm font-bold text-tinta-suave">
+			Confirma que vienes para abrir tu sobre y ver quién más se apunta.
+			<a href="/#asistencia" class="text-granate underline underline-offset-4">Confirmar →</a>
+		</p>
 		<!-- Barra de progreso del álbum -->
 		<div class="mt-2 h-2 overflow-hidden rounded-full bg-granate/15" aria-hidden="true">
 			<div data-progreso class="h-full w-0 rounded-full bg-granate transition-[width] duration-700"></div>
@@ -37,10 +46,10 @@ import Emblema from '../common/Emblema.astro';
 		<button
 			type="button"
 			aria-pressed="false"
-			class="relative block aspect-square w-full overflow-hidden rounded border-2 border-granate/20 bg-granate transition-transform active:scale-95 aria-pressed:border-amarillo aria-pressed:ring-2 aria-pressed:ring-granate aria-pressed:ring-offset-2 aria-pressed:ring-offset-crema"
+			class="relative block aspect-[63/88] w-full overflow-hidden rounded-md border-[3px] border-amarillo-oscuro bg-granate transition-transform active:scale-95 aria-pressed:border-granate aria-pressed:ring-2 aria-pressed:ring-amarillo aria-pressed:ring-offset-2 aria-pressed:ring-offset-crema"
 		>
 			<img data-c-foto alt="" loading="lazy" class="size-full object-cover" hidden />
-			<span data-c-inicial class="rotulo absolute inset-0 grid place-items-center pb-3 text-3xl text-amarillo"></span>
+			<span data-c-inicial class="rotulo absolute inset-0 grid place-items-center pb-4 text-3xl text-amarillo"></span>
 			<span data-c-numero class="absolute inset-x-0 bottom-0 bg-granate-oscuro/85 py-0.5 text-center text-[0.6rem] font-black text-amarillo"
 			></span>
 		</button>
@@ -50,7 +59,7 @@ import Emblema from '../common/Emblema.astro';
 <!-- Hueco: invitado aún sin registrar (cromo boca abajo) -->
 <template data-plantilla-hueco>
 	<li
-		class="relative grid aspect-square place-items-center overflow-hidden rounded border-2 border-dashed border-granate/30 bg-crema-oscuro text-granate/25"
+		class="relative grid aspect-[63/88] place-items-center overflow-hidden rounded-md border-2 border-dashed border-granate/30 bg-crema-oscuro text-granate/25"
 	>
 		<Emblema class="size-9" hueco="var(--color-crema-oscuro)" />
 		<span data-c-numero class="absolute inset-x-0 bottom-0 py-0.5 text-center text-[0.6rem] font-black text-granate/50"></span>
@@ -60,7 +69,8 @@ import Emblema from '../common/Emblema.astro';
 <script>
 	import { obtenerAlbum } from './datos';
 	import { numeroCromo, pintarCromo, pintarFoto } from './pintar';
-	import { leerSesion } from '../registro/sesion';
+	import { invitadoActual } from '../registro/sesion';
+	import { abrirSobre } from './sobre';
 
 	const album = document.querySelector<HTMLElement>('[data-album]')!;
 	const rejilla = album.querySelector<HTMLUListElement>('[data-rejilla]')!;
@@ -105,6 +115,17 @@ import Emblema from '../common/Emblema.astro';
 	album.querySelector<HTMLElement>('[data-progreso]')!.style.width = `${total ? (cromos.length / total) * 100 : 0}%`;
 
 	// Destaca el cromo del propio invitado; si no lo encuentra, el primero
-	const inicial = cromos.find((c) => c.id === leerSesion()?.id) ?? cromos[0];
+	const yo = invitadoActual()?.id;
+	const miCromo = cromos.find((c) => c.id === yo);
+	const inicial = miCromo ?? cromos[0];
 	if (inicial) seleccionar(inicial.id);
+
+	// El sobre trae a todos los confirmados. Quien aún no ha confirmado no tiene sobre.
+	const botonSobre = album.querySelector<HTMLElement>('[data-abrir-sobre]')!;
+	if (miCromo) {
+		botonSobre.hidden = false;
+		botonSobre.addEventListener('click', () => abrirSobre(cromos, { propio: miCromo.id }));
+	} else if (yo) {
+		album.querySelector<HTMLElement>('[data-sin-sobre]')!.hidden = false;
+	}
 </script>
