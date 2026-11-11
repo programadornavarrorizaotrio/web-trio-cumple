@@ -2,6 +2,7 @@
 import fiesta from '../../data/fiesta.json';
 
 // Cuenta atrás hasta `fiesta.inicio`. El HTML trae las cajas vacías y el script las rellena.
+// Usa las variables de color --c-* que define Portada.
 const unidades = [
 	{ clave: 'dias', texto: 'Días' },
 	{ clave: 'horas', texto: 'Horas' },
@@ -14,22 +15,31 @@ const unidades = [
 	<div data-estado="cuenta" class="grid grid-cols-4 gap-2 sm:gap-3">
 		{
 			unidades.map((u) => (
-				<div class="rounded bg-amarillo px-1 py-3 text-center text-granate-oscuro shadow-chapa-amarillo sm:py-4">
-					<span data-unidad={u.clave} class="rotulo block text-3xl tabular-nums sm:text-5xl">
+				<div class="caja px-1 py-3 text-center sm:py-4">
+					<span data-unidad={u.clave} class="numero block text-3xl font-black tabular-nums sm:text-5xl">
 						--
 					</span>
-					<span class="mt-1 block text-[0.65rem] font-bold uppercase tracking-[0.2em] sm:text-xs">{u.texto}</span>
+					<span class="mt-1 block text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[var(--c-lima)] sm:text-xs">{u.texto}</span>
 				</div>
 			))
 		}
 	</div>
-	<p data-estado="hoy" hidden class="rotulo rounded bg-amarillo py-6 text-center text-4xl text-granate-oscuro sm:text-6xl">
-		¡Es hoy!
-	</p>
-	<p data-estado="pasado" hidden class="rotulo rounded bg-amarillo py-6 text-center text-3xl text-granate-oscuro sm:text-5xl">
-		¡Gracias por venir!
-	</p>
+	<p data-estado="hoy" hidden class="caja numero py-6 text-center text-4xl font-black sm:text-6xl">¡Es hoy!</p>
+	<p data-estado="pasado" hidden class="caja numero py-6 text-center text-3xl font-black sm:text-5xl">¡Gracias por venir!</p>
 </div>
+
+<style>
+	.caja {
+		border-radius: 1rem;
+		background: rgb(255 244 214 / 0.1);
+		border: 2px solid rgb(198 242 107 / 0.55);
+		color: var(--c-crema);
+	}
+	.numero {
+		color: var(--c-crema);
+		text-shadow: 0 2px 0 rgb(6 28 20 / 0.7);
+	}
+</style>
 
 <script>
 	// Pasadas estas horas desde el inicio, la fiesta se da por terminada

@@ -1,0 +1,186 @@
+---
+import Button from '../common/Button.astro';
+import Emblema from '../common/Emblema.astro';
+import Cromo from './Cromo.astro';
+
+// Sobre de cartas: diálogo a pantalla completa. Se abre con `abrirSobre(cromos)` de sobre.ts.
+// Pasos: sobre cerrado → se rasga → las cartas salen una a una (toca para pasar) → resumen.
+---
+
+<dialog
+	data-sobre-dialogo
+	aria-label="Sobre de cromos"
+	class="fixed inset-0 m-0 hidden h-dvh max-h-none w-dvw max-w-none overflow-hidden bg-granate-oscuro p-0 text-crema backdrop:bg-black/70 open:block"
+>
+	<div class="fondo absolute inset-0" aria-hidden="true"></div>
+
+	<button
+		type="button"
+		data-cerrar
+		aria-label="Cerrar"
+		class="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid size-11 place-items-center rounded-full bg-crema/10 text-2xl font-black text-crema active:bg-crema/25"
+	>
+		×
+	</button>
+
+	<div class="relative mx-auto flex h-full max-w-md flex-col items-center justify-center px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
+		<!-- 1 · Sobre cerrado -->
+		<div data-paso-sobre class="text-center">
+			<p class="mb-5 text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro" data-titulo-sobre>Tu sobre</p>
+			<button
+				type="button"
+				data-paquete
+				class="paquete relative mx-auto block aspect-[11/18] w-52 text-amarillo [filter:drop-shadow(0_8px_0_var(--color-granate-oscuro))] sm:w-60"
+			>
+				<span data-tapa class="tapa absolute inset-x-0 top-0 h-[13%] border-2 border-b-0 border-amarillo"></span>
+				<span
+					class="cuerpo absolute inset-x-0 bottom-0 top-[11%] flex flex-col items-center justify-center gap-3 border-2 border-amarillo px-3"
+				>
+					<span class="holo-sobre pointer-events-none absolute inset-0" aria-hidden="true"></span>
+					<Emblema class="relative size-20" hueco="var(--color-granate)" />
+					<span class="rotulo relative text-2xl leading-none">Trio Feliz</span>
+					<span class="relative text-[0.65rem] font-black uppercase tracking-[0.25em] text-crema">Sobre de cromos</span>
+					<span data-n-cartas class="relative rounded-sm bg-amarillo px-2 py-0.5 text-xs font-black text-granate-oscuro"></span>
+				</span>
+			</button>
+			<p class="mt-8 animate-pulse text-xs font-bold uppercase tracking-[0.25em] text-crema/80">Toca para abrir</p>
+		</div>
+
+		<!-- 2 · Cartas -->
+		<div data-paso-cartas hidden class="flex w-full flex-col items-center">
+			<p class="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-amarillo-claro">
+				Cromo <span data-actual>1</span> de <span data-total>1</span>
+			</p>
+			<div data-mazo class="relative w-full max-w-72 cursor-pointer [perspective:1000px]">
+				<!-- Cartas de atrás, solo de adorno -->
+				<div class="dorso absolute inset-0 translate-x-2 translate-y-2 rotate-3" aria-hidden="true"></div>
+				<div class="dorso absolute inset-0 -translate-x-1 translate-y-1 -rotate-2" aria-hidden="true"></div>
+				<div data-escenario class="relative"></div>
+			</div>
+			<p data-anuncio class="sr-only" aria-live="polite"></p>
+			<div class="mt-7 flex w-full max-w-72 gap-3">
+				<Button data-saltar variante="borde" class="flex-1 text-crema">Saltar</Button>
+				<Button data-siguiente class="flex-[2]">Siguiente →</Button>
+			</div>
+		</div>
+
+		<!-- 3 · Final -->
+		<div data-paso-final hidden class="w-full max-w-72 text-center">
+			<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Sobre abierto!</p>
+			<p class="rotulo mt-3 text-5xl text-amarillo"><span data-final-n>0</span> cromos</p>
+			<p class="mt-2 text-crema/80">Todos los que vienen a la fiesta, ya en tu álbum.</p>
+			<Button data-fin tamano="lg" class="mt-8 w-full">Ver el álbum</Button>
+		</div>
+	</div>
+
+	<template data-plantilla-carta>
+		<div class="carta-sobre"><Cromo /></div>
+	</template>
+</dialog>
+
+<style>
+	.fondo {
+		background: radial-gradient(ellipse at 50% 35%, var(--color-granate-claro) 0%, var(--color-granate-oscuro) 70%);
+	}
+
+	/* --- Sobre de papel de aluminio --- */
+	.tapa,
+	.cuerpo {
+		background: linear-gradient(135deg, var(--color-granate-claro), var(--color-granate) 40%, var(--color-granate-oscuro));
+		overflow: hidden;
+	}
+	.tapa {
+		clip-path: polygon(0 0, 100% 0, 100% 100%, 95% 70%, 90% 100%, 85% 70%, 80% 100%, 75% 70%, 70% 100%, 65% 70%, 60% 100%, 55% 70%, 50% 100%, 45% 70%, 40% 100%, 35% 70%, 30% 100%, 25% 70%, 20% 100%, 15% 70%, 10% 100%, 5% 70%, 0 100%);
+		border-radius: 0.5rem 0.5rem 0 0;
+		transform-origin: 0 100%;
+	}
+	.cuerpo {
+		border-radius: 0 0 0.5rem 0.5rem;
+		clip-path: polygon(0 4%, 5% 0, 10% 4%, 15% 0, 20% 4%, 25% 0, 30% 4%, 35% 0, 40% 4%, 45% 0, 50% 4%, 55% 0, 60% 4%, 65% 0, 70% 4%, 75% 0, 80% 4%, 85% 0, 90% 4%, 95% 0, 100% 4%, 100% 100%, 0 100%);
+	}
+	.holo-sobre {
+		background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.3) 45%, rgb(240 188 68 / 0.35) 52%, transparent 65%);
+		background-size: 250% 100%;
+		animation: reflejo 3s ease-in-out infinite;
+	}
+	@keyframes reflejo {
+		from {
+			background-position: 120% 0;
+		}
+		to {
+			background-position: -120% 0;
+		}
+	}
+	.paquete {
+		animation: respira 2.4s ease-in-out infinite;
+	}
+	@keyframes respira {
+		50% {
+			transform: translateY(-6px) rotate(-1deg);
+		}
+	}
+
+	/* Rasgado: tiembla, la tapa sale volando y el sobre se hunde */
+	.paquete.abierto {
+		animation: tiembla 0.35s linear;
+	}
+	.paquete.abierto .tapa {
+		animation: vuela 0.6s 0.3s ease-in forwards;
+	}
+	.paquete.abierto .cuerpo {
+		animation: hunde 0.5s 0.65s ease-in forwards;
+	}
+	@keyframes tiembla {
+		20% {
+			transform: translateX(-4px) rotate(-2deg);
+		}
+		40% {
+			transform: translateX(4px) rotate(2deg);
+		}
+		60% {
+			transform: translateX(-3px) rotate(-1deg);
+		}
+		80% {
+			transform: translateX(3px) rotate(1deg);
+		}
+	}
+	@keyframes vuela {
+		to {
+			transform: translate(40%, -260%) rotate(40deg);
+			opacity: 0;
+		}
+	}
+	@keyframes hunde {
+		to {
+			transform: translateY(60%) scale(0.85);
+			opacity: 0;
+		}
+	}
+
+	/* --- Cartas --- */
+	.dorso {
+		border-radius: 5%;
+		border: 3px solid var(--color-amarillo);
+		background:
+			radial-gradient(circle at 50% 50%, var(--color-granate-claro) 0 22%, transparent 23%),
+			repeating-linear-gradient(45deg, var(--color-granate), var(--color-granate) 8px, var(--color-granate-oscuro) 8px 16px);
+	}
+	.carta-sobre.entra {
+		animation: gira 0.55s cubic-bezier(0.2, 0.8, 0.3, 1.15);
+	}
+	.carta-sobre.sale {
+		animation: sale 0.35s ease-in forwards;
+	}
+	@keyframes gira {
+		from {
+			transform: rotateY(90deg) scale(0.85);
+			opacity: 0;
+		}
+	}
+	@keyframes sale {
+		to {
+			transform: translateX(130%) rotate(18deg);
+			opacity: 0;
+		}
+	}
+</style>

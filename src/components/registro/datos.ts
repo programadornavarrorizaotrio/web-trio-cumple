@@ -43,5 +43,5 @@ export async function buscarInvitados(pin: string, texto: string): Promise<Coinc
 // TODO(B): RPC `registrar(pin, invitado_id, ...)`. Debe fallar con PIN incorrecto o si ya estaba registrado.
 export async function registrar(pin: string, id: string, datos: DatosRegistro): Promise<Registro> {
 	if (!(await comprobarPin(pin))) throw new Error('pin');
-	return demoRegistrar(id, { apodo: datos.apodo, frase: datos.frase });
+	return demoRegistrar(id, { apodo: datos.apodo, frase: datos.frase, asiste: datos.asiste });
 }

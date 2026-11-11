@@ -15,8 +15,8 @@
 	},
 	"spotify": {
 		"_nota": "playlist: id de la lista (open.spotify.com/playlist/<id>). invitacion: enlace de 'Invitar colaboradores' de Spotify",
-		"playlist": null,
-		"invitacion": null
+		"playlist": "2buvjzzQuqKu8ypq64ai3M",
+		"invitacion": "https://open.spotify.com/playlist/2buvjzzQuqKu8ypq64ai3M?si=bqVIsF8dRUSxBLLEQCm1Dg&pt=b07d6aefd420a11fa407b6fed94b2cd8&pi=d6gTu3KPQ7u_n"
 	},
 	"fotos": {
 		"abiertasDesde": "2027-02-27T16:00:00+01:00",

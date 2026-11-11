@@ -1,0 +1,344 @@
+/*
+ * Estética "festival" (inspirada en el cartel de Riverland) solo para /canciones.
+ * Todo va con prefijo `rv-` y los colores cuelgan de `.rv`, así no se mezcla con el estilo
+ * estanco del resto de la web.
+ */
+
+.rv {
+	--rv-negro: #0b0b0b; /* mismo negro y rosa que el cartel (Cartel.astro) */
+	--rv-morado: #1c0620;
+	--rv-rosa: #f53fc9;
+	--rv-neon: #ff2fd6;
+	--rv-cromo: #ffd6f5;
+	--rv-verde: #7dff9a;
+	--rv-mono: 'Space Mono', ui-monospace, monospace;
+}
+
+.rv ::selection {
+	background: var(--rv-rosa);
+	color: #000;
+}
+
+.rv :focus-visible {
+	outline-color: var(--rv-verde);
+}
+
+/* --- Cromo + neón (cabecera) --- */
+
+/* Letras de cromo rosa líquido */
+.rv-cromo {
+	font-stretch: 125%;
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: -0.01em;
+	line-height: 1;
+	transform: skewX(-8deg);
+	background: linear-gradient(
+		180deg,
+		#fff 0%,
+		var(--rv-cromo) 20%,
+		#ff6fd8 40%,
+		#8a0a6a 52%,
+		#ff8fe3 63%,
+		#ffe6f9 80%,
+		var(--rv-rosa) 100%
+	);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	-webkit-text-stroke: 1px rgb(255 225 250 / 0.55);
+	filter: drop-shadow(0 0 6px var(--rv-neon)) drop-shadow(0 0 22px rgb(255 47 214 / 0.55));
+}
+
+/* Texto de tubo de neón */
+.rv-neon {
+	color: #ffe9fb;
+	text-shadow:
+		0 0 2px #fff,
+		0 0 6px #ff6fe0,
+		0 0 14px var(--rv-neon),
+		0 0 30px rgb(255 47 214 / 0.6);
+}
+
+/* Barra de neón encendida */
+.rv-tubo {
+	background: #ffeafb;
+	border: 1.5px solid #ff8fe6;
+	box-shadow:
+		0 0 4px #fff,
+		0 0 10px #ff6fe0,
+		0 0 24px var(--rv-neon),
+		0 0 50px rgb(255 47 214 / 0.55);
+}
+
+/* Panel metálico donde va el logo */
+.rv-panel {
+	background:
+		repeating-linear-gradient(90deg, rgb(255 255 255 / 0.025) 0 2px, transparent 2px 5px),
+		linear-gradient(
+			180deg,
+			#c2b2c6 0%,
+			#5a4860 5%,
+			#1d0b20 12%,
+			#2c0e2e 50%,
+			#1d0b20 88%,
+			#5a4860 95%,
+			#c2b2c6 100%
+		);
+	box-shadow:
+		inset 0 0 0 1px rgb(255 255 255 / 0.18),
+		0 14px 30px rgb(0 0 0 / 0.65),
+		0 0 50px rgb(255 47 214 / 0.18);
+}
+
+/* Cartel colgante con bombillas punteadas */
+.rv-luces {
+	position: relative;
+	background: rgb(22 4 24 / 0.88);
+	border: 2px solid #ff6fe0;
+	border-top: 0;
+	border-radius: 0 0 14px 14px;
+	box-shadow:
+		0 0 12px rgb(255 47 214 / 0.6),
+		inset 0 0 14px rgb(255 47 214 / 0.3);
+}
+
+.rv-luces::after {
+	content: '';
+	position: absolute;
+	inset: auto 10px 6px;
+	height: 4px;
+	background: radial-gradient(circle, #ffe0f8 1.3px, transparent 1.8px) 0 0 / 7px 4px repeat-x;
+	filter: drop-shadow(0 0 3px var(--rv-neon));
+}
+
+/* --- Brutalista rosa (line-up) --- */
+
+/* Etiqueta rosa plana con letra de máquina */
+.rv-tag {
+	display: inline-block;
+	background: var(--rv-rosa);
+	color: #000;
+	font-family: var(--rv-mono);
+	font-weight: 700;
+	font-size: 0.95rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	line-height: 1.2;
+	padding: 0.15em 0.4em 0.1em;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+}
+
+.rv-tag-lg {
+	font-size: 1.15rem;
+}
+
+.rv-tag-negro {
+	background: #000;
+	color: var(--rv-rosa);
+}
+
+.rv-mono {
+	font-family: var(--rv-mono);
+}
+
+/* Rótulo gigante de la sección: letra de píxel, como el título del cartel */
+.rv-marca {
+	font-family: 'Silkscreen', 'Space Mono', monospace;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: -0.06em;
+	line-height: 0.8;
+	color: var(--rv-rosa);
+}
+
+/* Punto verde de los hilos */
+.rv-punto {
+	position: absolute;
+	width: 9px;
+	height: 9px;
+	border-radius: 9999px;
+	background: var(--rv-verde);
+	box-shadow: 0 0 8px var(--rv-verde);
+}
+
+/* Foto en duotono negro/rosa */
+.rv-duo {
+	background: var(--rv-rosa);
+}
+
+.rv-duo img {
+	filter: grayscale(1) contrast(1.35) brightness(1.05);
+	mix-blend-mode: multiply;
+}
+
+/* --- Recuadro de foco con glitch de hacker --- */
+
+/* Tarjeta: sin menú de "guardar imagen" al mantener pulsado en el móvil */
+.rv-tarjeta {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/* Oculto hasta la primera vez que pasas o pulsas */
+.rv-foco {
+	visibility: hidden;
+	opacity: 0;
+}
+
+/* Líneas de escaneo dentro del recuadro */
+.rv-foco::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.22) 0 1px, transparent 1px 3px);
+	opacity: 0.35;
+}
+
+.rv-foco-texto {
+	width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	background: #000;
+	color: var(--rv-verde);
+	font-size: 10px;
+	line-height: 1;
+	padding-block: 3px;
+	text-transform: uppercase;
+}
+
+[data-visto] .rv-foco {
+	visibility: visible;
+	opacity: 1;
+	animation: rv-glitch 0.9s steps(1, end) both;
+	animation-delay: var(--retraso, 0s);
+}
+
+[data-visto] .rv-foco::before {
+	animation: rv-escaneo 0.9s steps(6, end) both;
+	animation-delay: var(--retraso, 0s);
+}
+
+[data-visto] .rv-foco-texto {
+	width: calc(var(--letras) * 1ch + 8px);
+	padding-inline: 4px;
+	animation: rv-teclear 0.7s steps(var(--letras), end) 0.6s both;
+}
+
+/* Salta, se corta a tiras, separa los colores y distorsiona la foto de debajo */
+@keyframes rv-glitch {
+	0% {
+		opacity: 1;
+		transform: translate(7px, -4px) scale(1.45);
+		clip-path: inset(0 0 62% 0);
+		box-shadow: -4px 0 0 var(--rv-rosa), 4px 0 0 var(--rv-verde);
+		-webkit-backdrop-filter: invert(1) hue-rotate(120deg);
+		backdrop-filter: invert(1) hue-rotate(120deg);
+	}
+	9% {
+		opacity: 0;
+	}
+	16% {
+		opacity: 1;
+		transform: translate(-9px, 3px) scale(0.8);
+		clip-path: inset(38% 0 18% 0);
+		box-shadow: 5px 0 0 var(--rv-rosa), -5px 0 0 var(--rv-verde);
+		-webkit-backdrop-filter: contrast(3) saturate(0);
+		backdrop-filter: contrast(3) saturate(0);
+	}
+	27% {
+		transform: translate(4px, 5px) scale(1.15);
+		clip-path: inset(0 34% 0 0);
+		-webkit-backdrop-filter: hue-rotate(-90deg) contrast(2);
+		backdrop-filter: hue-rotate(-90deg) contrast(2);
+	}
+	38% {
+		opacity: 0.25;
+		transform: translate(-3px, -2px);
+		clip-path: inset(0 0 0 22%);
+	}
+	47% {
+		opacity: 1;
+		transform: translate(2px, 0) skewX(-12deg);
+		clip-path: inset(12% 0 45% 0);
+		-webkit-backdrop-filter: invert(1);
+		backdrop-filter: invert(1);
+	}
+	58% {
+		transform: translate(-2px, 1px);
+		clip-path: none;
+		box-shadow: -2px 0 0 var(--rv-rosa), 2px 0 0 var(--rv-verde);
+		-webkit-backdrop-filter: contrast(1.6) brightness(1.2);
+		backdrop-filter: contrast(1.6) brightness(1.2);
+	}
+	72% {
+		opacity: 0.6;
+		transform: translate(1px, -1px);
+	}
+	80%,
+	100% {
+		opacity: 1;
+		transform: none;
+		clip-path: none; /* sin recorte: el texto va fuera del recuadro */
+		box-shadow: none;
+		-webkit-backdrop-filter: contrast(1.25);
+		backdrop-filter: contrast(1.25);
+	}
+}
+
+@keyframes rv-escaneo {
+	from {
+		opacity: 1;
+		background-position: 0 -40px;
+	}
+	to {
+		opacity: 0.35;
+		background-position: 0 0;
+	}
+}
+
+@keyframes rv-teclear {
+	from {
+		width: 0;
+		padding-inline: 0;
+	}
+}
+
+/* --- Movimiento (solo si el móvil no pide reducirlo) --- */
+
+@media (prefers-reduced-motion: no-preference) {
+	.rv-parpadeo {
+		animation: rv-parpadeo 6s infinite;
+	}
+
+	.rv-zumbido {
+		animation: rv-zumbido 3.2s ease-in-out infinite;
+	}
+}
+
+@keyframes rv-parpadeo {
+	0%,
+	18%,
+	22%,
+	62%,
+	64%,
+	100% {
+		opacity: 1;
+	}
+	20%,
+	63% {
+		opacity: 0.35;
+	}
+}
+
+@keyframes rv-zumbido {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.8;
+	}
+}

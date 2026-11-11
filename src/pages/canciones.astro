@@ -1,21 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/common/Section.astro';
-import Canciones from '../components/spotify/Canciones.astro';
 import Cartel from '../components/spotify/Cartel.astro';
+import Canciones from '../components/spotify/Canciones.astro';
 ---
 
 <Layout title="Canciones · Trio Feliz">
-	<main>
+	<main class="flex-1 bg-[#0b0b0b]">
 		<h1 class="sr-only">Canciones</h1>
 		<Cartel />
-		<Section
-			id="canciones"
-			antetitulo="Line-up"
-			titulo="Canciones"
-			subtitulo="El cartel lo hacéis vosotros. Añade lo que quieras que suene esa noche."
-		>
-			<Canciones />
-		</Section>
+		<Canciones />
 	</main>
 </Layout>
