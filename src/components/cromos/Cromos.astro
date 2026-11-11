@@ -2,8 +2,6 @@
 import { Image } from 'astro:assets';
 import Cromo from './Cromo.astro';
 import FotosDemo from './FotosDemo.astro';
-import Sobre from './Sobre.astro';
-import Button from '../common/Button.astro';
 import { imagenTema } from '../../layouts/temas';
 import { LISTA_TIPOS, TIPOS } from './tiposCarta';
 import './energias.css';
@@ -19,7 +17,6 @@ const simbolo = imagenTema('cartas', 'simbolo');
 ---
 
 <FotosDemo />
-<Sobre />
 
 <div data-album>
 	<!-- Cabecera de la colección: roja arriba, franja negra y blanca abajo -->
@@ -82,13 +79,14 @@ const simbolo = imagenTema('cartas', 'simbolo');
 				<span data-reflejo class="reflejo" aria-hidden="true"></span>
 			</div>
 			<p class="mt-3 text-center text-xs font-semibold text-tinta-suave">Toca la carta para verla en grande · Muévela con el dedo</p>
-
-			<!-- Sobre: solo para quien ha confirmado que viene -->
-			<Button data-abrir-sobre variante="granate" class="mt-4 w-full" hidden>🎴 Abrir mi sobre</Button>
-			<p data-sin-sobre hidden class="mt-4 rounded border-2 border-dashed border-granate/30 px-4 py-3 text-sm font-bold text-tinta-suave">
-				Confirma que vienes para abrir tu sobre y ver quién más se apunta.
-				<a href="/#asistencia" class="text-granate underline underline-offset-4">Confirmar →</a>
-			</p>
+			<button
+				type="button"
+				data-descargar-carta
+				class="mx-auto mt-3 flex items-center gap-2 rounded-full border-2 border-granate px-4 py-2 text-sm font-bold text-granate transition-colors hover:bg-granate hover:text-white active:bg-granate active:text-white disabled:pointer-events-none disabled:opacity-50"
+			>
+				Descargar carta <span aria-hidden="true">↓</span>
+			</button>
+			<p data-descargar-error hidden role="alert" class="mt-2 text-center text-xs font-bold text-granate"></p>
 		</div>
 
 		<div class="mt-8 lg:mt-0">
@@ -320,7 +318,7 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	}
 
 	/* --- Carta en grande --- */
-	/* Pantalla completa; si la carta no cabe a lo ancho (móvil), se mueve con el dedo */
+	/* Pantalla completa, con la carta entera a la vista */
 	.zoom {
 		width: 100vw;
 		height: 100dvh;
@@ -346,7 +344,7 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		backdrop-filter: blur(4px);
 	}
 	.zoom-carta {
-		width: min(160vw, calc(92dvh * 63 / 88));
+		width: min(92vw, calc(88dvh * 63 / 88));
 	}
 	.zoom-carta :global(.cromo) {
 		max-width: none;
@@ -634,8 +632,6 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	import { obtenerAlbum } from './datos';
 	import { ajustarTexto, energia, pintarCromo, pintarFoto } from './pintar';
 	import { datosCarta } from './tiposCarta';
-	import { invitadoActual } from '../registro/sesion';
-	import { abrirSobre } from './sobre';
 
 	const album = document.querySelector<HTMLElement>('[data-album]')!;
 	const carpeta = album.querySelector<HTMLElement>('[data-carpeta]')!;
@@ -657,9 +653,11 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		volteo.classList.add('girando');
 	}
 
+	let actual: (typeof cromos)[number] | undefined;
 	function seleccionar(id: string, desplazar = false) {
 		const c = cromos.find((x) => x.id === id);
 		if (!c) return;
+		actual = c;
 		pintarCromo(tarjeta, c, total);
 		voltear();
 		carpeta.querySelectorAll<HTMLButtonElement>('.mini').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
@@ -760,9 +758,6 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		copia.classList.remove('entra');
 		zoomCarta.replaceChildren(copia);
 		zoom.showModal();
-		// Empieza centrada
-		zoom.scrollLeft = (zoom.scrollWidth - zoom.clientWidth) / 2;
-		zoom.scrollTop = (zoom.scrollHeight - zoom.clientHeight) / 2;
 	});
 	// Se cierra tocando fuera de la carta o la propia carta (sin arrastrar), con ✕ o con Esc
 	zoom.addEventListener('click', (ev) => {
@@ -770,18 +765,52 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		if (t === zoom || t.matches('[data-zoom-lienzo]') || zoomCarta.contains(t)) zoom.close();
 	});
 
-	// Destaca la carta del propio invitado; si no la encuentra, la primera
-	const yo = invitadoActual()?.id;
-	const miCromo = cromos.find((c) => c.id === yo);
-	const inicial = miCromo ?? cromos[0];
-	if (inicial) seleccionar(inicial.id);
+	// Descargar la carta destacada como PNG. La librería se carga solo al pulsar (no va en el bundle).
+	const botonDescarga = foco.querySelector<HTMLButtonElement>('[data-descargar-carta]')!;
+	const errorDescarga = foco.querySelector<HTMLElement>('[data-descargar-error]')!;
+	botonDescarga.addEventListener('click', async () => {
+		if (!actual) return;
+		const texto = botonDescarga.innerHTML;
+		botonDescarga.disabled = true;
+		botonDescarga.textContent = 'Preparando…';
+		errorDescarga.hidden = true;
+		try {
+			const url = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
+			const { toBlob } = await import(/* @vite-ignore */ url);
+			// Se dibuja una copia sin animaciones, fuera de la inclinación 3D
+			const copia = tarjeta.cloneNode(true) as HTMLElement;
+			copia.classList.remove('entra');
+			const lienzo = document.createElement('div');
+			lienzo.style.cssText = 'position:fixed;left:-10000px;top:0;width:27rem';
+			lienzo.append(copia);
+			document.body.append(lienzo);
+			try {
+				const blob: Blob | null = await toBlob(copia, { pixelRatio: 3, includeQueryParams: true });
+				if (!blob) throw new Error('sin imagen');
+				const nombre = actual.apodo
+					.normalize('NFD')
+					.replace(/[̀-ͯ]/g, '')
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/^-|-$/g, '');
+				const enlace = document.createElement('a');
+				enlace.href = URL.createObjectURL(blob);
+				enlace.download = `carta-${nombre || actual.numero}.png`;
+				enlace.click();
+				setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+			} finally {
+				lienzo.remove();
+			}
+		} catch {
+			errorDescarga.textContent = 'No se ha podido crear la imagen. Haz una captura de pantalla de la carta.';
+			errorDescarga.hidden = false;
+		} finally {
+			botonDescarga.disabled = false;
+			botonDescarga.innerHTML = texto;
+		}
+	});
 
-	// El sobre trae a todos los confirmados. Quien aún no ha confirmado no tiene sobre.
-	const botonSobre = album.querySelector<HTMLElement>('[data-abrir-sobre]')!;
-	if (miCromo) {
-		botonSobre.hidden = false;
-		botonSobre.addEventListener('click', () => abrirSobre(cromos, { propio: miCromo.id }));
-	} else if (yo) {
-		album.querySelector<HTMLElement>('[data-sin-sobre]')!.hidden = false;
-	}
+	// Empieza siempre por la carta de número más bajo (la nº 1)
+	const inicial = cromos.reduce<(typeof cromos)[number] | undefined>((min, c) => (!min || c.numero < min.numero ? c : min), undefined);
+	if (inicial) seleccionar(inicial.id);
 </script>
