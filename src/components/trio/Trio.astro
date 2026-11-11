@@ -798,8 +798,16 @@ const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
 	}
 	/* El chibi cae desde arriba y se chafa un poco al tocar el nenúfar */
 	@keyframes cae {
+		/* Mientras espera su turno (retraso + relleno "both") se queda en este primer fotograma, invisible:
+		   no se ve parado arriba, aparece ya cayendo */
 		0% {
+			opacity: 0;
 			transform: translateY(-22rem);
+			animation-timing-function: linear;
+		}
+		3% {
+			opacity: 1;
+			transform: translateY(-21.5rem);
 			animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.5);
 		}
 		65% {
