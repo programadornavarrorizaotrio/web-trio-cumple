@@ -71,6 +71,31 @@
 	--radius-lg: 0.9rem;
 }
 
+/* Canciones: cartel de festival urbano. Negro, rosa chillón, letra monoespaciada y fotos en rosa y negro. */
+:root[data-tema='riverland'] {
+	--color-granate: #f53fc9;
+	--color-granate-oscuro: #b0168f;
+	--color-granate-claro: #ff8be6;
+	--color-amarillo: #ffffff;
+	--color-amarillo-claro: #ffd6f3;
+	--color-amarillo-oscuro: #d9d9d9;
+	--color-crema: #0b0b0b;
+	--color-crema-oscuro: #161616;
+	--color-tinta: #f5f5f5;
+	--color-tinta-suave: #b9b9b9;
+	--color-white: #161616;
+	--color-extra: #7dff9a;
+	--font-sans: 'Space Mono', ui-monospace, monospace;
+	--font-rotulo: 'Space Mono', ui-monospace, monospace;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 700;
+	--rotulo-espaciado: -0.02em;
+	--rotulo-interlineado: 0.95;
+	--radius-lg: 1rem;
+	--radius-sm: 0;
+	color-scheme: dark;
+}
+
 /* === Tipografías exactas de cada tema ===
  * Primero la del sistema (local) y, si no está, el archivo de public/fuentes/ (fuera del repo, ver .gitignore).
  * Si no hay ninguna, cada tema cae en la alternativa libre que lleva detrás en su font-family.
@@ -158,4 +183,9 @@
 }
 :root[data-tema='cartas'] footer[data-barra] {
 	border-top: 3px solid #1d1d1f;
+}
+
+/* Riverland: cabecera rosa con letras negras, como las etiquetas del cartel */
+:root[data-tema='riverland'] header[data-barra] {
+	box-shadow: 0 2px 0 0 #0b0b0b;
 }

@@ -17,6 +17,7 @@ const icono = tema === 'cartas' ? imagenTema('cartas', 'reverso') : undefined;
 const color: Record<Tema, string> = {
 	estanco: 'text-amarillo',
 	cartas: 'text-crema',
+	riverland: 'text-crema',
 };
 ---
 
@@ -28,7 +29,7 @@ const color: Record<Tema, string> = {
 	) : (
 		<span class:list={['inline-flex items-center gap-2', color[tema]]}>
 			{icono && <Image src={icono} alt="" height={80} class="h-9 w-auto shrink-0 rounded-[3px] shadow-[0_1px_3px_rgb(0_0_0/0.5)]" />}
-			<svg viewBox="0 0 32 32" class:list={['shrink-0', 'size-8', icono && 'hidden']} aria-hidden="true">
+			<svg viewBox="0 0 32 32" class:list={['shrink-0', tema === 'riverland' ? 'h-8 w-9' : 'size-8', icono && 'hidden']} aria-hidden="true">
 				{tema === 'cartas' && (
 					<g>
 						<rect x="6" y="2" width="20" height="28" rx="3" fill="currentColor" />
@@ -36,9 +37,19 @@ const color: Record<Tema, string> = {
 						<path d="M16 9 l2 4.2 4.6.6-3.3 3.2.8 4.6L16 19.4 11.9 21.6l.8-4.6-3.3-3.2 4.6-.6z" fill="currentColor" />
 					</g>
 				)}
+				{tema === 'riverland' && (
+					<g>
+						<!-- Monograma TF: bloques gruesos redondeados. T y F con hueco claro entre los brazos de la F -->
+						<rect x="0" y="4" width="15" height="7" rx="2.2" fill="currentColor" />
+						<rect x="4.2" y="4" width="6.6" height="24" rx="2.2" fill="currentColor" />
+						<rect x="17" y="4" width="15" height="7" rx="2.2" fill="currentColor" />
+						<rect x="17" y="4" width="6.8" height="24" rx="2.2" fill="currentColor" />
+						<rect x="17" y="16.4" width="10.5" height="6" rx="2.2" fill="currentColor" />
+					</g>
+				)}
 			</svg>
 			<span class="rotulo text-xl leading-none">
-				Trio Feliz
+				{tema === 'riverland' ? 'Trio Feliz Fest' : 'Trio Feliz'}
 			</span>
 		</span>
 	)
