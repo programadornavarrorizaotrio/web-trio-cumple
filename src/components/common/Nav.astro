@@ -112,7 +112,7 @@ const actual = (href: string) => ruta === href;
 			menu.hidden = !si;
 			boton.setAttribute('aria-expanded', String(si));
 		};
-		boton.addEventListener('click', () => abrir(menu.hidden));
+		boton.addEventListener('click', () => abrir(menu.hidden === true));
 		// Se cierra al elegir (también "Asistencia", que salta a un ancla de la home), con Esc,
 		// al tocar fuera o si la pantalla pasa a escritorio
 		menu.addEventListener('click', (ev) => (ev.target as HTMLElement).closest('a') && abrir(false));
