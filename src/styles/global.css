@@ -22,18 +22,96 @@
 	--font-sans: "Archivo Variable", system-ui, sans-serif;
 	--font-rotulo: "Archivo Variable", system-ui, sans-serif;
 
+	/* Color propio de cada tema para detalles (ver Temas) */
+	--color-extra: #c9962a;
+
 	--shadow-chapa: 0 4px 0 0 var(--color-granate-oscuro);
 	--shadow-chapa-amarillo: 0 4px 0 0 var(--color-amarillo-oscuro);
 }
 
-/* Rótulo: letra ancha y gruesa en mayúsculas, como "TABACOS" */
+/* Rótulo: letra ancha y gruesa en mayúsculas, como "TABACOS". Cada tema puede cambiarla. */
 @utility rotulo {
 	font-family: var(--font-rotulo);
-	font-stretch: 125%;
-	font-weight: 900;
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
-	line-height: 0.95;
+	font-stretch: var(--rotulo-ancho, 125%);
+	font-weight: var(--rotulo-peso, 900);
+	text-transform: var(--rotulo-mayusculas, uppercase);
+	letter-spacing: var(--rotulo-espaciado, 0.02em);
+	line-height: var(--rotulo-interlineado, 0.95);
+}
+
+/* === Temas: cada página tiene su estética (data-tema en <html>, lo pone el Layout) ===
+ * Los nombres de los tokens vienen del estanco, pero en cada tema significan un papel:
+ *   granate  → color principal (cabecera, títulos sobre fondo claro, bordes)
+ *   amarillo → acento (botones, títulos sobre el principal)
+ *   crema    → fondo de página        tinta → texto
+ *   white    → fondo de tarjetas y campos (en los temas oscuros deja de ser blanco)
+ *   extra    → color propio de cada tema para detalles
+ * Las cabeceras, la barra de pestañas y el pie llevan [data-barra] para que cada tema las decore.
+ */
+/* Participantes: colección de cartas en rojo y blanco, con franja negra fina. */
+:root[data-tema='cartas'] {
+	--color-granate: #e3350d;
+	--color-granate-oscuro: #a8250a;
+	--color-granate-claro: #ff5a36;
+	--color-amarillo: #ffffff;
+	--color-amarillo-claro: #ffe1d9;
+	--color-amarillo-oscuro: #d9d9d9;
+	--color-crema: #ffffff;
+	--color-crema-oscuro: #f2f2f2;
+	--color-tinta: #1d1d1f;
+	--color-tinta-suave: #6b6b6b;
+	--color-extra: #1d1d1f;
+	--font-sans: 'Gill Sans Cartas', 'Gill Sans', 'Gill Sans MT', 'Archivo Variable', sans-serif;
+	--font-rotulo: 'Gill Sans Cartas', 'Gill Sans', 'Gill Sans MT', 'Archivo Variable', sans-serif;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 700;
+	--rotulo-mayusculas: none;
+	--rotulo-espaciado: -0.01em;
+	--rotulo-interlineado: 1;
+	--radius-lg: 0.9rem;
+}
+
+/* Canciones: cartel de festival urbano. Negro, rosa chillón, letra monoespaciada y fotos en rosa y negro. */
+:root[data-tema='riverland'] {
+	--color-granate: #f53fc9;
+	--color-granate-oscuro: #b0168f;
+	--color-granate-claro: #ff8be6;
+	--color-amarillo: #ffffff;
+	--color-amarillo-claro: #ffd6f3;
+	--color-amarillo-oscuro: #d9d9d9;
+	--color-crema: #0b0b0b;
+	--color-crema-oscuro: #161616;
+	--color-tinta: #f5f5f5;
+	--color-tinta-suave: #b9b9b9;
+	--color-white: #161616;
+	--color-extra: #7dff9a;
+	--font-sans: 'Space Mono', ui-monospace, monospace;
+	--font-rotulo: 'Space Mono', ui-monospace, monospace;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 700;
+	--rotulo-espaciado: -0.02em;
+	--rotulo-interlineado: 0.95;
+	--radius-lg: 1rem;
+	--radius-sm: 0;
+	color-scheme: dark;
+}
+
+/* === Tipografías exactas de cada tema ===
+ * Primero la del sistema (local) y, si no está, el archivo de public/fuentes/ (fuera del repo, ver .gitignore).
+ * Si no hay ninguna, cada tema cae en la alternativa libre que lleva detrás en su font-family.
+ */
+/* Cartas: Gill Sans viene en macOS e iOS; en Android hace falta el archivo */
+@font-face {
+	font-family: 'Gill Sans Cartas';
+	font-weight: 400 600;
+	font-display: swap;
+	src: local('Gill Sans'), local('GillSans'), local('Gill Sans MT'), url('/fuentes/pokemon/GillSans.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Gill Sans Cartas';
+	font-weight: 700 900;
+	font-display: swap;
+	src: local('Gill Sans Bold'), local('GillSans-Bold'), local('Gill Sans MT Bold'), url('/fuentes/pokemon/GillSans-Bold.woff2') format('woff2');
 }
 
 /* === Base === */
@@ -93,4 +171,21 @@
 			transition-duration: 0.01ms !important;
 		}
 	}
+}
+
+/* === Detalles de cada tema (sin capa: ganan a las utilidades) === */
+
+/* Temas oscuros: cabecera, pestañas y pie en negro con el acento del tema */
+
+/* Cartas: franja negra fina bajo la cabecera roja y sobre el pie */
+:root[data-tema='cartas'] header[data-barra] {
+	box-shadow: 0 3px 0 0 #1d1d1f;
+}
+:root[data-tema='cartas'] footer[data-barra] {
+	border-top: 3px solid #1d1d1f;
+}
+
+/* Riverland: cabecera rosa con letras negras, como las etiquetas del cartel */
+:root[data-tema='riverland'] header[data-barra] {
+	box-shadow: 0 2px 0 0 #0b0b0b;
 }

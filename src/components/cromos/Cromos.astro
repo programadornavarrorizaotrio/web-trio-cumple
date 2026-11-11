@@ -1,79 +1,644 @@
 ---
+import { Image } from 'astro:assets';
 import Cromo from './Cromo.astro';
 import FotosDemo from './FotosDemo.astro';
 import Sobre from './Sobre.astro';
 import Button from '../common/Button.astro';
-import Emblema from '../common/Emblema.astro';
+import { imagenTema } from '../../layouts/temas';
+import { LISTA_TIPOS, TIPOS } from './tiposCarta';
+import './energias.css';
 
-// Álbum de cromos estilo "selecciona tu luchador": cromo destacado arriba y rejilla debajo.
-// Cada número del álbum es un invitado; los que aún no se han registrado salen boca abajo.
-// Los datos llegan en el navegador (datos.ts), así que la rejilla se pinta desde el script.
+// Colección tipo app, en rojo y blanco: cabecera con contador, carta destacada (se voltea, se inclina
+// con el dedo y se amplía al tocarla), filtros y rejilla de cartas. Las conseguidas salen en color y las
+// que faltan en gris. Los datos llegan en el navegador (datos.ts), así que la rejilla se pinta desde el script.
+
+// Reverso oficial si está en src/assets/temas/cartas/reverso.*
+const reverso = imagenTema('cartas', 'reverso');
+// Símbolo de la expansión si está en src/assets/temas/cartas/simbolo.*
+const simbolo = imagenTema('cartas', 'simbolo');
 ---
 
 <FotosDemo />
 <Sobre />
 
-<div data-album class="lg:grid lg:grid-cols-[22rem_1fr] lg:items-start lg:gap-10">
-	<div data-foco class="scroll-mt-20 lg:sticky lg:top-20">
-		<Cromo />
-	</div>
-
-	<div class="mt-5 lg:mt-0">
-		<div class="flex items-end justify-between gap-3">
-			<p class="text-sm font-bold text-tinta-suave">
-				<span data-conseguidos class="rotulo text-3xl text-granate">0</span>
-				<span class="ml-0.5">de <span data-total>0</span> cromos</span>
+<div data-album>
+	<!-- Cabecera de la colección: roja arriba, franja negra y blanca abajo -->
+	<header class="coleccion-cabecera">
+		<div class="cabecera-roja">
+			{simbolo && <Image src={simbolo} alt="" width={128} class="simbolo simbolo-imagen object-contain" />}
+			<svg viewBox="0 0 48 48" class:list={['simbolo', simbolo && 'hidden']} aria-hidden="true">
+				<circle cx="24" cy="24" r="20" fill="#fff" stroke="#1d1d1f" stroke-width="3" />
+				<path d="M9 16h30M12 30l24-12" stroke="#e3350d" stroke-width="4" stroke-linecap="round" />
+				<path d="M24 13l2.6 5.4 6 .8-4.3 4.1 1 5.9L24 26.4l-5.3 2.8 1-5.9-4.3-4.1 6-.8z" fill="#1d1d1f" />
+			</svg>
+			<div class="min-w-0 flex-1">
+				<p class="cabecera-ante">Colección · TF4</p>
+				<h2 class="cabecera-titulo">Participantes</h2>
+			</div>
+			<p class="cabecera-cuenta" aria-label="Cartas conseguidas">
+				<span data-conseguidos class="cuenta-num">0</span><span class="cuenta-total">/<span data-total>0</span></span>
 			</p>
-			<p class="text-xs font-bold uppercase tracking-[0.15em] text-tinta-suave">Toca uno</p>
 		</div>
-		<!-- Sobre: solo para quien ha confirmado que viene -->
-		<Button data-abrir-sobre variante="granate" class="mt-4 w-full" hidden>🎴 Abrir mi sobre</Button>
-		<p data-sin-sobre hidden class="mt-4 rounded border-2 border-dashed border-granate/30 px-4 py-3 text-sm font-bold text-tinta-suave">
-			Confirma que vienes para abrir tu sobre y ver quién más se apunta.
-			<a href="/#asistencia" class="text-granate underline underline-offset-4">Confirmar →</a>
-		</p>
-		<!-- Barra de progreso del álbum -->
-		<div class="mt-2 h-2 overflow-hidden rounded-full bg-granate/15" aria-hidden="true">
-			<div data-progreso class="h-full w-0 rounded-full bg-granate transition-[width] duration-700"></div>
+		<div class="cabecera-blanca">
+			<div class="barra-progreso" aria-hidden="true"><span data-progreso></span></div>
+			<p class="leyenda">
+				<span><b>●</b> Invitado</span>
+				<span><b>★★</b> Cumpleañero ex</span>
+				<span><b class="text-[#b9b9b9]">▮</b> Falta por registrarse</span>
+			</p>
+		</div>
+	</header>
+
+	<div class="mt-6 lg:grid lg:grid-cols-[27rem_1fr] lg:items-start lg:gap-10">
+		<!-- Carta destacada sobre el tapete -->
+		<div data-foco class="tapete scroll-mt-20 lg:sticky lg:top-20">
+			<div data-inclinar class="inclinar">
+				<!-- Volteo: primero el reverso y luego gira hasta la carta -->
+				<div data-volteo class="volteo">
+					<div class="volteo-frente"><Cromo /></div>
+					<div class="volteo-dorso" aria-hidden="true">
+						{
+							reverso ? (
+								<Image src={reverso} alt="" width={700} class="size-full object-cover" />
+							) : (
+								<svg viewBox="0 0 63 88" class="size-full">
+									<defs>
+										<radialGradient id="remolino-grande" cx="50%" cy="50%" r="60%">
+											<stop offset="0" stop-color="#6fa3ff" />
+											<stop offset="0.45" stop-color="#2d5fae" />
+											<stop offset="1" stop-color="#0d2a66" />
+										</radialGradient>
+									</defs>
+									<rect width="63" height="88" fill="#1b2f6b" />
+									<rect x="2.5" y="2.5" width="58" height="83" rx="2" fill="url(#remolino-grande)" />
+									<path d="M8 20 Q31 4 55 20 M8 68 Q31 84 55 68" stroke="#9cc0f2" stroke-width="1.2" fill="none" opacity="0.6" />
+									<circle cx="31.5" cy="44" r="15" fill="#0c1736" stroke="#f8d030" stroke-width="2.4" />
+									<path d="M31.5 33.5l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6-4.4-4.2 6-.8z" fill="#f8d030" />
+								</svg>
+							)
+						}
+					</div>
+				</div>
+				<span data-reflejo class="reflejo" aria-hidden="true"></span>
+			</div>
+			<p class="mt-3 text-center text-xs font-semibold text-tinta-suave">Toca la carta para verla en grande · Muévela con el dedo</p>
+
+			<!-- Sobre: solo para quien ha confirmado que viene -->
+			<Button data-abrir-sobre variante="granate" class="mt-4 w-full" hidden>🎴 Abrir mi sobre</Button>
+			<p data-sin-sobre hidden class="mt-4 rounded border-2 border-dashed border-granate/30 px-4 py-3 text-sm font-bold text-tinta-suave">
+				Confirma que vienes para abrir tu sobre y ver quién más se apunta.
+				<a href="/#asistencia" class="text-granate underline underline-offset-4">Confirmar →</a>
+			</p>
 		</div>
 
-		<ul data-rejilla class="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 sm:gap-3" aria-label="Cromos del álbum"></ul>
+		<div class="mt-8 lg:mt-0">
+			<!-- Filtros: conseguidas / faltan y tipo -->
+			<div class="filtros">
+				<div class="segmentos" role="group" aria-label="Mostrar">
+					<button type="button" data-estado="" aria-pressed="true">Todas</button>
+					<button type="button" data-estado="si" aria-pressed="false">Conseguidas</button>
+					<button type="button" data-estado="no" aria-pressed="false">Faltan</button>
+				</div>
+				<div class="tipos" role="group" aria-label="Filtrar por tipo">
+					<button type="button" data-filtro="" aria-pressed="true" class="chip">Todos</button>
+					{
+						LISTA_TIPOS.map((t) => (
+							<button type="button" data-filtro={t} aria-pressed="false" class="chip" title={TIPOS[t].nombre} aria-label={TIPOS[t].nombre}>
+								<span class="energia size-5" data-tipo={t} />
+							</button>
+						))
+					}
+				</div>
+			</div>
+
+			<!-- Rejilla de la colección -->
+			<ul data-carpeta class="carpeta" aria-label="Cartas de la colección"></ul>
+			<p data-vacio hidden class="mt-6 text-center text-sm text-tinta-suave">No hay cartas con ese filtro.</p>
+		</div>
 	</div>
 </div>
 
+<!-- Carta en grande al tocarla -->
+<dialog data-zoom class="zoom" aria-label="Carta en grande">
+	<div data-zoom-lienzo class="zoom-lienzo"><div data-zoom-carta class="zoom-carta"></div></div>
+	<form method="dialog"><button class="zoom-cerrar" aria-label="Cerrar">✕</button></form>
+</dialog>
+
+<!-- Carta conseguida, en pequeño -->
 <template data-plantilla-cromo>
-	<li>
-		<button
-			type="button"
-			aria-pressed="false"
-			class="relative block aspect-[63/88] w-full overflow-hidden rounded-md border-[3px] border-amarillo-oscuro bg-granate transition-transform active:scale-95 aria-pressed:border-granate aria-pressed:ring-2 aria-pressed:ring-amarillo aria-pressed:ring-offset-2 aria-pressed:ring-offset-crema"
-		>
-			<img data-c-foto alt="" loading="lazy" class="size-full object-cover" hidden />
-			<span data-c-inicial class="rotulo absolute inset-0 grid place-items-center pb-4 text-3xl text-amarillo"></span>
-			<span data-c-numero class="absolute inset-x-0 bottom-0 bg-granate-oscuro/85 py-0.5 text-center text-[0.6rem] font-black text-amarillo"
-			></span>
+	<li class="funda">
+		<button type="button" aria-pressed="false" class="mini cromo">
+			<span class="mini-cara">
+				<span class="mini-cabecera">
+					<span data-c-apodo class="mini-nombre"></span>
+					<span class="mini-ex" hidden>ex</span>
+					<span data-c-ps class="mini-ps"></span>
+					<span data-c-tipo class="mini-tipo"></span>
+				</span>
+				<span class="mini-ilustracion">
+					<img data-c-foto alt="" loading="lazy" hidden />
+					<span data-c-inicial class="mini-inicial"></span>
+				</span>
+				<span class="mini-lineas" aria-hidden="true"><i></i><i></i><i></i></span>
+				<span data-c-numero class="mini-numero"></span>
+			</span>
 		</button>
 	</li>
 </template>
 
-<!-- Hueco: invitado aún sin registrar (cromo boca abajo) -->
+<!-- Carta que falta: invitado aún sin registrar (en gris) -->
 <template data-plantilla-hueco>
-	<li
-		class="relative grid aspect-[63/88] place-items-center overflow-hidden rounded-md border-2 border-dashed border-granate/30 bg-crema-oscuro text-granate/25"
-	>
-		<Emblema class="size-9" hueco="var(--color-crema-oscuro)" />
-		<span data-c-numero class="absolute inset-x-0 bottom-0 py-0.5 text-center text-[0.6rem] font-black text-granate/50"></span>
+	<li class="funda">
+		<span class="falta">
+			<span class="falta-signo" aria-hidden="true">?</span>
+			<span data-c-numero class="falta-numero"></span>
+		</span>
 	</li>
 </template>
 
+<style>
+	/* --- Cabecera de la colección --- */
+	.coleccion-cabecera {
+		overflow: hidden;
+		border-radius: 1rem;
+		background: #fff;
+		box-shadow:
+			0 0 0 3px #1d1d1f,
+			0 6px 18px rgb(0 0 0 / 0.12);
+	}
+	.cabecera-roja {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.9rem 1rem;
+		background: linear-gradient(180deg, #ef4a26, #e3350d);
+		color: #fff;
+		border-bottom: 4px solid #1d1d1f;
+	}
+	.simbolo {
+		width: 3.25rem;
+		height: 3.25rem;
+		flex-shrink: 0;
+	}
+	/* La imagen trae fondo blanco: se recorta por el contorno del círculo */
+	.simbolo-imagen {
+		clip-path: circle(44.6% at 50% 50%);
+	}
+	.cabecera-ante {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: #ffd9cf;
+	}
+	.cabecera-titulo {
+		font-size: 1.75rem;
+		line-height: 1.05;
+		color: #fff;
+	}
+	.cabecera-cuenta {
+		font-weight: 700;
+		line-height: 1;
+		text-align: right;
+	}
+	.cuenta-num {
+		font-size: 2.1rem;
+	}
+	.cuenta-total {
+		font-size: 1rem;
+		color: #ffd9cf;
+	}
+	.cabecera-blanca {
+		padding: 0.8rem 1rem 0.9rem;
+	}
+	.barra-progreso {
+		height: 0.55rem;
+		overflow: hidden;
+		border-radius: 9999px;
+		background: #eee;
+		box-shadow: inset 0 0 0 1px #ddd;
+	}
+	.barra-progreso span {
+		display: block;
+		height: 100%;
+		width: 0;
+		border-radius: inherit;
+		background: #e3350d;
+		transition: width 0.7s;
+	}
+	.leyenda {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		margin-top: 0.55rem;
+		font-size: 0.75rem;
+		color: #6b6b6b;
+	}
+	.leyenda b {
+		color: #1d1d1f;
+	}
+
+	/* --- Carta destacada --- */
+	.tapete {
+		margin-inline: -0.5rem;
+		padding: 1rem 0.4rem 0.9rem;
+		border-radius: 1.25rem;
+		background: radial-gradient(120% 80% at 50% 20%, #fafafa, #ececec 75%);
+		box-shadow: inset 0 0 0 1px #e2e2e2;
+		perspective: 900px;
+	}
+	.inclinar {
+		position: relative;
+		max-width: 27rem;
+		cursor: zoom-in;
+		margin-inline: auto;
+		transform-style: preserve-3d;
+		transition: transform 0.4s ease-out;
+		touch-action: pan-y;
+	}
+	.inclinar.moviendo {
+		transition: none;
+	}
+	.reflejo {
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		border-radius: 4.2% / 3.01%;
+		background: radial-gradient(circle at var(--rx, 50%) var(--ry, 0%), rgb(255 255 255 / 0.35), transparent 45%);
+		mix-blend-mode: soft-light;
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+	.inclinar.moviendo .reflejo {
+		opacity: 1;
+	}
+
+	/* Volteo de la carta destacada: aparece boca abajo, espera un momento y gira */
+	.volteo {
+		position: relative;
+		transform-style: preserve-3d;
+	}
+	.volteo-frente,
+	.volteo-dorso {
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.volteo-dorso {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		border-radius: 4.2% / 3.01%;
+		transform: rotateY(180deg);
+		box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+	}
+	.volteo.girando {
+		animation: girar-carta 1.1s cubic-bezier(0.45, 0, 0.2, 1) both;
+	}
+	@keyframes girar-carta {
+		0% {
+			transform: rotateY(180deg) scale(0.92);
+		}
+		35% {
+			transform: rotateY(180deg) scale(1);
+		}
+		100% {
+			transform: rotateY(360deg) scale(1);
+		}
+	}
+	.reflejo {
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		border-radius: 4.2% / 3.01%;
+		background: radial-gradient(circle at var(--rx, 50%) var(--ry, 0%), rgb(255 255 255 / 0.35), transparent 45%);
+		mix-blend-mode: soft-light;
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+	.inclinar.moviendo .reflejo {
+		opacity: 1;
+	}
+
+	/* --- Carta en grande --- */
+	/* Pantalla completa; si la carta no cabe a lo ancho (móvil), se mueve con el dedo */
+	.zoom {
+		width: 100vw;
+		height: 100dvh;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		overflow: auto;
+		overscroll-behavior: contain;
+		max-width: none;
+		max-height: none;
+	}
+	.zoom-lienzo {
+		display: grid;
+		place-items: center;
+		min-width: 100%;
+		min-height: 100%;
+		width: max-content;
+		padding: 1rem;
+	}
+	.zoom::backdrop {
+		background: rgb(4 9 24 / 0.88);
+		backdrop-filter: blur(4px);
+	}
+	.zoom-carta {
+		width: min(160vw, calc(92dvh * 63 / 88));
+	}
+	.zoom-carta :global(.cromo) {
+		max-width: none;
+	}
+	.zoom[open] .zoom-carta {
+		animation: ampliar 0.3s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+	}
+	@keyframes ampliar {
+		from {
+			transform: scale(0.75);
+			opacity: 0;
+		}
+	}
+	.zoom-cerrar {
+		position: fixed;
+		top: max(0.75rem, env(safe-area-inset-top));
+		right: 0.75rem;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 9999px;
+		background: rgb(255 255 255 / 0.15);
+		color: #fff;
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+
+	/* --- Filtros --- */
+	.filtros {
+		display: grid;
+		gap: 0.6rem;
+	}
+	.segmentos {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		padding: 0.25rem;
+		border-radius: 9999px;
+		background: #f0f0f0;
+	}
+	.segmentos button {
+		height: 2.4rem;
+		border-radius: 9999px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #6b6b6b;
+	}
+	.segmentos button[aria-pressed='true'] {
+		background: #fff;
+		color: #e3350d;
+		box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+	}
+	.tipos {
+		display: flex;
+		gap: 0.4rem;
+		overflow-x: auto;
+		padding-bottom: 0.25rem;
+		scrollbar-width: none;
+	}
+	.chip {
+		flex-shrink: 0;
+		display: grid;
+		place-items: center;
+		min-width: 2.5rem;
+		height: 2.5rem;
+		padding-inline: 0.7rem;
+		border-radius: 9999px;
+		background: #fff;
+		box-shadow: inset 0 0 0 1.5px #ddd;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: #1d1d1f;
+	}
+	.chip[aria-pressed='true'] {
+		box-shadow: inset 0 0 0 2.5px #e3350d;
+		color: #e3350d;
+	}
+
+	/* --- Rejilla de la colección --- */
+	.carpeta {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.6rem;
+		margin-top: 1rem;
+	}
+	@media (min-width: 40rem) {
+		.carpeta {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+	@media (min-width: 80rem) {
+		.carpeta {
+			grid-template-columns: repeat(5, 1fr);
+		}
+	}
+	.carpeta :global(.funda) {
+		position: relative;
+		aspect-ratio: 63 / 88;
+	}
+	.carpeta :global(.funda[hidden]) {
+		display: none;
+	}
+
+	/* Carta conseguida, en pequeño */
+	.carpeta :global(.mini) {
+		container-type: inline-size;
+		display: block;
+		width: 100%;
+		height: 100%;
+		padding: 5%;
+		border-radius: 0.45rem;
+		background: linear-gradient(160deg, #eceef0, #cfd2d6 45%, #e4e6e9 70%, #c6c9cd);
+		box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
+		transition: transform 0.15s;
+	}
+	.carpeta :global(.mini:active) {
+		transform: scale(0.95);
+	}
+	.carpeta :global(.mini[aria-pressed='true']) {
+		outline: 3px solid #e3350d;
+		outline-offset: 2px;
+	}
+	.carpeta :global(.mini.es-especial) {
+		background: linear-gradient(135deg, #f9e27d, #fff 25%, #c9b3ff 50%, #9cf0ff 75%, #f9e27d);
+	}
+	/* Arte completo en las miniaturas de los cumpleañeros */
+	.carpeta :global(.mini.es-especial .mini-cara) {
+		position: relative;
+		overflow: hidden;
+		background: #111;
+		color: #fff;
+	}
+	.carpeta :global(.mini.es-especial .mini-ilustracion) {
+		position: absolute;
+		inset: 0;
+		aspect-ratio: auto;
+		background: none;
+	}
+	.carpeta :global(.mini.es-especial .mini-ilustracion img),
+	.carpeta :global(.mini.es-especial .mini-inicial) {
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.carpeta :global(.mini.es-especial .mini-cara)::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, rgb(0 0 0 / 0.55), transparent 22%, transparent 70%, rgb(0 0 0 / 0.6));
+	}
+	.carpeta :global(.mini.es-especial .mini-cabecera),
+	.carpeta :global(.mini.es-especial .mini-numero) {
+		position: relative;
+		z-index: 1;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+	}
+	.carpeta :global(.mini.es-especial .mini-lineas) {
+		visibility: hidden;
+	}
+	.carpeta :global(.mini-cara) {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		padding: 3% 6% 5%;
+		border-radius: 0.2rem;
+		background: var(--carta-m, #f8cf3f);
+		color: #1d1d1f;
+		text-align: left;
+	}
+	.carpeta :global(.mini-cabecera) {
+		display: flex;
+		align-items: center;
+		gap: 2%;
+		height: 15cqw;
+	}
+	.carpeta :global(.mini-nombre) {
+		flex: 0 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 9.5cqw;
+		font-weight: 700;
+	}
+	.carpeta :global(.mini-ex) {
+		flex-shrink: 0;
+		font-size: 10cqw;
+		font-weight: 900;
+		font-style: italic;
+		line-height: 1;
+		color: #fff;
+		-webkit-text-stroke: 0.7cqw #1d1d1f;
+		paint-order: stroke fill;
+	}
+	.carpeta :global(.mini-ps) {
+		margin-left: auto;
+		font-size: 9cqw;
+		font-weight: 700;
+	}
+	.carpeta :global(.mini-tipo .energia) {
+		width: 11cqw;
+		height: 11cqw;
+	}
+	.carpeta :global(.mini-ilustracion) {
+		position: relative;
+		display: block;
+		aspect-ratio: 1215 / 755;
+		overflow: hidden;
+		background: linear-gradient(135deg, #f4f5f6, #b4b8bd 40%, #e9ebed 60%, #a4a8ae);
+	}
+	.carpeta :global(.mini-ilustracion img),
+	.carpeta :global(.mini-inicial) {
+		position: absolute;
+		inset: 4%;
+		display: grid;
+		place-items: center;
+		width: 92%;
+		height: 92%;
+		object-fit: cover;
+		background: #e3350d;
+		font-size: 22cqw;
+		font-weight: 700;
+		color: #fff;
+	}
+	.carpeta :global(.mini-lineas) {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 9%;
+		padding-inline: 4%;
+	}
+	.carpeta :global(.mini-lineas i) {
+		display: block;
+		height: 3cqw;
+		border-radius: 9999px;
+		background: rgb(0 0 0 / 0.14);
+	}
+	.carpeta :global(.mini-lineas i:nth-child(2)) {
+		width: 80%;
+	}
+	.carpeta :global(.mini-lineas i:nth-child(3)) {
+		width: 55%;
+	}
+	.carpeta :global(.mini-numero) {
+		font-size: 7cqw;
+		font-weight: 700;
+		font-style: italic;
+	}
+
+	/* Carta que falta: hueco gris con su número */
+	.carpeta :global(.falta) {
+		container-type: inline-size;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4%;
+		height: 100%;
+		border-radius: 0.45rem;
+		background: repeating-linear-gradient(135deg, #f1f1f1 0 8px, #eaeaea 8px 16px);
+		box-shadow: inset 0 0 0 2px #dcdcdc;
+		color: #b9b9b9;
+	}
+	.carpeta :global(.falta-signo) {
+		font-size: 34cqw;
+		font-weight: 700;
+		line-height: 1;
+	}
+	.carpeta :global(.falta-numero) {
+		font-size: 9cqw;
+		font-weight: 700;
+		font-style: italic;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.inclinar {
+			transform: none !important;
+		}
+		.volteo.girando {
+			animation: none;
+		}
+	}
+</style>
+
 <script>
 	import { obtenerAlbum } from './datos';
-	import { numeroCromo, pintarCromo, pintarFoto } from './pintar';
+	import { ajustarTexto, energia, pintarCromo, pintarFoto } from './pintar';
+	import { datosCarta } from './tiposCarta';
 	import { invitadoActual } from '../registro/sesion';
 	import { abrirSobre } from './sobre';
 
 	const album = document.querySelector<HTMLElement>('[data-album]')!;
-	const rejilla = album.querySelector<HTMLUListElement>('[data-rejilla]')!;
+	const carpeta = album.querySelector<HTMLElement>('[data-carpeta]')!;
 	const foco = album.querySelector<HTMLElement>('[data-foco]')!;
 	const tarjeta = foco.querySelector<HTMLElement>('[data-cromo]')!;
 	const plantilla = (nombre: string) =>
@@ -81,40 +646,131 @@ import Emblema from '../common/Emblema.astro';
 
 	const { cromos, total } = await obtenerAlbum();
 	const porNumero = new Map(cromos.map((c) => [c.numero, c]));
+	const tres = (n: number) => String(n).padStart(3, '0');
+
+	// Muestra el reverso y gira hasta la carta (se reinicia en cada carta nueva)
+	const volteo = foco.querySelector<HTMLElement>('[data-volteo]')!;
+	function voltear() {
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		volteo.classList.remove('girando');
+		void volteo.offsetWidth;
+		volteo.classList.add('girando');
+	}
 
 	function seleccionar(id: string, desplazar = false) {
 		const c = cromos.find((x) => x.id === id);
 		if (!c) return;
-		pintarCromo(tarjeta, c);
-		rejilla.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
-		// En móvil el destacado puede quedar fuera de pantalla al tocar abajo en la rejilla
+		pintarCromo(tarjeta, c, total);
+		voltear();
+		carpeta.querySelectorAll<HTMLButtonElement>('.mini').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+		// En móvil la carta destacada puede quedar fuera de pantalla al tocar abajo en la carpeta
 		if (desplazar && foco.getBoundingClientRect().top < 0) foco.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
-	rejilla.replaceChildren(
-		...Array.from({ length: total }, (_, i) => {
-			const numero = i + 1;
-			const c = porNumero.get(numero);
-			const li = (c ? plantilla('cromo') : plantilla('hueco')).cloneNode(true) as HTMLLIElement;
-			li.querySelector('[data-c-numero]')!.textContent = numeroCromo(numero);
-			if (!c) {
-				li.setAttribute('aria-label', `${numeroCromo(numero)}: sin descubrir`);
-				return li;
-			}
-			const boton = li.querySelector('button')!;
-			boton.dataset.id = c.id;
-			boton.setAttribute('aria-label', `${c.apodo} (${c.nombre})`);
-			pintarFoto(li.querySelector('img')!, li.querySelector<HTMLElement>('[data-c-inicial]')!, c);
-			boton.addEventListener('click', () => seleccionar(c.id, true));
+	// Una carta por número del álbum
+	const fundas = Array.from({ length: total }, (_, i) => {
+		const numero = i + 1;
+		const c = porNumero.get(numero);
+		const li = (c ? plantilla('cromo') : plantilla('hueco')).cloneNode(true) as HTMLLIElement;
+		li.querySelector('[data-c-numero]')!.textContent = `${tres(numero)}/${tres(total)}`;
+		if (!c) {
+			li.setAttribute('aria-label', `Carta ${numero}: sin descubrir`);
 			return li;
-		}),
-	);
+		}
+		const carta = datosCarta(c);
+		const boton = li.querySelector<HTMLButtonElement>('.mini')!;
+		boton.dataset.id = c.id;
+		boton.dataset.tipo = carta.tipo;
+		boton.classList.toggle('es-especial', !!c.especial);
+		li.querySelector<HTMLElement>('.mini-ex')!.hidden = !c.especial;
+		li.dataset.tipo = carta.tipo;
+		boton.setAttribute('aria-label', `${c.apodo} (${c.nombre}), carta ${numero}`);
+		li.querySelector('[data-c-apodo]')!.textContent = c.apodo;
+		li.querySelector('[data-c-ps]')!.textContent = String(carta.ps);
+		li.querySelector('[data-c-tipo]')!.replaceChildren(energia(carta.tipo));
+		pintarFoto(li.querySelector('img')!, li.querySelector<HTMLElement>('[data-c-inicial]')!, c);
+		boton.addEventListener('click', () => seleccionar(c.id, true));
+		return li;
+	});
 
+	carpeta.replaceChildren(...fundas);
+
+	// Nombres de las miniaturas: más pequeños si no caben (ya están en la página)
+	carpeta.querySelectorAll<HTMLElement>('.mini-nombre').forEach((el) => ajustarTexto(el, 9.5, 5.5));
+
+	album.querySelectorAll('[data-total]').forEach((el) => (el.textContent = String(total)));
 	album.querySelector('[data-conseguidos]')!.textContent = String(cromos.length);
-	album.querySelector('[data-total]')!.textContent = String(total);
 	album.querySelector<HTMLElement>('[data-progreso]')!.style.width = `${total ? (cromos.length / total) * 100 : 0}%`;
 
-	// Destaca el cromo del propio invitado; si no lo encuentra, el primero
+	// Filtros: conseguidas / faltan y tipo (las que faltan no tienen tipo: solo salen con "Todos")
+	let estado = '';
+	let tipo = '';
+	const vacio = album.querySelector<HTMLElement>('[data-vacio]')!;
+	function filtrar() {
+		let visibles = 0;
+		fundas.forEach((li) => {
+			const tiene = !!li.dataset.tipo;
+			const ver = (!estado || (estado === 'si') === tiene) && (!tipo || li.dataset.tipo === tipo);
+			li.hidden = !ver;
+			if (ver) visibles++;
+		});
+		vacio.hidden = visibles > 0;
+	}
+	const grupo = (sel: string, alPulsar: (b: HTMLButtonElement) => void) => {
+		const botones = album.querySelectorAll<HTMLButtonElement>(sel);
+		botones.forEach((b) =>
+			b.addEventListener('click', () => {
+				botones.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+				alPulsar(b);
+				filtrar();
+			}),
+		);
+	};
+	grupo('[data-estado]', (b) => (estado = b.dataset.estado!));
+	grupo('[data-filtro]', (b) => (tipo = b.dataset.filtro!));
+
+	// Carta destacada: se inclina siguiendo el dedo o el ratón, con reflejo de luz
+	const inclinar = foco.querySelector<HTMLElement>('[data-inclinar]')!;
+	const reflejo = foco.querySelector<HTMLElement>('[data-reflejo]')!;
+	const quieta = matchMedia('(prefers-reduced-motion: reduce)').matches;
+	function mover(ev: PointerEvent) {
+		if (quieta) return;
+		const r = inclinar.getBoundingClientRect();
+		const x = (ev.clientX - r.left) / r.width;
+		const y = (ev.clientY - r.top) / r.height;
+		inclinar.classList.add('moviendo');
+		inclinar.style.transform = `rotateY(${(x - 0.5) * 22}deg) rotateX(${(0.5 - y) * 22}deg)`;
+		reflejo.style.setProperty('--rx', `${x * 100}%`);
+		reflejo.style.setProperty('--ry', `${y * 100}%`);
+	}
+	function soltar() {
+		inclinar.classList.remove('moviendo');
+		inclinar.style.transform = '';
+	}
+	inclinar.addEventListener('pointermove', mover);
+	inclinar.addEventListener('pointerleave', soltar);
+	inclinar.addEventListener('pointerup', soltar);
+	inclinar.addEventListener('pointercancel', soltar);
+
+	// Al tocar la carta destacada se abre en grande; se cierra tocando fuera, con ✕ o con Esc
+	const zoom = document.querySelector<HTMLDialogElement>('[data-zoom]')!;
+	const zoomCarta = zoom.querySelector<HTMLElement>('[data-zoom-carta]')!;
+	inclinar.addEventListener('click', () => {
+		const copia = tarjeta.cloneNode(true) as HTMLElement;
+		copia.classList.remove('entra');
+		zoomCarta.replaceChildren(copia);
+		zoom.showModal();
+		// Empieza centrada
+		zoom.scrollLeft = (zoom.scrollWidth - zoom.clientWidth) / 2;
+		zoom.scrollTop = (zoom.scrollHeight - zoom.clientHeight) / 2;
+	});
+	// Se cierra tocando fuera de la carta o la propia carta (sin arrastrar), con ✕ o con Esc
+	zoom.addEventListener('click', (ev) => {
+		const t = ev.target as HTMLElement;
+		if (t === zoom || t.matches('[data-zoom-lienzo]') || zoomCarta.contains(t)) zoom.close();
+	});
+
+	// Destaca la carta del propio invitado; si no la encuentra, la primera
 	const yo = invitadoActual()?.id;
 	const miCromo = cromos.find((c) => c.id === yo);
 	const inicial = miCromo ?? cromos[0];

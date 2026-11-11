@@ -1,64 +1,352 @@
 ---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import fiesta from '../../data/fiesta.json';
-import Cabezas from './Cabezas.astro';
-import './riverland.css';
+import trio from '../../data/trio.json';
 
-// Cabecera de /canciones: cartel de festival (cromo rosa y neón sobre seda negra).
+// Cartel de festival en negro y rosa: título vertical en letra de píxel a todo lo alto, etiquetas de
+// sitio y año, y el line-up repartido en los tres momentos de la noche hasta el final del cartel, con
+// las fotos del trío (en rosa y negro) intercaladas. Los nombres son los de los invitados registrados
+// (llegan en el navegador desde el álbum); los cumpleañeros son cabezas de cartel de la noche.
+
+const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
+const foto = (archivo: string) => fotos[`../../assets/trio/${archivo}`].default;
+
+const zona = fiesta.zonaHoraria;
 const inicio = new Date(fiesta.inicio);
-const fecha = (opciones: Intl.DateTimeFormatOptions) =>
-	new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, ...opciones }).format(inicio);
+const diaSemana = new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: zona }).format(inicio).toUpperCase();
+const diaMes = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', timeZone: zona }).format(inicio).toUpperCase();
+const anio = new Intl.DateTimeFormat('es-ES', { year: 'numeric', timeZone: zona }).format(inicio);
+
+// Los tres momentos y sus categorías. `data-hueco` es donde el script pone los nombres.
+const franjas = [
+	{ id: 'tarde', titulo: `${diaSemana} ${diaMes} · TARDE`, grupos: [{ tipo: 'En directo', hueco: 'tarde' }] },
+	{
+		id: 'noche',
+		titulo: `${diaSemana} ${diaMes} · NOCHE`,
+		grupos: [
+			{ tipo: 'Cabezas de cartel', hueco: 'cabezas' },
+			{ tipo: 'En directo', hueco: 'noche' },
+		],
+	},
+	{ id: 'after', titulo: 'AFTER · HASTA QUE CIERREN', grupos: [{ tipo: 'DJ sets', hueco: 'after' }] },
+];
 ---
 
-<header class="rv relative isolate overflow-hidden bg-(--rv-negro) px-4 pb-14 pt-8 text-white sm:pb-20 sm:pt-14">
-	<!-- Seda ondulada -->
-	<svg
-		class="absolute inset-0 -z-10 size-full [mask-image:radial-gradient(ellipse_90%_70%_at_75%_45%,#000_25%,transparent_75%)]"
-		viewBox="0 0 400 600"
-		preserveAspectRatio="none"
-		aria-hidden="true"
-	>
-		<defs>
-			<filter id="rv-seda" x="0" y="0" width="100%" height="100%">
-				<feTurbulence type="fractalNoise" baseFrequency="0.004 0.05" numOctaves="2" seed="7" />
-				<feColorMatrix type="matrix" values="0 0 0 0 0.75  0 0 0 0 0.05  0 0 0 0 0.45  2.4 0 0 0 -0.95" />
-			</filter>
-		</defs>
-		<rect width="400" height="600" filter="url(#rv-seda)" />
-	</svg>
-	<div class="absolute -right-24 top-1/3 -z-10 size-80 rounded-full bg-(--rv-neon)/20 blur-3xl" aria-hidden="true"></div>
+<section aria-label="Cartel del festival" class="cartel" data-cartel>
+	<!-- Título vertical, a todo lo alto -->
+	<p class="titulo" aria-label="Trio Feliz">TRIO FELIZ</p>
 
-	<!-- Red en la esquina -->
-	<svg class="absolute -left-4 -top-2 -z-10 w-44 opacity-60 sm:w-72" viewBox="0 0 200 140" aria-hidden="true">
-		<defs>
-			<pattern id="rv-red" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-				<path d="M0 0H11M0 0V11" fill="none" stroke="#fff" stroke-width="0.8"></path>
-			</pattern>
-			<clipPath id="rv-red-corte">
-				<path d="M0 0H200C175 35 125 80 50 100 30 106 12 120 0 140Z"></path>
-			</clipPath>
-		</defs>
-		<rect width="200" height="140" fill="url(#rv-red)" clip-path="url(#rv-red-corte)"></rect>
-	</svg>
-
-	<div class="mx-auto max-w-3xl">
-		<!-- Tubo de neón -->
-		<div class="rv-tubo rv-zumbido mx-auto h-2.5 w-4/5 rounded-full sm:h-3" aria-hidden="true"></div>
-
-		<!-- Logo en el panel metálico -->
-		<div class="rv-panel mt-5 rounded-xl px-2 py-6 sm:px-8 sm:py-10">
-			<h1 class="rv-cromo rv-parpadeo text-center text-[12vw] sm:text-8xl">
-				Trioland <span class="sr-only">· Canciones</span>
-			</h1>
+	<div class="contenido">
+		<div class="etiquetas">
+			<p class="tag">{fiesta.lugar.nombre.toUpperCase()}</p>
+			<p class="tag">{anio}</p>
 		</div>
+		<p class="tag tag-hueco">LINE UP A-Z</p>
 
-		<!-- Cartel colgante con la fecha -->
-		<div class="rv-luces mx-auto w-fit px-4 pb-5 pt-3 text-center min-[360px]:px-6 sm:px-10">
-			<p class="rv-neon text-base font-black uppercase leading-tight tracking-wider [font-stretch:115%] min-[360px]:text-lg sm:text-2xl">
-				{`${fecha({ weekday: 'long' })} ${fecha({ day: 'numeric' })} · ${fecha({ month: 'long' })}`}
-			</p>
-			<p class="rv-neon text-xs font-bold uppercase tracking-[0.25em] min-[360px]:text-sm min-[360px]:tracking-[0.3em] sm:text-base">{fiesta.lugar.nombre}</p>
-		</div>
+		{
+			franjas.map((f, i) => (
+				<>
+					<div class="franja">
+						<p class="franja-titulo">{f.titulo}</p>
+						{f.grupos.map((g) => (
+							<div class="grupo">
+								<p class="grupo-tipo">{g.tipo}</p>
+								<ul class="grupo-nombres" data-hueco={g.hueco} />
+							</div>
+						))}
+					</div>
+
+					{/* Fotos entre una franja y la siguiente */}
+					{i < franjas.length - 1 && (
+						<div class:list={['fotos', `fotos-${i + 1}`]} aria-hidden="true">
+							{(i === 0 ? trio.slice(0, 2) : trio.slice(2)).map((p, k) => (
+								<span class:list={['ventana', `ventana-${i + 1}-${k + 1}`]}>
+									<Image src={foto(p.foto)} alt="" widths={[320, 640]} sizes="60vw" style={`object-position: ${p.encuadre}`} />
+									{i === 0 && k === 1 && <span class="marco-ojo" />}
+								</span>
+							))}
+							<span class="nodo" style={i === 0 ? 'left: 4%; top: 10%' : 'left: 70%; top: 70%'} />
+							<span class="barra-ui" style={i === 0 ? 'left: 58%; top: 76%' : 'left: 6%; top: 18%'} />
+						</div>
+					)}
+				</>
+			))
+		}
+
+		<p class="tag web">TRIOFELIZ.FEST</p>
 	</div>
 
-	<Cabezas />
-</header>
+	<!-- Líneas discontinuas que cruzan el cartel -->
+	<svg class="rutas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+		<path d="M14 2 C 40 20, 95 10, 92 40 S 30 70, 60 98" />
+		<path d="M100 18 C 70 30, 20 35, 18 60 S 60 80, 40 100" />
+	</svg>
+</section>
+
+<script>
+	import { obtenerAlbum } from '../cromos/datos';
+
+	// Nombres de los invitados registrados, de la A a la Z: los cumpleañeros son cabezas de cartel
+	// y el resto se reparte a partes iguales entre tarde, noche y after.
+	const cartel = document.querySelector<HTMLElement>('[data-cartel]')!;
+	const hueco = (nombre: string) => cartel.querySelector<HTMLElement>(`[data-hueco="${nombre}"]`)!;
+	const pintar = (nombre: string, lista: string[]) =>
+		hueco(nombre).replaceChildren(
+			...(lista.length ? lista : ['POR ANUNCIAR']).map((n) => {
+				const li = document.createElement('li');
+				li.textContent = n;
+				return li;
+			}),
+		);
+
+	const { cromos } = await obtenerAlbum();
+	const az = (a: string, b: string) => a.localeCompare(b, 'es');
+	const nombre = (n: string) => n.toUpperCase();
+	const cabezas = cromos.filter((c) => c.especial).map((c) => nombre(c.nombre)).sort(az);
+	const resto = cromos.filter((c) => !c.especial).map((c) => nombre(c.nombre)).sort(az);
+	const tercio = Math.ceil(resto.length / 3);
+
+	pintar('cabezas', cabezas);
+	pintar('tarde', resto.slice(0, tercio));
+	pintar('noche', resto.slice(tercio, tercio * 2));
+	pintar('after', resto.slice(tercio * 2));
+</script>
+
+<style>
+	.cartel {
+		--rosa: #f53fc9;
+		position: relative;
+		overflow: hidden;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 0 0.6rem;
+		padding: 0.9rem 0.75rem 1rem 0.5rem;
+		background: #0b0b0b;
+		color: #f5f5f5;
+		font-family: 'Space Mono', ui-monospace, monospace;
+	}
+
+	/* Título vertical, de abajo arriba, a todo lo alto del cartel */
+	.titulo {
+		writing-mode: vertical-rl;
+		transform: rotate(180deg);
+		font-family: 'Silkscreen', 'Space Mono', monospace;
+		font-weight: 700;
+		font-size: clamp(3.2rem, 16vw, 7rem);
+		line-height: 0.8;
+		letter-spacing: -0.06em;
+		color: var(--rosa);
+		text-align: justify;
+		text-align-last: justify;
+	}
+
+	/* El contenido se reparte a lo largo: las franjas llegan hasta el final */
+	.contenido {
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 0.7rem;
+	}
+	.etiquetas {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.tag {
+		width: fit-content;
+		padding: 0.05em 0.4em;
+		background: var(--rosa);
+		color: #0b0b0b;
+		font-size: 0.8rem;
+		font-weight: 700;
+		line-height: 1.35;
+		text-transform: uppercase;
+	}
+	.tag-hueco {
+		background: transparent;
+		color: var(--rosa);
+		box-shadow: inset 0 0 0 2px var(--rosa);
+	}
+
+	.franja {
+		display: grid;
+		gap: 0.4rem;
+	}
+	.franja-titulo {
+		padding: 0.1em 0.4em;
+		background: var(--rosa);
+		color: #0b0b0b;
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+	.grupo {
+		display: grid;
+		grid-template-columns: 4.1rem 1fr;
+		gap: 0.4rem;
+		align-items: start;
+	}
+	.grupo-tipo {
+		padding-top: 0.15em;
+		font-size: 0.55rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--rosa);
+		line-height: 1.2;
+	}
+	.grupo-nombres {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.1rem 0.6rem;
+		min-height: 1.2em;
+		font-size: 0.72rem;
+		font-weight: 700;
+		line-height: 1.3;
+		text-transform: uppercase;
+	}
+	.grupo-nombres :global(li) {
+		position: relative;
+		overflow-wrap: anywhere;
+	}
+	/* Punto separador entre columnas */
+	.grupo-nombres :global(li:nth-child(odd):not(:last-child))::after {
+		content: '·';
+		position: absolute;
+		right: -0.45rem;
+		color: #f5f5f5;
+	}
+	@media (min-width: 40rem) {
+		.grupo {
+			grid-template-columns: 6rem 1fr;
+		}
+		.grupo-nombres {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			font-size: 0.85rem;
+		}
+		.grupo-nombres :global(li:nth-child(odd):not(:last-child))::after {
+			content: none;
+		}
+		.grupo-nombres :global(li:not(:nth-child(4n)):not(:last-child))::after {
+			content: '·';
+			position: absolute;
+			right: -0.45rem;
+		}
+		.franja-titulo,
+		.tag {
+			font-size: 0.95rem;
+		}
+	}
+
+	/* --- Fotos intercaladas, en rosa y negro --- */
+	.fotos {
+		position: relative;
+		height: 9rem;
+	}
+	.ventana {
+		position: absolute;
+		overflow: hidden;
+		border-radius: 1.1rem;
+		background: var(--rosa);
+	}
+	.ventana :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		filter: grayscale(1) contrast(1.5) brightness(1.05);
+		mix-blend-mode: multiply;
+	}
+	.ventana-1-1 {
+		left: 0;
+		top: 0.4rem;
+		width: 52%;
+		height: 7.6rem;
+	}
+	.ventana-1-2 {
+		right: 0;
+		top: 1.4rem;
+		width: 52%;
+		height: 7.2rem;
+		box-shadow: 0 0 0 3px #0b0b0b;
+	}
+	.ventana-2-1 {
+		left: 18%;
+		top: 0.5rem;
+		width: 64%;
+		height: 8rem;
+	}
+	.marco-ojo {
+		position: absolute;
+		left: 38%;
+		top: 30%;
+		width: 26%;
+		height: 24%;
+		border: 2px solid #0b0b0b;
+		box-shadow: inset 0 0 0 2px #fff;
+	}
+	.nodo {
+		position: absolute;
+		z-index: 2;
+		width: 0.7rem;
+		height: 1rem;
+		border: 2px solid var(--rosa);
+		background: #0b0b0b;
+	}
+	.nodo::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 0.3rem;
+		height: 0.3rem;
+		border-radius: 9999px;
+		background: #7dff9a;
+		transform: translate(-50%, -50%);
+	}
+	.barra-ui {
+		position: absolute;
+		z-index: 2;
+		width: 3.2rem;
+		height: 0.55rem;
+		border: 2px solid #0b0b0b;
+		background: var(--rosa);
+	}
+
+	.rutas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+	.rutas path {
+		fill: none;
+		stroke: rgb(255 255 255 / 0.75);
+		stroke-width: 1;
+		stroke-dasharray: 5 4;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.web {
+		align-self: flex-end;
+		position: relative;
+		z-index: 2;
+		font-size: 1rem;
+	}
+
+	@media (min-width: 64rem) {
+		.cartel {
+			padding-inline: max(1rem, calc((100vw - 72rem) / 2));
+		}
+		.fotos {
+			height: 14rem;
+		}
+		.ventana-1-1,
+		.ventana-1-2 {
+			height: 12rem;
+		}
+		.ventana-2-1 {
+			height: 13rem;
+		}
+	}
+</style>

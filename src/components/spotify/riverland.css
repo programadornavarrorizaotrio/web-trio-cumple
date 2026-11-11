@@ -5,13 +5,13 @@
  */
 
 .rv {
-	--rv-negro: #08020b;
+	--rv-negro: #0b0b0b; /* mismo negro y rosa que el cartel (Cartel.astro) */
 	--rv-morado: #1c0620;
-	--rv-rosa: #ff4fbf;
+	--rv-rosa: #f53fc9;
 	--rv-neon: #ff2fd6;
 	--rv-cromo: #ffd6f5;
 	--rv-verde: #7dff9a;
-	--rv-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
+	--rv-mono: 'Space Mono', ui-monospace, monospace;
 }
 
 .rv ::selection {
@@ -143,13 +143,13 @@
 	font-family: var(--rv-mono);
 }
 
-/* Rótulo gigante de la sección */
+/* Rótulo gigante de la sección: letra de píxel, como el título del cartel */
 .rv-marca {
-	font-stretch: 125%;
-	font-weight: 900;
+	font-family: 'Silkscreen', 'Space Mono', monospace;
+	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: -0.02em;
-	line-height: 0.85;
+	letter-spacing: -0.06em;
+	line-height: 0.8;
 	color: var(--rv-rosa);
 }
 

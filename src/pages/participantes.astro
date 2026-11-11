@@ -1,19 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/common/Section.astro';
 import Cromos from '../components/cromos/Cromos.astro';
 ---
 
 <Layout title="Participantes · Trio Feliz">
-	<main>
+	<main class="px-4 pb-16 pt-6 sm:pt-10">
 		<h1 class="sr-only">Participantes</h1>
-		<Section
-			id="participantes"
-			antetitulo="Colección"
-			titulo="Participantes"
-			subtitulo="Cada invitado tiene su cromo. Se descubre cuando se registra: ¿cuántos faltan?"
-		>
+		<div class="mx-auto max-w-6xl">
 			<Cromos />
-		</Section>
+		</div>
 	</main>
 </Layout>

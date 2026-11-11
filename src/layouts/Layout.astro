@@ -1,8 +1,14 @@
 ---
 import '@fontsource-variable/archivo/wdth.css';
+// Tipografías de los temas: el navegador solo descarga las que usa la página
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '@fontsource/silkscreen/700.css';
 import '../styles/global.css';
 import Nav from '../components/common/Nav.astro';
 import { CLAVE_SESION, EXIGIR_REGISTRO } from '../components/registro/sesion';
+import { getImage } from 'astro:assets';
+import { imagenTema, temaDeRuta, TEMAS, type Tema } from './temas';
 
 interface Props {
 	title?: string;
@@ -10,6 +16,8 @@ interface Props {
 	/** Se puede ver sin registrarse (registro, guía de estilo) */
 	publica?: boolean;
 	sinNav?: boolean;
+	/** Estética de la página. Sin indicar, la que toca a su ruta (ver temas.ts) */
+	tema?: Tema;
 }
 
 const {
@@ -17,21 +25,34 @@ const {
 	description = 'Estás invitado a la 4ª edición del Trio Feliz. Regístrate, pasa por el estanco y activa tu cromo.',
 	publica = false,
 	sinNav = false,
+	tema = temaDeRuta(Astro.url.pathname),
 } = Astro.props;
+const t = TEMAS[tema];
+// Icono de pestaña propio del tema si está en src/assets/temas/<tema>/favicon.* (si no, el general)
+const iconoTema = imagenTema(tema, 'favicon');
+const favicon = iconoTema ? (await getImage({ src: iconoTema, width: 64, height: 64, format: 'png' })).src : null;
 
 // Base para URLs absolutas (og:image). Sin `site` configurado, la de la propia página.
 const base = Astro.site ?? Astro.url;
 ---
 
-<html lang="es">
+<html lang="es" data-tema={tema}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="robots" content="noindex, nofollow" />
-		<meta name="theme-color" content="#742434" />
+		<meta name="theme-color" content={t.colorNavegador} />
 		<meta name="description" content={description} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" sizes="48x48" />
+		{
+			favicon ? (
+				<link rel="icon" type="image/png" href={favicon} />
+			) : (
+				<>
+					<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+					<link rel="icon" href="/favicon.ico" sizes="48x48" />
+				</>
+			)
+		}
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<meta name="apple-mobile-web-app-title" content="Trio Feliz" />
@@ -66,10 +87,10 @@ const base = Astro.site ?? Astro.url;
 		}
 	</head>
 	<body class:list={['flex min-h-dvh flex-col', !sinNav && 'pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0']}>
-		{!sinNav && <Nav />}
+		{!sinNav && <Nav tema={tema} />}
 		<slot />
-		<footer class="mt-auto bg-granate-oscuro px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 text-center text-sm text-amarillo-claro">
-			<p>Trio Feliz · 4ª edición · Hecho a mano, sin gluten y con poca vergüenza</p>
+		<footer data-barra class="relative mt-auto bg-granate-oscuro px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-8 text-center text-sm text-amarillo-claro">
+			<p>{t.pie}</p>
 			<p data-salir hidden class="mt-3 text-xs text-crema/70">
 				¿No eres <span data-salir-nombre></span>?
 				<button type="button" class="font-bold text-amarillo underline underline-offset-4">Salir</button>

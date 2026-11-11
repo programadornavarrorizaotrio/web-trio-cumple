@@ -1,0 +1,100 @@
+/* Energías y fondos de carta por tipo (global: las energías las crea pintar.ts).
+ * Iconos propios; si hay imagen oficial en src/assets/temas/cartas/energia-<tipo>.*, Cromo.astro
+ * la pasa como --energia-<tipo> y se usa en su lugar. Para añadir un tipo: también en tiposCarta.ts. */
+.energia {
+	display: inline-block;
+	flex-shrink: 0;
+	border-radius: 9999px;
+	background-size: cover;
+	box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.3), 0 1px 1px rgb(0 0 0 / 0.25);
+}
+.energia[data-tipo="planta"] {
+	background-color: #3f9a3a;
+	background-image: var(--energia-planta, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%233f9a3a'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M5 19C5 10 11 5 20 4c0 9-5 15-13 15m-2 0 8-8'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="planta"] {
+	--carta-a: #cfe7a1;
+	--carta-m: #9ccf63;
+	--carta-b: #6fae3f;
+}
+.energia[data-tipo="fuego"] {
+	background-color: #e2462b;
+	background-image: var(--energia-fuego, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%23e2462b'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-6 1 1 2 2 2 3 0-3 1-6 2-8z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="fuego"] {
+	--carta-a: #f9c56e;
+	--carta-m: #f08a3c;
+	--carta-b: #e0502f;
+}
+.energia[data-tipo="agua"] {
+	background-color: #2f86d6;
+	background-image: var(--energia-agua, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%232f86d6'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="agua"] {
+	--carta-a: #bfe3f7;
+	--carta-m: #79bde8;
+	--carta-b: #3f93d1;
+}
+.energia[data-tipo="rayo"] {
+	background-color: #f2b705;
+	background-image: var(--energia-rayo, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%23f2b705'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M13 2 5 14h6l-1 8 8-12h-6z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="rayo"] {
+	--carta-a: #fbe27a;
+	--carta-m: #f8cf3f;
+	--carta-b: #f2b928;
+}
+.energia[data-tipo="psiquico"] {
+	background-color: #8e4bb8;
+	background-image: var(--energia-psiquico, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%238e4bb8'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3' fill='%238e4bb8'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="psiquico"] {
+	--carta-a: #e9c9ec;
+	--carta-m: #cf97d6;
+	--carta-b: #a967b8;
+}
+.energia[data-tipo="lucha"] {
+	background-color: #b5562a;
+	background-image: var(--energia-lucha, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%23b5562a'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M6 10h12v6a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4zM6 10V7h3v3m0 0V6h3v4m0 0V6h3v4m0 0V7h3v3'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="lucha"] {
+	--carta-a: #f1c79b;
+	--carta-m: #d9925a;
+	--carta-b: #b5622f;
+}
+.energia[data-tipo="oscuridad"] {
+	background-color: #2f3a4a;
+	background-image: var(--energia-oscuridad, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%232f3a4a'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M15 3a9 9 0 1 0 6 13A7 7 0 0 1 15 3z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="oscuridad"] {
+	--carta-a: #a9b6bd;
+	--carta-m: #7d8e97;
+	--carta-b: #5b6c75;
+}
+.energia[data-tipo="metalico"] {
+	background-color: #8c97a3;
+	background-image: var(--energia-metalico, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%238c97a3'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z'/%3E%3Ccircle cx='12' cy='12' r='3.5' fill='%238c97a3'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="metalico"] {
+	--carta-a: #e5e8ec;
+	--carta-m: #c4cad1;
+	--carta-b: #9ea6af;
+}
+.energia[data-tipo="dragon"] {
+	background-color: #b08d1a;
+	background-image: var(--energia-dragon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%23b08d1a'/%3E%3Cg fill='%23fff' stroke='%23fff' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M4 20 9 4l2 9 3-6 1 7 3-4 2 10z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="dragon"] {
+	--carta-a: #eadc9c;
+	--carta-m: #cdb45c;
+	--carta-b: #a88a2c;
+}
+.energia[data-tipo="incoloro"] {
+	background-color: #d6d6d6;
+	background-image: var(--energia-incoloro, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 32 32'%3E%3Ccircle cx='12' cy='12' r='15.5' fill='%23d6d6d6'/%3E%3Cg fill='%23555' stroke='%23555' stroke-width='1.2' stroke-linejoin='round'%3E%3Cpath d='M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z'/%3E%3C/g%3E%3C/svg%3E"));
+}
+.cromo[data-tipo="incoloro"] {
+	--carta-a: #f6f6f6;
+	--carta-m: #e6e6e6;
+	--carta-b: #cfcfcf;
+}
