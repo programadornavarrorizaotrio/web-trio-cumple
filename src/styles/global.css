@@ -46,7 +46,7 @@
  *   crema    → fondo de página        tinta → texto
  *   white    → fondo de tarjetas y campos (en los temas oscuros deja de ser blanco)
  *   extra    → color propio de cada tema para detalles
- * Las cabeceras, la barra de pestañas y el pie llevan [data-barra] para que cada tema las decore.
+ * La cabecera, el menú y el pie llevan [data-barra] para que cada tema las decore.
  */
 /* Participantes: colección de cartas en rojo y blanco, con franja negra fina. */
 :root[data-tema='cartas'] {
@@ -94,6 +94,27 @@
 	--radius-lg: 1rem;
 	--radius-sm: 0;
 	color-scheme: dark;
+}
+
+/* Inicio: la charca de Trioland. Verde bosque como color principal y lima como acento.
+ * (Las variables --c-* de .selva, más abajo, son las de las escenas ilustradas.) */
+:root[data-tema='charca'] {
+	--color-granate: #12402c;
+	--color-granate-oscuro: #0e2a1f;
+	--color-granate-claro: #1d6b45;
+	--color-amarillo: #c6f26b;
+	--color-amarillo-claro: #e2f8a8;
+	--color-amarillo-oscuro: #8fbf3a;
+	--color-crema: #fff4d6;
+	--color-crema-oscuro: #f3e6bd;
+	--color-tinta: #0e2a1f;
+	--color-tinta-suave: #4a6a58;
+	--color-extra: #ff7fa8;
+}
+
+/* Charca: la cabecera lleva una línea lima, como el borde del agua */
+:root[data-tema='charca'] header[data-barra] {
+	box-shadow: 0 3px 0 0 var(--color-amarillo-oscuro);
 }
 
 /* === Tipografías exactas de cada tema ===
