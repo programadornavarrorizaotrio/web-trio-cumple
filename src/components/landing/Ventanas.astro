@@ -178,7 +178,6 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 							<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)" />
 							<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-ventanas)" stroke="#14502f" stroke-width="1.2" />
 						</svg>
-						<span class="ficha" aria-hidden="true">{s.emoji}</span>
 						<i class="onda" />
 					</span>
 					<span class="rotulo-hoja">{s.titulo}</span>
@@ -511,15 +510,6 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 	.hoja:active .plato {
 		transform: scale(0.95);
 	}
-	.ficha {
-		position: absolute;
-		left: 50%;
-		top: 42%;
-		translate: -50% -50%;
-		font-size: 1.7rem;
-		line-height: 1;
-		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.4));
-	}
 	.onda {
 		position: absolute;
 		left: 0;
@@ -608,9 +598,6 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 		.hoja {
 			left: var(--xg);
 			top: var(--yg);
-		}
-		.ficha {
-			font-size: 2.1rem;
 		}
 		.rotulo-hoja {
 			font-size: 0.95rem;
