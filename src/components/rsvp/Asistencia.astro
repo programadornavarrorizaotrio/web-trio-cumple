@@ -1,84 +1,1033 @@
 ---
-import Button from '../common/Button.astro';
-import CamposAsistencia from './CamposAsistencia.astro';
+import { Image } from 'astro:assets';
+import fiesta from '../../data/fiesta.json';
+import espera from '../../assets/mascota/rsvp.png';
+import si from '../../assets/mascota/si_rsvp.png';
+import no from '../../assets/mascota/no_rsvp.png';
 
-// Asistencia: se rellena en el registro; aquí se ve el resumen y se puede cambiar.
+// Asistencia: una escena más de la charca. Dos nenúfares, «Voy» y «Paso»; la rana salta al que toques.
+// Si vienes, cada acompañante es una ranita que se sube contigo y, al confirmar, te dan tu ENTRADA
+// (descargable en PNG). Se rellena en el registro; aquí se ve la respuesta y se puede cambiar.
+// Mismo contrato de datos que antes (`./datos`): { asiste, acompanantes, alergias }.
+const MAX_ACOMPANANTES = 5;
+const poses = { ninguna: espera, si, no };
+const fecha = new Intl.DateTimeFormat('es-ES', { dateStyle: 'full', timeZone: fiesta.zonaHoraria }).format(new Date(fiesta.inicio));
+const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14, 36, 0.9], [64, 6, 2.2], [48, 20, 0.3], [88, 42, 0.4]];
 ---
 
-<div data-asistencia class="mx-auto max-w-md">
-	<!-- Resumen -->
-	<div data-resumen hidden class="rounded-lg border-2 border-granate/15 bg-white p-5 text-tinta shadow-chapa">
-		<p class="text-xs font-black uppercase tracking-[0.2em] text-granate">Tu respuesta</p>
-		<p data-r-titulo class="rotulo mt-2 text-3xl text-granate"></p>
-		<ul data-r-detalle class="mt-3 space-y-1 text-sm font-bold text-tinta-suave"></ul>
-		<Button data-cambiar variante="granate" class="mt-5 w-full">Cambiar respuesta</Button>
+<section id="asistencia" class="fase selva" aria-labelledby="asistencia-titulo" data-asistencia data-estado="ninguna" data-fecha={fecha.charAt(0).toUpperCase() + fecha.slice(1)} data-llegada={fiesta.llegada} data-lugar={fiesta.lugar.nombre} data-edicion={fiesta.edicion} data-rana={si.src}>
+	<svg class="ola" viewBox="0 0 400 24" preserveAspectRatio="none" aria-hidden="true">
+		<path d="M0 0H400V10C350 24 300 0 250 10C200 20 150 0 100 10C50 20 25 14 0 10Z"></path>
+	</svg>
+	<div class="cielo" aria-hidden="true">
+		<div class="astro"></div>
+		<svg class="guirnalda" viewBox="0 0 400 50" preserveAspectRatio="none">
+			<path d="M0 6Q100 46 200 10Q300 46 400 6" fill="none" stroke="rgb(14 42 31 / 0.8)" stroke-width="1.5"></path>
+			<circle cx="50" cy="21" r="4.5" fill="#ffcf5c"></circle>
+			<circle cx="100" cy="27" r="4.5" fill="#ff7fa8"></circle>
+			<circle cx="150" cy="23" r="4.5" fill="#c6f26b"></circle>
+			<circle cx="250" cy="23" r="4.5" fill="#ffcf5c"></circle>
+			<circle cx="300" cy="27" r="4.5" fill="#ff7fa8"></circle>
+			<circle cx="350" cy="22" r="4.5" fill="#c6f26b"></circle>
+		</svg>
+		<div class="luciernagas">
+			{luciernagas.map(([x, y, d]) => <i style={`left:${x}%;top:${y}%;--d:${d}s`}></i>)}
+		</div>
 	</div>
 
-	<!-- Formulario -->
-	<form data-form hidden class="space-y-5 rounded-lg border-2 border-granate/15 bg-white p-5 text-tinta shadow-chapa">
-		<p data-sin-respuesta class="text-tinta-suave">Aún no nos has dicho si vienes.</p>
-		<CamposAsistencia />
-		<div class="flex gap-3">
-			<Button data-cancelar type="button" variante="borde" class="flex-1 text-granate" hidden>Cancelar</Button>
-			<Button type="submit" class="flex-1">Guardar</Button>
-		</div>
-	</form>
+	<header class="cabecera">
+		<p class="etiqueta">RSVP</p>
+		<h2 id="asistencia-titulo" class="titulo">¿Vienes o qué?</h2>
+		<p class="sub">Salta a un nenúfar y dínoslo. Lo puedes cambiar cuando quieras.</p>
+	</header>
 
-	<p data-sin-sesion hidden class="rounded-lg bg-crema p-5 text-center text-tinta shadow-chapa">
-		<a href="/registro" class="font-bold text-granate underline underline-offset-4">Regístrate</a> para decirnos si vienes.
-	</p>
-</div>
+	<div class="orilla" aria-hidden="true">
+		<svg class="colinas lejos" viewBox="0 0 400 120" preserveAspectRatio="none">
+			<path d="M0 120V70C40 40 80 30 130 55C180 80 220 20 280 35C330 48 370 60 400 40V120Z"></path>
+		</svg>
+		<svg class="colinas cerca" viewBox="0 0 400 120" preserveAspectRatio="none">
+			<path d="M0 120V80C60 55 100 75 160 60C220 45 260 85 320 65C360 52 385 62 400 58V120Z"></path>
+		</svg>
+	</div>
+
+	<div class="charca">
+		<div class="fondo" aria-hidden="true"><div class="reflejos"></div></div>
+
+		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+			<defs>
+				<radialGradient id="hoja-asistencia" cx="45%" cy="40%" r="70%">
+					<stop offset="0" stop-color="#4fae5f"></stop>
+					<stop offset="1" stop-color="#1d6b45"></stop>
+				</radialGradient>
+			</defs>
+		</svg>
+
+		<!-- Los nenúfares -->
+		<div class="pads" data-pads role="radiogroup" aria-label="¿Vienes?">
+			<!-- Nenúfar de salida: la rana espera aquí hasta que elijas -->
+			<span class="hoja centro" data-hoja="ninguna" aria-hidden="true">
+				<span class="plato">
+					<svg viewBox="0 0 120 50">
+						<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
+						<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-asistencia)" stroke="#14502f" stroke-width="1.2"></path>
+						<g transform="translate(88 18)">
+							<circle r="6" fill="#ff7fa8"></circle>
+							<circle r="3" fill="#ffcf5c"></circle>
+						</g>
+					</svg>
+				</span>
+			</span>
+
+			{
+				[
+					{ valor: 'si', texto: 'Voy', x: 27 },
+					{ valor: 'no', texto: 'Paso', x: 73 },
+				].map((h) => (
+					<button type="button" role="radio" aria-checked="false" class="hoja grande" data-hoja={h.valor} style={`--x:${h.x}%`}>
+						<span class="plato">
+							<svg viewBox="0 0 120 50" aria-hidden="true">
+								<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
+								<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-asistencia)" stroke="#14502f" stroke-width="1.2"></path>
+							</svg>
+							<i class="onda"></i>
+						</span>
+						<span class="rotulo-hoja">{h.texto}</span>
+					</button>
+				))
+			}
+
+			<div class="rana" data-rana data-pose="ninguna" aria-hidden="true">
+				<div class="flota">
+					{Object.entries(poses).map(([nombre, src]) => <Image src={src} alt="" data-pose-img={nombre} widths={[300, 460]} sizes="(min-width: 640px) 120px, 90px" format="webp" loading="eager" />)}
+				</div>
+			</div>
+		</div>
+
+		<!-- Panel: se ajusta al contenido de cada vista -->
+		<div class="panel" aria-live="polite">
+			<!-- 0 · Aún sin elegir -->
+			<div data-vista="ninguna" class="caja">
+				<p class="kicker">Tu respuesta</p>
+				<p class="nombre">Toca un nenúfar</p>
+				<p class="texto">«Voy» si te apuntas, «Paso» si no puedes. Aún no nos has dicho nada.</p>
+			</div>
+
+			<!-- 1 · Voy: acompañantes y alergias -->
+			<form data-vista="si" hidden class="caja" novalidate>
+				<p class="kicker">¡Qué bien!</p>
+				<p class="nombre">¿Vienes con gente?</p>
+
+				<div class="ranitas" aria-hidden="true" data-ranitas>
+					{Array.from({ length: MAX_ACOMPANANTES }, (_, i) => <span class="ranita" hidden data-ranita={i}><Image src={si} alt="" widths={[120, 200]} sizes="48px" format="webp" loading="eager" /></span>)}
+					<span class="vacio" data-vacio>Solo tú</span>
+				</div>
+
+				<div class="paso" role="group" aria-label="Acompañantes">
+					<button type="button" data-menos class="redondo" aria-label="Uno menos">−</button>
+					<p class="cuenta"><span data-cuenta class="num">0</span> <span data-cuenta-texto>acompañantes</span></p>
+					<button type="button" data-mas class="redondo" aria-label="Uno más">+</button>
+				</div>
+
+				<label class="campo">
+					<span class="kicker">Alergias o intolerancias</span>
+					<input name="alergias" type="text" maxlength="120" placeholder="Ninguna" autocomplete="off" />
+				</label>
+
+				<div class="acciones">
+					<button type="button" data-cancelar hidden class="boton-borde">Cancelar</button>
+					<button type="submit" class="boton">Confirmar que voy</button>
+				</div>
+			</form>
+
+			<!-- 2 · Paso -->
+			<form data-vista="no" hidden class="caja" novalidate>
+				<p class="kicker">Vaya…</p>
+				<p class="nombre">Te vamos a echar de menos</p>
+				<p class="texto">Si cambias de idea, aquí seguirá el nenúfar. Aún estás a tiempo.</p>
+				<div class="acciones">
+					<button type="button" data-cancelar hidden class="boton-borde">Cancelar</button>
+					<button type="submit" class="boton">Confirmar que no voy</button>
+				</div>
+			</form>
+
+			<!-- 3 · Respuesta guardada: vienes → entrada -->
+			<div data-vista="resultado-si" hidden class="resultado">
+				<article class="entrada" data-entrada aria-label="Tu entrada">
+					<div class="entrada-cuerpo">
+						<p class="entrada-marca">Trio Feliz · {fiesta.edicion}ª edición</p>
+						<p class="entrada-titulo">Trioland</p>
+						<p class="entrada-nombre" data-e-nombre></p>
+						<dl class="entrada-datos">
+							<div><dt>Cuándo</dt><dd class="primera-may">{fecha}</dd></div>
+							<div><dt>Llegada</dt><dd>Desde las {fiesta.llegada}</dd></div>
+							<div><dt>Dónde</dt><dd>{fiesta.lugar.nombre}</dd></div>
+							<div><dt>Contigo</dt><dd data-e-acomp></dd></div>
+							<div><dt>Alergias</dt><dd data-e-alergias></dd></div>
+						</dl>
+					</div>
+					<div class="entrada-talon">
+						<span class="barras" aria-hidden="true"></span>
+						<span class="entrada-numero">Nº <span data-e-numero></span></span>
+					</div>
+				</article>
+				<div class="acciones centro">
+					<button type="button" data-descargar class="boton">Descargar entrada</button>
+					<button type="button" data-cambiar class="boton-borde">Cambiar respuesta</button>
+				</div>
+				<p data-aviso hidden class="aviso">No se pudo crear la imagen. Inténtalo otra vez.</p>
+			</div>
+
+			<!-- 4 · Respuesta guardada: no vienes -->
+			<div data-vista="resultado-no" hidden class="caja">
+				<p class="kicker">Tu respuesta</p>
+				<p class="nombre">No vienes 😢</p>
+				<p class="texto">Si cambias de idea, aún estás a tiempo.</p>
+				<div class="acciones">
+					<button type="button" data-cambiar class="boton">Cambiar respuesta</button>
+				</div>
+			</div>
+
+			<!-- 5 · Sin sesión -->
+			<p data-vista="sin-sesion" hidden class="caja texto">
+				<a href="/registro" class="enlace">Regístrate</a> para decirnos si vienes.
+			</p>
+		</div>
+	</div>
+</section>
+
+<style>
+	.fase {
+		--pw: 7rem; /* ancho de los nenúfares grandes */
+		--rw: 5rem; /* ancho de la rana */
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		color: var(--c-crema);
+		background: #06353a;
+		padding-top: 3.5rem;
+	}
+	.cielo {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		/* Noche: es la última escena */
+		background: linear-gradient(180deg, #060c24 0%, #1b1a55 55%, #2c3b6e 100%);
+	}
+	.astro {
+		position: absolute;
+		right: 12%;
+		top: 3.6rem;
+		width: 3.4rem;
+		height: 3.4rem;
+		border-radius: 9999px;
+		background: #f3f1e6;
+		box-shadow: 0 0 30px 10px rgb(210 220 255 / 0.4);
+	}
+	.guirnalda {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		height: 2.4rem;
+		filter: drop-shadow(0 0 6px rgb(255 214 120 / 0.9));
+	}
+	.luciernagas {
+		position: absolute;
+		inset: 0;
+	}
+	.luciernagas i {
+		position: absolute;
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+		background: #e9ff9a;
+		box-shadow: 0 0 10px 4px rgb(214 255 110 / 0.75);
+		opacity: 0.6;
+	}
+	.ola {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 0;
+		width: 100%;
+		height: 1.4rem;
+	}
+	.ola path {
+		fill: #06353a;
+	}
+
+	/* Cabecera */
+	.cabecera {
+		padding: 1rem 1rem 0;
+		text-align: center;
+	}
+	.etiqueta {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--c-lima);
+		text-shadow: 0 1px 8px rgb(8 30 22 / 0.9);
+	}
+	.titulo {
+		margin: 0.3rem auto 0;
+		font-family: var(--font-sans);
+		font-stretch: 100%;
+		font-weight: 900;
+		text-transform: none;
+		letter-spacing: -0.03em;
+		line-height: 0.95;
+		font-size: clamp(2.6rem, 14vw, 6rem);
+		color: var(--c-crema);
+		text-shadow:
+			0 0.035em 0 var(--c-hoja),
+			0 0.07em 0 #0a2217,
+			0 0.14em 0.3em rgb(0 0 0 / 0.45);
+	}
+	.sub {
+		margin: 0.9rem auto 0;
+		max-width: 26rem;
+		font-weight: 800;
+		color: var(--c-crema);
+		text-shadow: 0 1px 8px rgb(8 30 22 / 0.9);
+	}
+
+	/* Colinas sobre el agua */
+	.orilla {
+		position: relative;
+		width: 100%;
+		height: 4rem;
+		margin-top: 1rem;
+		pointer-events: none;
+	}
+	.colinas {
+		position: absolute;
+		left: -10%;
+		bottom: -1px;
+		width: 120%;
+		height: 4.5rem;
+	}
+	.colinas.lejos {
+		opacity: 0.55;
+	}
+	.colinas.lejos path {
+		fill: #3a7d5a;
+	}
+	.colinas.cerca {
+		height: 3.2rem;
+	}
+	.colinas.cerca path {
+		fill: #1e5a3d;
+	}
+
+	/* Agua */
+	.charca {
+		position: relative;
+		width: 100%;
+		background: linear-gradient(180deg, #1aa497 0%, #0d6c6a 38%, #06353a 100%);
+		border-top: 2px solid rgb(255 255 255 / 0.35);
+		padding-bottom: 3rem;
+	}
+	.fondo {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+	}
+	.reflejos {
+		position: absolute;
+		inset: -3rem 0 0;
+		background: repeating-linear-gradient(180deg, transparent 0 14px, rgb(255 255 255 / 0.1) 14px 16px);
+	}
+	.pads {
+		position: relative;
+		height: 17rem;
+	}
+	.hoja {
+		position: absolute;
+		left: var(--x, 50%);
+		top: 42%;
+		width: var(--pw);
+		margin-left: calc(var(--pw) / -2);
+		margin-top: calc(var(--pw) * -0.1);
+		z-index: 2;
+		-webkit-tap-highlight-color: transparent;
+		cursor: pointer;
+	}
+	.hoja.centro {
+		--cw: 4.4rem;
+		top: 83%;
+		width: var(--cw);
+		margin-left: calc(var(--cw) / -2);
+		cursor: default;
+		z-index: 1;
+	}
+	.plato {
+		position: relative;
+		display: block;
+		transition: transform 0.2s;
+	}
+	.plato svg {
+		display: block;
+		width: 100%;
+		height: auto;
+		transition: filter 0.3s;
+	}
+	.grande:hover .plato {
+		transform: scale(1.06);
+	}
+	.grande:active .plato {
+		transform: scale(0.95);
+	}
+	.onda {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 40%;
+		height: 55%;
+		border: 2px solid rgb(255 255 255 / 0.8);
+		border-radius: 50%;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.rotulo-hoja {
+		position: absolute;
+		left: 50%;
+		top: 100%;
+		translate: -50% 0;
+		white-space: nowrap;
+		font-size: 1.05rem;
+		font-weight: 900;
+		color: var(--c-crema);
+		text-shadow:
+			0 1px 0 #06353a,
+			0 0 6px #06353a,
+			0 0 10px #06353a;
+	}
+	.hoja[aria-checked='true'] .rotulo-hoja {
+		color: var(--c-lima);
+	}
+	.hoja[aria-checked='true'] .plato svg {
+		filter: drop-shadow(0 0 8px rgb(198 242 107 / 0.85));
+	}
+	.hoja:focus-visible {
+		outline: 3px solid var(--c-lima);
+		outline-offset: 4px;
+		border-radius: 1rem;
+	}
+
+	/* La rana se coloca con transform (lo calcula el script) */
+	.rana {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 4;
+		width: var(--rw);
+		pointer-events: none;
+		visibility: hidden;
+	}
+	[data-listo] .rana {
+		visibility: visible;
+	}
+	.rana :global(img) {
+		display: none;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.45));
+	}
+	.rana :global(img.activa) {
+		display: block;
+	}
+
+	/* Panel */
+	.panel {
+		position: relative;
+		width: calc(100% - 2rem);
+		max-width: 26rem;
+		margin: 0.5rem auto 0;
+		z-index: 2;
+	}
+	.panel [hidden] {
+		display: none;
+	}
+	.caja {
+		position: relative;
+		border: 2px solid #0a2217;
+		border-radius: 1.4rem;
+		background: var(--c-crema);
+		color: var(--c-bosque);
+		padding: 1.1rem 1.15rem 1.15rem;
+		box-shadow: 0 5px 0 rgb(0 0 0 / 0.28);
+	}
+	.kicker {
+		font-size: 0.68rem;
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--c-hoja);
+	}
+	.nombre {
+		margin-top: 0.1rem;
+		font-size: 1.6rem;
+		font-weight: 900;
+		letter-spacing: -0.02em;
+		line-height: 1.1;
+	}
+	.texto {
+		margin-top: 0.35rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+	.enlace {
+		font-weight: 900;
+		text-decoration: underline;
+		text-underline-offset: 4px;
+		text-decoration-color: var(--c-flor);
+	}
+
+	/* Ranitas = acompañantes */
+	.ranitas {
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		gap: 0.15rem;
+		min-height: 3.4rem;
+		margin-top: 0.7rem;
+		border-radius: 0.9rem;
+		background: linear-gradient(180deg, transparent 55%, rgb(29 107 69 / 0.25) 55%);
+	}
+	.ranita {
+		display: block;
+		width: 3rem;
+	}
+	.ranita :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	.vacio {
+		align-self: center;
+		font-size: 0.8rem;
+		font-weight: 800;
+		color: var(--c-hoja);
+	}
+	.vacio[hidden] {
+		display: none;
+	}
+	.paso {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.9rem;
+		margin-top: 0.6rem;
+	}
+	.redondo {
+		display: grid;
+		place-items: center;
+		width: 2.9rem;
+		height: 2.9rem;
+		border-radius: 9999px;
+		border: 2px solid #0a2217;
+		background: var(--c-lima);
+		color: var(--c-bosque);
+		font-size: 1.6rem;
+		font-weight: 900;
+		line-height: 1;
+		box-shadow: 0 3px 0 #6fa72f;
+	}
+	.redondo:active {
+		transform: translateY(3px);
+		box-shadow: none;
+	}
+	.redondo:disabled {
+		opacity: 0.35;
+	}
+	.cuenta {
+		min-width: 8rem;
+		text-align: center;
+		font-weight: 800;
+	}
+	.num {
+		font-size: 1.8rem;
+		font-weight: 900;
+	}
+	.campo {
+		display: block;
+		margin-top: 0.8rem;
+	}
+	.campo input {
+		display: block;
+		width: 100%;
+		margin-top: 0.3rem;
+		border: 2px solid rgb(14 42 31 / 0.35);
+		border-radius: 0.8rem;
+		background: #fff;
+		color: var(--c-bosque);
+		padding: 0.65rem 0.8rem;
+		font-size: 1rem;
+		font-weight: 600;
+	}
+	.campo input:focus {
+		outline: 3px solid var(--c-lima);
+		border-color: var(--c-bosque);
+	}
+	.acciones {
+		display: flex;
+		gap: 0.6rem;
+		margin-top: 1rem;
+	}
+	.acciones.centro {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.boton,
+	.boton-borde {
+		flex: 1;
+		border-radius: 9999px;
+		padding: 0.75rem 1.1rem;
+		font-size: 0.9rem;
+		font-weight: 900;
+		text-align: center;
+	}
+	.boton {
+		background: var(--c-bosque);
+		color: var(--c-lima);
+		box-shadow: 0 4px 0 #0a2217;
+	}
+	.boton:active {
+		transform: translateY(3px);
+		box-shadow: none;
+	}
+	.boton-borde {
+		border: 2px solid var(--c-bosque);
+		color: var(--c-bosque);
+		background: transparent;
+	}
+	/* En la vista de la entrada los botones van sobre el agua, no sobre crema */
+	.resultado .boton {
+		background: var(--c-lima);
+		color: var(--c-bosque);
+		box-shadow: 0 4px 0 #6fa72f;
+	}
+	.resultado .boton-borde {
+		border-color: rgb(255 244 214 / 0.8);
+		color: var(--c-crema);
+		background: rgb(8 30 22 / 0.4);
+	}
+	.aviso {
+		margin-top: 0.7rem;
+		text-align: center;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--c-crema);
+	}
+
+	/* ===== Entrada ===== */
+	.entrada {
+		--muesca: 0.9rem;
+		position: relative;
+		color: #2a1a10;
+		filter: drop-shadow(0 6px 0 rgb(0 0 0 / 0.28));
+	}
+	.entrada-cuerpo,
+	.entrada-talon {
+		background: var(--c-crema);
+		/* Muescas a los lados, como una entrada de verdad */
+		-webkit-mask: radial-gradient(circle at 0 100%, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top left / 51% 100% no-repeat,
+			radial-gradient(circle at 100% 100%, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top right / 51% 100% no-repeat;
+		mask: radial-gradient(circle at 0 100%, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top left / 51% 100% no-repeat,
+			radial-gradient(circle at 100% 100%, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top right / 51% 100% no-repeat;
+	}
+	.entrada-cuerpo {
+		border-radius: 1.2rem 1.2rem 0 0;
+		padding: 1.2rem 1.2rem 1.5rem;
+		background-image: linear-gradient(135deg, rgb(198 242 107 / 0.35), transparent 40%);
+	}
+	.entrada-talon {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.8rem;
+		border-radius: 0 0 1.2rem 1.2rem;
+		padding: 1.1rem 1.2rem 1rem;
+		border-top: 2px dashed rgb(14 42 31 / 0.35);
+		-webkit-mask: radial-gradient(circle at 0 0, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top left / 51% 100% no-repeat,
+			radial-gradient(circle at 100% 0, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top right / 51% 100% no-repeat;
+		mask: radial-gradient(circle at 0 0, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top left / 51% 100% no-repeat,
+			radial-gradient(circle at 100% 0, transparent var(--muesca), #000 calc(var(--muesca) + 0.5px)) top right / 51% 100% no-repeat;
+	}
+	.entrada-marca {
+		font-size: 0.66rem;
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--c-hoja);
+	}
+	.entrada-titulo {
+		font-size: 3rem;
+		font-weight: 900;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		color: var(--c-bosque);
+		text-shadow: 0 0.04em 0 var(--c-lima);
+	}
+	.entrada-nombre {
+		margin-top: 0.5rem;
+		font-size: 1.25rem;
+		font-weight: 900;
+		color: var(--c-flor);
+		filter: brightness(0.7);
+	}
+	.entrada-datos {
+		margin-top: 0.8rem;
+		display: grid;
+		gap: 0.45rem;
+	}
+	.entrada-datos div {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		border-bottom: 1px dotted rgb(14 42 31 / 0.3);
+		padding-bottom: 0.3rem;
+		font-size: 0.88rem;
+	}
+	.entrada-datos dt {
+		flex: none;
+		font-size: 0.65rem;
+		font-weight: 900;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--c-hoja);
+		align-self: center;
+	}
+	.entrada-datos dd {
+		text-align: right;
+		font-weight: 800;
+	}
+	.primera-may::first-letter {
+		text-transform: uppercase;
+	}
+	.barras {
+		flex: 1;
+		height: 2.2rem;
+		background: repeating-linear-gradient(90deg, #0e2a1f 0 2px, transparent 2px 5px, #0e2a1f 5px 6px, transparent 6px 10px, #0e2a1f 10px 13px, transparent 13px 15px);
+	}
+	.entrada-numero {
+		flex: none;
+		font-size: 0.8rem;
+		font-weight: 900;
+		letter-spacing: 0.1em;
+		color: var(--c-bosque);
+	}
+
+	@media (min-width: 640px) {
+		.fase {
+			--pw: 9rem;
+			--rw: 6.5rem;
+			padding-top: 5rem;
+		}
+		.orilla {
+			height: 5.5rem;
+		}
+		.colinas {
+			height: 6rem;
+		}
+		.colinas.cerca {
+			height: 4.2rem;
+		}
+		.pads {
+			height: 19rem;
+		}
+		.hoja.centro {
+			--cw: 5.4rem;
+		}
+		.panel {
+			max-width: 30rem;
+		}
+		.nombre {
+			font-size: 1.9rem;
+		}
+		.texto {
+			font-size: 1.02rem;
+		}
+		.acciones.centro {
+			flex-direction: row;
+		}
+		.astro {
+			width: 4.5rem;
+			height: 4.5rem;
+		}
+		.entrada-titulo {
+			font-size: 3.6rem;
+		}
+	}
+
+	/* ===== Animación ===== */
+	@media (prefers-reduced-motion: no-preference) {
+		.reflejos {
+			animation: reflejos 5s linear infinite;
+		}
+		.luciernagas i {
+			animation: parpadeo 2.6s ease-in-out infinite;
+			animation-delay: var(--d);
+		}
+		.plato {
+			animation: mecer 6s ease-in-out infinite;
+		}
+		.grande + .grande .plato {
+			animation-delay: -3s;
+		}
+		.flota {
+			animation: respirar 3.5s ease-in-out infinite;
+			transform-origin: 50% 100%;
+		}
+		.caja:not([hidden]),
+		.resultado:not([hidden]) {
+			animation: sale 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+		}
+		.ranita.nueva {
+			animation: sube 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+			transform-origin: 50% 100%;
+		}
+	}
+	@keyframes sale {
+		from {
+			opacity: 0;
+			scale: 0.9;
+		}
+	}
+	@keyframes sube {
+		from {
+			opacity: 0;
+			transform: translateY(-2rem) scale(0.6);
+		}
+	}
+	@keyframes reflejos {
+		to {
+			transform: translateY(1.9rem);
+		}
+	}
+	@keyframes mecer {
+		50% {
+			transform: translateY(0.25rem) rotate(1.2deg);
+		}
+	}
+	@keyframes respirar {
+		50% {
+			transform: scale(1.02, 0.98);
+		}
+	}
+	@keyframes parpadeo {
+		0%,
+		100% {
+			opacity: 0.15;
+			transform: translate(0, 0);
+		}
+		50% {
+			opacity: 1;
+			transform: translate(6px, -8px);
+		}
+	}
+</style>
 
 <script>
-	import { obtenerAsistencia, guardarAsistencia, leerCampos, type Asistencia } from './datos';
+	import { obtenerAsistencia, guardarAsistencia, type Asistencia } from './datos';
 	import { invitadoActual } from '../registro/sesion';
 
+	const MAX = 5;
 	const raiz = document.querySelector<HTMLElement>('[data-asistencia]')!;
-	const resumen = raiz.querySelector<HTMLElement>('[data-resumen]')!;
-	const form = raiz.querySelector<HTMLFormElement>('[data-form]')!;
-	const cancelar = form.querySelector<HTMLElement>('[data-cancelar]')!;
-	let actual: Asistencia | null = null;
-
-	function mostrarResumen(a: Asistencia) {
-		resumen.querySelector('[data-r-titulo]')!.textContent = a.asiste ? '¡Vienes! 🎉' : 'No vienes 😢';
-		const lineas = a.asiste
-			? [
-					a.acompanantes ? `Con ${a.acompanantes} acompañante${a.acompanantes > 1 ? 's' : ''}` : 'Sin acompañantes',
-					`Alergias: ${a.alergias ?? 'ninguna'}`,
-				]
-			: ['Si cambias de idea, aún estás a tiempo.'];
-		resumen.querySelector('[data-r-detalle]')!.replaceChildren(
-			...lineas.map((t) => Object.assign(document.createElement('li'), { textContent: t })),
-		);
-		resumen.hidden = false;
-		form.hidden = true;
+	const pads = raiz.querySelector<HTMLElement>('[data-pads]')!;
+	const rana = raiz.querySelector<HTMLElement>('[data-rana]')!;
+	const hojas = new Map<string, HTMLElement>();
+	raiz.querySelectorAll<HTMLElement>('[data-hoja]').forEach((h) => hojas.set(h.dataset.hoja!, h));
+	const vistas = new Map<string, HTMLElement>();
+	raiz.querySelectorAll<HTMLElement>('[data-vista]').forEach((v) => vistas.set(v.dataset.vista!, v));
+	const formSi = vistas.get('si') as HTMLFormElement;
+	const formNo = vistas.get('no') as HTMLFormElement;
+	const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+	// La pose de la rana en cada estado coincide con el nombre del estado (ver `poses` arriba)
+	const imagenes = [...rana.querySelectorAll<HTMLElement>('[data-pose-img]')];
+	function ponerPose(pose: string) {
+		rana.dataset.pose = pose;
+		imagenes.forEach((i) => i.classList.toggle('activa', i.dataset.poseImg === pose));
 	}
+	ponerPose('ninguna');
 
-	function mostrarFormulario() {
-		form.querySelector<HTMLElement>('[data-sin-respuesta]')!.hidden = !!actual;
-		cancelar.hidden = !actual;
-		if (actual) {
-			form.querySelector<HTMLInputElement>(`input[name="asiste"][value="${actual.asiste ? 'si' : 'no'}"]`)!.checked = true;
-			(form.elements.namedItem('acompanantes') as HTMLInputElement).value = String(actual.acompanantes);
-			(form.elements.namedItem('alergias') as HTMLInputElement).value = actual.alergias ?? '';
-			form.dispatchEvent(new Event('rellenado'));
+	let guardada: Asistencia | null = null;
+	let sitio = 'ninguna'; // nenúfar donde está la rana
+	let acompanantes = 0;
+
+	const mostrar = (nombre: string) => vistas.forEach((v, n) => (v.hidden = n !== nombre));
+
+	// ---- La rana ----
+	function destino(clave: string) {
+		const c = pads.getBoundingClientRect();
+		const p = hojas.get(clave)!.querySelector('svg')!.getBoundingClientRect();
+		return {
+			x: p.left - c.left + p.width / 2 - rana.offsetWidth / 2,
+			y: p.top - c.top + p.height * 0.62 - rana.offsetHeight,
+		};
+	}
+	function colocar() {
+		const d = destino(sitio);
+		rana.style.transform = `translate(${d.x}px, ${d.y}px)`;
+	}
+	function saltarA(clave: string) {
+		if (clave === sitio) return;
+		const desde = destino(sitio);
+		const hasta = destino(clave);
+		sitio = clave;
+		raiz.dataset.estado = clave;
+		hojas.forEach((h, n) => n !== 'ninguna' && h.setAttribute('aria-checked', String(n === clave)));
+		rana.style.transform = `translate(${hasta.x}px, ${hasta.y}px)`;
+		if (quieto) {
+			ponerPose(clave);
+			return;
 		}
-		resumen.hidden = true;
-		form.hidden = false;
+		setTimeout(() => ponerPose(clave), 330);
+		const alto = Math.min(desde.y, hasta.y) - 70;
+		rana.animate(
+			[
+				{ transform: `translate(${desde.x}px, ${desde.y}px) scale(1.12, 0.86)`, offset: 0 },
+				{ transform: `translate(${(desde.x + hasta.x) / 2}px, ${alto}px) scale(0.95, 1.07)`, offset: 0.45 },
+				{ transform: `translate(${hasta.x}px, ${hasta.y}px) scale(1.12, 0.86)`, offset: 0.85 },
+				{ transform: `translate(${hasta.x}px, ${hasta.y}px) scale(1, 1)`, offset: 1 },
+			],
+			{ duration: 750, easing: 'ease-in-out' },
+		);
+		hojas.get(clave)!.querySelector('.onda')?.animate(
+			[
+				{ opacity: 0.9, transform: 'scale(0.6)' },
+				{ opacity: 0, transform: 'scale(1.7)' },
+			],
+			{ duration: 1100, delay: 600, easing: 'ease-out' },
+		);
 	}
+
+	// ---- Acompañantes = ranitas ----
+	const ranitas = [...raiz.querySelectorAll<HTMLElement>('[data-ranita]')];
+	function pintarRanitas(nueva = false) {
+		ranitas.forEach((r, i) => {
+			const antes = r.hidden;
+			r.hidden = i >= acompanantes;
+			r.classList.toggle('nueva', nueva && antes && !r.hidden);
+		});
+		raiz.querySelector<HTMLElement>('[data-vacio]')!.hidden = acompanantes > 0;
+		raiz.querySelector('[data-cuenta]')!.textContent = String(acompanantes);
+		raiz.querySelector('[data-cuenta-texto]')!.textContent = acompanantes === 1 ? 'acompañante' : 'acompañantes';
+		raiz.querySelector<HTMLButtonElement>('[data-menos]')!.disabled = acompanantes <= 0;
+		raiz.querySelector<HTMLButtonElement>('[data-mas]')!.disabled = acompanantes >= MAX;
+	}
+	raiz.querySelector('[data-menos]')!.addEventListener('click', () => {
+		acompanantes = Math.max(0, acompanantes - 1);
+		pintarRanitas();
+	});
+	raiz.querySelector('[data-mas]')!.addEventListener('click', () => {
+		acompanantes = Math.min(MAX, acompanantes + 1);
+		pintarRanitas(true);
+	});
+
+	// ---- Elegir nenúfar ----
+	function elegir(valor: 'si' | 'no') {
+		saltarA(valor);
+		if (valor === 'si' && guardada?.asiste) {
+			acompanantes = guardada.acompanantes;
+			(formSi.elements.namedItem('alergias') as HTMLInputElement).value = guardada.alergias ?? '';
+		}
+		pintarRanitas();
+		mostrar(valor);
+		// Si ya había respuesta se puede volver atrás
+		raiz.querySelectorAll<HTMLElement>('[data-cancelar]').forEach((b) => (b.hidden = !guardada));
+	}
+	['si', 'no'].forEach((v) => hojas.get(v)!.addEventListener('click', () => elegir(v as 'si' | 'no')));
+
+	// ---- Entrada ----
+	function numeroDe(texto: string) {
+		let h = 0;
+		for (const c of texto) h = (h * 31 + c.charCodeAt(0)) % 9000;
+		return String(h + 1000);
+	}
+	function mostrarResultado(a: Asistencia) {
+		guardada = a;
+		const pagina = a.asiste ? 'si' : 'no';
+		saltarA(pagina);
+		if (a.asiste) {
+			const nombre = invitadoActual()?.nombre ?? '';
+			raiz.querySelector('[data-e-nombre]')!.textContent = nombre;
+			raiz.querySelector('[data-e-acomp]')!.textContent = a.acompanantes ? `${a.acompanantes} acompañante${a.acompanantes > 1 ? 's' : ''}` : 'Solo tú';
+			raiz.querySelector('[data-e-alergias]')!.textContent = a.alergias ?? 'Ninguna';
+			raiz.querySelector('[data-e-numero]')!.textContent = numeroDe(nombre + a.acompanantes);
+		}
+		raiz.querySelector<HTMLElement>('[data-aviso]')!.hidden = true;
+		mostrar(a.asiste ? 'resultado-si' : 'resultado-no');
+	}
+
+	async function guardar(a: Asistencia) {
+		mostrarResultado(await guardarAsistencia(a));
+	}
+	formSi.addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		const alergias = String(new FormData(formSi).get('alergias') ?? '').trim() || null;
+		guardar({ asiste: true, acompanantes, alergias });
+	});
+	formNo.addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		guardar({ asiste: false, acompanantes: 0, alergias: null });
+	});
+	raiz.querySelectorAll('[data-cancelar]').forEach((b) => b.addEventListener('click', () => guardada && mostrarResultado(guardada)));
+	raiz.querySelectorAll('[data-cambiar]').forEach((b) =>
+		b.addEventListener('click', () => {
+			if (!guardada) return;
+			elegir(guardada.asiste ? 'si' : 'no');
+		}),
+	);
+
+	// Descargar la entrada: se dibuja una imagen propia (entrada.ts), no es una captura de la web
+	raiz.querySelector<HTMLButtonElement>('[data-descargar]')!.addEventListener('click', async (ev) => {
+		const boton = ev.currentTarget as HTMLButtonElement;
+		const aviso = raiz.querySelector<HTMLElement>('[data-aviso]')!;
+		aviso.hidden = true;
+		boton.disabled = true;
+		try {
+			const { crearEntrada } = await import('./entrada');
+			const texto = (campo: string) => raiz.querySelector(`[data-e-${campo}]`)!.textContent ?? '';
+			const blob = await crearEntrada({
+				nombre: texto('nombre'),
+				fecha: raiz.dataset.fecha ?? '',
+				llegada: raiz.dataset.llegada ?? '',
+				lugar: raiz.dataset.lugar ?? '',
+				contigo: texto('acomp'),
+				alergias: texto('alergias'),
+				numero: texto('numero'),
+				edicion: Number(raiz.dataset.edicion),
+				rana: raiz.dataset.rana ?? '',
+			});
+			const enlace = document.createElement('a');
+			enlace.href = URL.createObjectURL(blob);
+			enlace.download = 'entrada-trioland.png';
+			enlace.click();
+			setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+		} catch {
+			aviso.hidden = false;
+		} finally {
+			boton.disabled = false;
+		}
+	});
+
+	// ---- Arranque ----
+	raiz.dataset.listo = '';
+	pads.setAttribute('data-listo', '');
+	colocar();
+	new ResizeObserver(colocar).observe(pads);
 
 	if (!invitadoActual()) {
-		raiz.querySelector<HTMLElement>('[data-sin-sesion]')!.hidden = false;
+		pads.hidden = true;
+		mostrar('sin-sesion');
 	} else {
-		actual = await obtenerAsistencia();
-		actual ? mostrarResumen(actual) : mostrarFormulario();
+		const a = await obtenerAsistencia();
+		if (a) mostrarResultado(a);
 	}
-
-	resumen.querySelector('[data-cambiar]')!.addEventListener('click', mostrarFormulario);
-	cancelar.addEventListener('click', () => actual && mostrarResumen(actual));
-	form.addEventListener('submit', async (ev) => {
-		ev.preventDefault();
-		actual = await guardarAsistencia(leerCampos(form));
-		mostrarResumen(actual);
-	});
 </script>

@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/common/Section.astro';
 import Portada from '../components/landing/Portada.astro';
 import Ventanas from '../components/landing/Ventanas.astro';
 import Asistencia from '../components/rsvp/Asistencia.astro';
@@ -20,16 +19,7 @@ import Trio from '../components/trio/Trio.astro';
 		<!-- landing: Persona A -->
 		<Ventanas />
 
-		<!-- rsvp: Persona B -->
-		<Section
-			id="asistencia"
-			antetitulo="RSVP"
-			titulo="¿Vienes o qué?"
-			subtitulo="Dinos si vienes, con cuánta gente y si hay alguna alergia. Lo puedes cambiar cuando quieras."
-			fondo="granate"
-			centrado
-		>
-			<Asistencia />
-		</Section>
+		<!-- rsvp: Persona B (escena a sangre, lleva su propio <section id="asistencia">) -->
+		<Asistencia />
 	</main>
 </Layout>
