@@ -1,8 +1,11 @@
 ---
 import { Image } from 'astro:assets';
-import saluda from '../../assets/mascota/saluda.png';
-import mapa from '../../assets/mascota/mapa.png';
-import reloj from '../../assets/mascota/reloj.png';
+import cartas from '../../assets/mascota/cartas.png';
+import estanco from '../../assets/mascota/estanco.png';
+import canciones from '../../assets/mascota/canciones.png';
+import juegos from '../../assets/mascota/juegos.png';
+import fotos from '../../assets/mascota/fotos.png';
+import rsvp from '../../assets/mascota/rsvp.png';
 import FotosDemo from '../cromos/FotosDemo.astro';
 
 // "Qué se puede hacer en Trioland": la charca como menú. Cada apartado de la web es un nenúfar; al
@@ -13,7 +16,7 @@ import FotosDemo from '../cromos/FotosDemo.astro';
 const sitios = [
 	{
 		id: 'participantes',
-		pose: 'saluda',
+		pose: 'cartas',
 		href: '/participantes',
 		emoji: '🃏',
 		titulo: 'Participantes',
@@ -25,7 +28,7 @@ const sitios = [
 	},
 	{
 		id: 'estanco',
-		pose: 'mapa',
+		pose: 'estanco',
 		href: '/estanco',
 		emoji: '🚬',
 		titulo: 'Estanco',
@@ -37,7 +40,7 @@ const sitios = [
 	},
 	{
 		id: 'canciones',
-		pose: 'saluda',
+		pose: 'canciones',
 		href: '/canciones',
 		emoji: '🎶',
 		titulo: 'Canciones',
@@ -49,7 +52,7 @@ const sitios = [
 	},
 	{
 		id: 'juegos',
-		pose: 'mapa',
+		pose: 'juegos',
 		href: '/juegos',
 		emoji: '🎲',
 		titulo: 'Juegos',
@@ -61,7 +64,7 @@ const sitios = [
 	},
 	{
 		id: 'fotos',
-		pose: 'saluda',
+		pose: 'fotos',
 		href: '/fotos',
 		emoji: '📷',
 		titulo: 'Fotos',
@@ -73,7 +76,7 @@ const sitios = [
 	},
 	{
 		id: 'asistencia',
-		pose: 'reloj',
+		pose: 'rsvp',
 		href: '#asistencia',
 		emoji: '✅',
 		titulo: 'Asistencia',
@@ -85,7 +88,7 @@ const sitios = [
 	},
 ];
 // Poses de la rana (una imagen por pose; el nenúfar elige cuál). Para añadir más: importar la imagen y ponerla aquí.
-const poses = { saluda, mapa, reloj };
+const poses = { cartas, estanco, canciones, juegos, fotos, rsvp };
 const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14, 36, 0.9], [64, 6, 2.2], [48, 20, 0.3], [88, 42, 0.4]];
 ---
 
@@ -183,7 +186,7 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 			))
 		}
 
-		<div class="rana" data-rana data-pose="saluda" aria-hidden="true">
+		<div class="rana" data-rana data-pose="cartas" aria-hidden="true">
 			<div class="flota">
 				{Object.entries(poses).map(([nombre, src]) => (
 						<Image src={src} alt="" data-pose-img={nombre} widths={[300, 460]} sizes="(min-width: 640px) 120px, 90px" format="webp" loading="eager" />
@@ -562,9 +565,7 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 		/* Sin JS no se sabe dónde ponerla: oculta hasta que el script la coloca */
 		visibility: hidden;
 	}
-	.rana[data-pose="saluda"] :global(img[data-pose-img="saluda"]),
-	.rana[data-pose="mapa"] :global(img[data-pose-img="mapa"]),
-	.rana[data-pose="reloj"] :global(img[data-pose-img="reloj"]) {
+	.rana :global(img.activa) {
 		display: block;
 	}
 	[data-listo] .rana {
@@ -687,6 +688,14 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 	const textos = [...document.querySelectorAll<HTMLElement>('[data-texto]')];
 	const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+	// Solo se ve la imagen de la pose actual
+	const imagenes = [...rana.querySelectorAll<HTMLElement>('[data-pose-img]')];
+	function ponerPose(pose: string) {
+		rana.dataset.pose = pose;
+		imagenes.forEach((i) => i.classList.toggle('activa', i.dataset.poseImg === pose));
+	}
+	ponerPose(hojas[0].dataset.pose ?? 'cartas');
+
 	let actual = hojas[0];
 
 	// Dónde tiene que estar la rana para ir sobre un nenúfar (esquina de la rana, relativa a la charca)
@@ -714,13 +723,13 @@ const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14
 		textos.forEach((t) => (t.dataset.texto === hoja.dataset.hoja ? t.setAttribute('data-activo', '') : t.removeAttribute('data-activo')));
 
 		rana.style.transform = `translate(${hasta.x}px, ${hasta.y}px)`;
-		const pose = hoja.dataset.pose ?? 'saluda';
+		const pose = hoja.dataset.pose ?? 'cartas';
 		if (quieto) {
-			rana.dataset.pose = pose;
+			ponerPose(pose);
 			return;
 		}
 		// La pose cambia en lo más alto del salto
-		setTimeout(() => (rana.dataset.pose = pose), 330);
+		setTimeout(() => ponerPose(pose), 330);
 		const alto = Math.min(desde.y, hasta.y) - 70;
 		rana.animate(
 			[
