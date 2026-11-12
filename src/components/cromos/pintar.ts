@@ -2,8 +2,6 @@ import type { Cromo } from './tipos';
 import { TIPOS, datosCarta, type TipoCarta } from './tiposCarta';
 
 export const numeroCromo = (n: number) => `Nº ${String(n).padStart(2, '0')}`;
-/** "Puntos de salud" de adorno: fijos por número, y los del trío siempre arriba */
-export const puntosSalud = (c: Pick<Cromo, 'numero' | 'especial'>) => (c.especial ? 150 : 30 + ((c.numero * 37) % 9) * 10);
 export const inicial = (texto: string) => texto.trim().charAt(0).toUpperCase();
 
 const campo = <T extends HTMLElement = HTMLElement>(raiz: ParentNode, nombre: string) =>
@@ -50,8 +48,6 @@ export function pintarCromo(raiz: HTMLElement, c: Cromo, total?: number) {
 	campo(raiz, 'nombre').textContent = c.nombre;
 	campo(raiz, 'apodo').textContent = c.apodo;
 	campo(raiz, 'frase').textContent = c.frase ? `«${c.frase}»` : '';
-	campo(raiz, 'ps').textContent = String(puntosSalud(c));
-	campo(raiz, 'especial-texto').textContent = c.especial ? 'Cumpleañero' : 'Invitado';
 	campo(raiz, 'especial').hidden = !c.especial;
 
 	// Tipo y estadísticas de la carta (siempre las mismas para cada invitado)

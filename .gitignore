@@ -29,6 +29,5 @@ pnpm-debug.log*
 # datos privados (lista de invitados, códigos)
 private/
 
-# material oficial de cada tema (logos, tipografías): solo en local, nunca al repo
+# tipografías oficiales: solo en local, nunca al repo
 public/fuentes/
-src/assets/temas/

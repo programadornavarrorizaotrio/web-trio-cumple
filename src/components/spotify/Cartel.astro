@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import fiesta from '../../data/fiesta.json';
 import trio from '../../data/trio.json';
+import './riverland.css';
 
 // Cartel de festival en negro y rosa: título vertical en letra de píxel a todo lo alto, etiquetas de
 // sitio y año, y el line-up repartido en los tres momentos de la noche hasta el final del cartel, con
@@ -84,6 +85,21 @@ const franjas = [
 	</svg>
 </section>
 
+<!-- Descargar el cartel como imagen -->
+<div class="rv bg-(--rv-negro) px-3 lg:px-[max(1rem,calc((100vw-72rem)/2))]">
+	<div class="flex items-center justify-between gap-3 border-t-2 border-dashed border-white/20 py-3">
+		<p class="rv-mono text-xs uppercase leading-tight text-white/60">Guárdalo y pásalo<br />por el grupo</p>
+		<button
+			type="button"
+			data-descargar
+			class="rv-mono flex shrink-0 items-center gap-2 border-2 border-(--rv-rosa) px-3 py-2 text-sm font-bold uppercase tracking-wider text-(--rv-rosa) transition-colors hover:bg-(--rv-rosa) hover:text-black active:bg-(--rv-rosa) active:text-black disabled:pointer-events-none disabled:opacity-40"
+		>
+			Descargar <span aria-hidden="true">↓</span>
+		</button>
+	</div>
+	<p data-descargar-error hidden role="alert" class="rv-mono pb-3 text-sm font-bold uppercase text-(--rv-rosa)"></p>
+</div>
+
 <script>
 	import { obtenerAlbum } from '../cromos/datos';
 
@@ -111,6 +127,33 @@ const franjas = [
 	pintar('tarde', resto.slice(0, tercio));
 	pintar('noche', resto.slice(tercio, tercio * 2));
 	pintar('after', resto.slice(tercio * 2));
+
+	// Descargar el cartel como PNG. La librería se carga solo al pulsar (no va en el bundle).
+	const botonDescarga = document.querySelector<HTMLButtonElement>('[data-descargar]')!;
+	const errorDescarga = document.querySelector<HTMLElement>('[data-descargar-error]')!;
+	botonDescarga.addEventListener('click', async () => {
+		const texto = botonDescarga.innerHTML;
+		botonDescarga.disabled = true;
+		botonDescarga.textContent = 'Preparando…';
+		errorDescarga.hidden = true;
+		try {
+			const url = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
+			const { toBlob } = await import(/* @vite-ignore */ url);
+			const blob: Blob | null = await toBlob(cartel, { pixelRatio: 2, backgroundColor: '#0b0b0b', includeQueryParams: true });
+			if (!blob) throw new Error('sin imagen');
+			const enlace = document.createElement('a');
+			enlace.href = URL.createObjectURL(blob);
+			enlace.download = 'cartel-trio-feliz.png';
+			enlace.click();
+			setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+		} catch {
+			errorDescarga.textContent = 'No se ha podido crear la imagen. Haz una captura de pantalla del cartel.';
+			errorDescarga.hidden = false;
+		} finally {
+			botonDescarga.disabled = false;
+			botonDescarga.innerHTML = texto;
+		}
+	});
 </script>
 
 <style>

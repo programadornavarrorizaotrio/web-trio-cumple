@@ -12,6 +12,8 @@
 	--rv-cromo: #ffd6f5;
 	--rv-verde: #7dff9a;
 	--rv-mono: 'Space Mono', ui-monospace, monospace;
+	/* El tema riverland (global.css) oscurece `white` para las tarjetas; aquí el blanco vuelve a ser blanco */
+	--color-white: #fff;
 }
 
 .rv ::selection {

@@ -1,6 +1,5 @@
 ---
 import fiesta from '../../data/fiesta.json';
-import trio from '../../data/trio.json';
 import { MAX_CANCIONES } from './datos';
 import Tocadiscos from './Tocadiscos.astro';
 import './riverland.css';
@@ -9,17 +8,6 @@ import './riverland.css';
 // no tiene Spotify y los tres cumpleañeros como cabezas de cartel.
 const playlist = fiesta.spotify.playlist as string | null;
 const invitacion = fiesta.spotify.invitacion as string | null;
-
-const inicio = new Date(fiesta.inicio);
-const fecha = (opciones: Intl.DateTimeFormatOptions) =>
-	new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, ...opciones }).format(inicio);
-const dia = `${fecha({ weekday: 'long' })} ${fecha({ day: 'numeric' })} de ${fecha({ month: 'long' })}`;
-
-const lineup = [
-	['Lives', trio.map((p) => p.nombre).join(' · ')],
-	['DJ sets', `Tú · hasta ${MAX_CANCIONES} temas`],
-	['Escenario', fiesta.lugar.nombre],
-];
 
 const entrada = [
 	'mt-1.5 block w-full rounded-none border-2 border-(--rv-rosa) bg-black px-3 py-3 rv-mono uppercase text-white',
@@ -48,19 +36,7 @@ const entrada = [
 		</h2>
 
 		<div class="mt-6 lg:mt-0">
-			<p class="mt-6"><span class="rv-tag rv-tag-lg">{dia}</span></p>
-			<dl class="rv-mono mt-3 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1.5 uppercase">
-				{
-					lineup.map(([etiqueta, valor]) => (
-						<>
-							<dt class="pt-0.5 text-xs text-(--rv-rosa)">{etiqueta}</dt>
-							<dd class="text-sm sm:text-base">{valor}</dd>
-						</>
-					))
-				}
-			</dl>
-
-			<div class="mt-12 space-y-12 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-start lg:gap-10 lg:space-y-0">
+			<div class="mt-4 space-y-12 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-start lg:gap-10 lg:space-y-0">
 				<!-- 01 · Lista de Spotify -->
 				<div>
 					<h3 class="text-base"><span class="rv-tag rv-tag-lg">01 · La lista</span></h3>
