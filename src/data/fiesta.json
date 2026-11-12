@@ -6,7 +6,7 @@
 	"fin": "2027-02-28T04:00:00+01:00",
 	"zonaHoraria": "Europe/Madrid",
 	"lugar": {
-		"nombre": "Restaurante La Charca",
+		"nombre": "La Charca",
 		"mapa": "https://www.google.com/maps/search/?api=1&query=Restaurante+La+Charca"
 	},
 	"estanco": {
