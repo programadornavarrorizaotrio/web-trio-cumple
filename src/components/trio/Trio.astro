@@ -1,101 +1,926 @@
 ---
 import { Image } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
 import trio from '../../data/trio.json';
-import Cajetilla from '../common/Cajetilla.astro';
-import Etiqueta from '../common/Etiqueta.astro';
-import Button from '../common/Button.astro';
+import saluda from '../../assets/mascota/saluda.png';
 import Hoja from '../common/Hoja.astro';
-import Carrusel from '../common/Carrusel.astro';
+import Nenufar from './Nenufar.astro';
 
-// Cada cumpleañero es una "marca" de tabaco: cajetilla en el carrusel y ficha en una hoja.
-// `encuadre` en trio.json es el object-position de su foto.
-const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
-const foto = (archivo: string) => fotos[`../../assets/trio/${archivo}`].default;
+// Escena del trío: continúa el recorrido de la portada (Trioland) con el amanecer del día siguiente.
+// La rana entra primero y los presenta; después caen los tres chibis 3D a sus nenúfares. Al tocar uno
+// sale su advertencia en un bocadillo con "Ver ficha", que abre una Hoja con el modelo giratorio.
+// Sin JS, o con "reducir movimiento", todo se ve ya colocado (los modelos se ven como imagen `poster`).
+// Posición de cada chibi: [x en % de la escena, escala, sube (rem)]; el del medio, más atrás y más pequeño.
+// El 4º valor es la x en pantallas grandes, donde la rana se aparta a la izquierda.
+const sitios: [number, number, number, number][] = [
+	[19, 1, 0, 31],
+	[50, 0.82, 1.5, 55],
+	[81, 1, 0, 80],
+];
+// Cámara fija algo girada hacia el centro
+const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
 ---
 
-<Carrusel cantidad={trio.length}>
-	{
-		trio.map((p, i) => (
-			<button
-				type="button"
-				data-abrir-hoja={`ficha-${p.slug}`}
-				class:list={[
-					'group block w-full shrink-0 snap-center text-left transition-transform duration-300 hover:-translate-y-2 hover:rotate-0',
-					i % 2 === 0 ? '-rotate-1' : 'rotate-1',
-				]}
-				aria-haspopup="dialog"
-			>
-				<Cajetilla marca={p.nombre} advertencia={p.advertencia}>
-					<div class="relative">
-						<Image
-							src={foto(p.foto)}
-							alt={`Foto de ${p.nombre}`}
-							widths={[320, 480, 640]}
-							sizes="(min-width: 640px) 33vw, 100vw"
-							class="aspect-[3/4] w-full object-cover"
-							style={`object-position: ${p.encuadre}`}
-						/>
-						<Etiqueta class="absolute bottom-3 left-3">{p.lema}</Etiqueta>
-						<span class="absolute right-3 top-3 rounded-sm bg-granate-oscuro/85 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wider text-amarillo opacity-90 transition-opacity group-hover:opacity-100">
-							Ver ficha
-						</span>
+<section id="trio" class="fase selva" aria-labelledby="trio-titulo">
+	<!-- Degradado de los nenúfares, compartido por todos -->
+	<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+		<defs>
+			<radialGradient id="hoja-trio" cx="45%" cy="40%" r="70%">
+				<stop offset="0" stop-color="#4fae5f"></stop>
+				<stop offset="1" stop-color="#1d6b45"></stop>
+			</radialGradient>
+		</defs>
+	</svg>
+
+	<svg class="ola" viewBox="0 0 400 24" preserveAspectRatio="none" aria-hidden="true">
+		<path d="M0 0H400V10C350 24 300 0 250 10C200 20 150 0 100 10C50 20 25 14 0 10Z"></path>
+	</svg>
+	<div class="arte" aria-hidden="true">
+		<div class="astro"></div>
+		<svg class="colinas lejos" viewBox="0 0 400 120" preserveAspectRatio="none">
+			<path d="M0 120V70C40 40 80 30 130 55C180 80 220 20 280 35C330 48 370 60 400 40V120Z"></path>
+		</svg>
+		<svg class="colinas cerca" viewBox="0 0 400 120" preserveAspectRatio="none">
+			<path d="M0 120V80C60 55 100 75 160 60C220 45 260 85 320 65C360 52 385 62 400 58V120Z"></path>
+		</svg>
+		<div class="agua"><div class="reflejos"></div></div>
+	</div>
+
+	<div class="cabecera">
+		<p class="etiqueta">Los cumpleañeros</p>
+		<h2 id="trio-titulo" class="titulo">El trío</h2>
+		<p class="sub">Estáis invitados por los tres, pero muchos solo conocéis a uno. Toca a cada uno para conocerlo.</p>
+	</div>
+
+	<div class="escena">
+		<!-- La rana, delante y a un lado -->
+		<div class="sitio rana-sitio" style="--xm: 21; --xg: 9">
+			<!-- Nenúfar y rana se mecen juntos, como los chibis -->
+			<div class="mece">
+			<Nenufar flor />
+			<div class="rana">
+				<div class="flota">
+					<Image
+						src={saluda}
+						alt="Una rana de juguete con corbata negra y cara de pocos amigos que te presenta a los tres cumpleañeros"
+						widths={[240, 360, 480]}
+						sizes="(min-width: 1024px) 190px, (min-width: 640px) 160px, 110px"
+						format="webp"
+						loading="lazy"
+					/>
+				</div>
+			</div>
+			</div>
+			<i class="onda"></i>
+			<p class="bocadillo der">Estos son los tres culpables. Yo no respondo por ninguno.</p>
+		</div>
+
+		{
+			trio.map((p, i) => (
+				<div class:list={['sitio chibi', i === 1 && 'atras']} style={`--xm: ${sitios[i][0]}; --xg: ${sitios[i][3]}; --esc: ${sitios[i][1]}; --sube: ${sitios[i][2]}rem; --i: ${i}`}>
+					<div class="entra">
+						<div class="mece">
+							<Nenufar />
+							<button type="button" class="figura" data-chibi={p.slug} aria-expanded="false" aria-controls={`dialogo-${p.slug}`}>
+								<model-viewer
+									src={`/${p.modelo}`}
+									alt={`Avatar 3D de ${p.nombre}`}
+									loading="eager"
+									reveal="auto"
+									camera-orbit={orbitas[i]}
+									field-of-view="30deg"
+									interaction-prompt="none"
+									disable-zoom
+									disable-pan
+									touch-action="pan-y"
+									shadow-intensity="1"
+									shadow-softness="0.8"
+									class="avatar"
+								>
+									<img slot="poster" src={`/${p.poster}`} alt={`Avatar 3D de ${p.nombre}`} width="360" height="414" />
+								</model-viewer>
+							</button>
+						</div>
 					</div>
-				</Cajetilla>
-			</button>
-		))
-	}
-</Carrusel>
+					<i class="onda"></i>
+					<span class="chip">{p.nombre}</span>
+				</div>
+			))
+		}
+
+		{
+			trio.map((p, i) => (
+				<div id={`dialogo-${p.slug}`} class="dialogo" hidden style={`--xm: ${sitios[i][0]}; --xg: ${sitios[i][3]}`}>
+					<p class="aviso">{p.advertencia}</p>
+					<button type="button" class="boton" data-abrir-hoja={`ficha-${p.slug}`}>
+						Ver ficha
+					</button>
+				</div>
+			))
+		}
+	</div>
+</section>
 
 {
 	trio.map((p) => (
-		<Hoja id={`ficha-${p.slug}`} titulo={`ficha-${p.slug}-nombre`} asaClara>
-			<div class="relative">
-				<Image
-					src={foto(p.foto)}
-					alt=""
-					widths={[480, 800]}
-					sizes="(min-width: 640px) 512px, 100vw"
-					class="h-60 w-full object-cover sm:h-80"
-					style={`object-position: ${p.encuadre}`}
-				/>
-				<div class="absolute inset-0 bg-gradient-to-t from-granate-oscuro via-granate-oscuro/30 to-transparent" />
-				<form method="dialog" class="absolute right-3 top-3">
-					<button
-						class="flex size-10 items-center justify-center rounded-full bg-granate-oscuro/80 text-lg font-bold text-amarillo hover:bg-granate"
-						aria-label="Cerrar"
-					>
-						✕
-					</button>
+		<Hoja id={`ficha-${p.slug}`} titulo={`ficha-${p.slug}-nombre`} asaClara class="ficha-charca selva">
+			<div class="mini">
+				<div class="mini-agua"></div>
+				<Nenufar class="mini-nenufar" />
+				<model-viewer
+					src={`/${p.modelo}`}
+					alt={`Avatar 3D de ${p.nombre}. Arrastra para girarlo`}
+					loading="lazy"
+					reveal="auto"
+					camera-orbit="0deg 80deg auto"
+					field-of-view="30deg"
+					camera-controls
+					disable-zoom
+					disable-pan
+					interaction-prompt="none"
+					touch-action="pan-y"
+					shadow-intensity="1"
+					shadow-softness="0.8"
+					class="avatar mini-avatar"
+				>
+					<img slot="poster" src={`/${p.poster}`} alt={`Avatar 3D de ${p.nombre}`} width="360" height="414" />
+				</model-viewer>
+				<p class="giro" aria-hidden="true">Arrastra para girarme</p>
+				<form method="dialog" class="x">
+					<button aria-label="Cerrar">✕</button>
 				</form>
-				<div class="absolute bottom-4 left-5 right-5">
-					<Etiqueta>{p.lema}</Etiqueta>
-					<h3 id={`ficha-${p.slug}-nombre`} class="mt-2 text-4xl text-amarillo">
-						{p.nombre}
-					</h3>
-					<p class="mt-1 text-sm font-bold text-crema/90">Cumple {p.edad} años</p>
-				</div>
 			</div>
 
-			<div class="space-y-6 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
-				<div>
-					<h4 class="text-xs font-black uppercase tracking-[0.2em] text-granate">Composición</h4>
-					<p class="mt-2 leading-relaxed">{p.descripcion}</p>
-				</div>
-				<div>
-					<h4 class="text-xs font-black uppercase tracking-[0.2em] text-granate">Aficiones</h4>
-					<ul class="mt-3 flex flex-wrap gap-2">
-						{p.aficiones.map((a) => (
-							<li class="rounded-full border-2 border-granate/20 bg-crema-oscuro px-3 py-1.5 text-sm font-semibold">{a}</li>
-						))}
-					</ul>
-				</div>
+			<div class="cuerpo">
+				<h3 id={`ficha-${p.slug}-nombre`} class="nombre">{p.nombre}</h3>
+				<dl class="panel">
+					<div class="fila">
+						<dt>Edad</dt>
+						<dd>{p.edad} años</dd>
+					</div>
+					<div class="fila">
+						<dt>Lema</dt>
+						<dd>{p.lema}</dd>
+					</div>
+				</dl>
+				<p class="desc">{p.descripcion}</p>
+				<ul class="aficiones">
+					{p.aficiones.map((a) => <li class="chip">{a}</li>)}
+				</ul>
 				<form method="dialog">
-					<Button variante="granate" class="w-full">
-						Cerrar
-					</Button>
+					<button class="boton">Cerrar</button>
 				</form>
 			</div>
 		</Hoja>
 	))
 }
+
+<style is:global>
+	/* La hoja es el <dialog> de Hoja.astro: se pinta con la charca en vez de con el estanco */
+	dialog.ficha-charca {
+		background: var(--c-bosque);
+		color: var(--c-crema);
+		border-color: var(--c-lima);
+		box-shadow: 0 -6px 0 rgb(0 0 0 / 0.25);
+	}
+	dialog.ficha-charca::backdrop {
+		background: rgb(6 20 16 / 0.82);
+	}
+</style>
+
+<style>
+	.fase {
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		color: var(--c-crema);
+		background: #06353a;
+		/* Medidas móvil; en sm: y lg: se amplían */
+		--cw: 6.8rem; /* ancho de un chibi lateral */
+		--rw: 6.4rem; /* ancho de la rana */
+		--fila: 11.8rem; /* altura del nenúfar de los chibis sobre el borde inferior */
+		--alto-agua: calc(var(--fila) + 2.8rem);
+		--cielo: linear-gradient(180deg, #5b8fd0 0%, #9ccfe6 38%, #ffe6b0 74%, #ffc08e 100%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 3.2rem 0 0;
+	}
+	.arte {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: var(--cielo);
+	}
+	.arte > * {
+		position: absolute;
+	}
+	.astro {
+		right: 12%;
+		bottom: calc(var(--alto-agua) + 3.5rem);
+		width: 4rem;
+		height: 4rem;
+		border-radius: 9999px;
+		background: #fff6c8;
+		box-shadow: 0 0 44px 16px rgb(255 235 150 / 0.65);
+	}
+	.colinas {
+		left: -10%;
+		width: 120%;
+		height: 9rem;
+		bottom: calc(var(--alto-agua) - 1px);
+	}
+	.colinas.lejos {
+		opacity: 0.55;
+	}
+	.colinas.lejos path {
+		fill: #3a7d5a;
+	}
+	.colinas.cerca {
+		height: 6.5rem;
+	}
+	.colinas.cerca path {
+		fill: #1e5a3d;
+	}
+	.agua {
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: var(--alto-agua);
+		background: linear-gradient(180deg, #1aa497 0%, #0d6c6a 38%, #06353a 100%);
+		border-top: 2px solid rgb(255 255 255 / 0.35);
+		overflow: hidden;
+	}
+	.reflejos {
+		position: absolute;
+		inset: -3rem 0 0;
+		background: repeating-linear-gradient(180deg, transparent 0 14px, rgb(255 255 255 / 0.1) 14px 16px);
+	}
+	.ola {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 0;
+		width: 100%;
+		height: 1.4rem;
+	}
+	.ola path {
+		fill: #06353a;
+	}
+
+	/* ===== Cabecera (sobre el cielo) ===== */
+	.cabecera {
+		width: 100%;
+		max-width: 36rem;
+		padding: 0 1rem;
+		text-align: center;
+	}
+	.etiqueta {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--c-bosque);
+		text-shadow: 0 1px 0 rgb(255 255 255 / 0.5);
+	}
+	.titulo {
+		margin-top: 0.1rem;
+		font-family: var(--font-sans);
+		font-stretch: 100%;
+		font-weight: 900;
+		text-transform: none;
+		letter-spacing: -0.03em;
+		line-height: 0.95;
+		font-size: clamp(3rem, 18vw, 7rem);
+		color: var(--c-crema);
+		text-shadow:
+			0 0.035em 0 var(--c-hoja),
+			0 0.07em 0 #0a2217,
+			0 0.14em 0.3em rgb(0 0 0 / 0.35);
+	}
+	.sub {
+		margin: 0.9rem auto 0;
+		max-width: 24rem;
+		border-radius: 0.9rem;
+		background: rgb(8 30 22 / 0.7);
+		padding: 0.5rem 0.8rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	/* ===== Escena: nenúfares sobre el agua ===== */
+	.escena {
+		container-type: inline-size;
+		position: relative;
+		width: 100%;
+		max-width: 64rem;
+		/* nenúfares + chibi + hueco para el bocadillo de arriba */
+		height: calc(var(--fila) + var(--cw) * 1.2 + 9rem);
+	}
+	.sitio,
+	.dialogo {
+		--x: var(--xm);
+	}
+	.sitio {
+		position: absolute;
+		left: calc(var(--x) * 1%);
+		bottom: 1.2rem;
+		width: var(--rw);
+		margin-left: calc(var(--rw) / -2);
+		z-index: 2;
+	}
+	.chibi {
+		--w: calc(var(--cw) * var(--esc, 1));
+		width: var(--w);
+		margin-left: calc(var(--w) / -2);
+		bottom: calc(var(--fila) + var(--sube, 0rem));
+		z-index: 1;
+	}
+	.chibi.atras {
+		z-index: 0;
+	}
+	.nenufar {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	.onda {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0.15rem;
+		height: 1rem;
+		border: 2px solid rgb(255 255 255 / 0.8);
+		border-radius: 50%;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.mece {
+		position: relative;
+	}
+
+	/* Chibi de pie sobre su nenúfar */
+	.figura {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: calc(var(--w) * 0.1);
+		display: block;
+		cursor: pointer;
+		touch-action: pan-y;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.figura:focus-visible {
+		outline: 3px solid var(--c-lima);
+		outline-offset: 2px;
+		border-radius: 1rem;
+	}
+	.avatar {
+		display: block;
+		width: 100%;
+		aspect-ratio: 360 / 414;
+		background: transparent;
+		--poster-color: transparent;
+		--progress-bar-color: transparent;
+		--progress-bar-height: 0;
+	}
+	.avatar img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	/* En la home el modelo es una imagen viva: el toque llega al botón, nunca al visor */
+	.figura .avatar {
+		pointer-events: none;
+	}
+
+	.chip {
+		display: inline-block;
+		border-radius: 9999px;
+		background: var(--c-lima);
+		color: var(--c-bosque);
+		padding: 0.25rem 0.8rem;
+		font-size: 0.72rem;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+	.chibi .chip {
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		translate: -50% 0.1rem;
+		white-space: nowrap;
+	}
+
+	/* La rana */
+	.rana {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0.7rem;
+		transform-origin: 50% 100%;
+	}
+	.rana :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 10px 12px rgb(0 0 0 / 0.45));
+	}
+
+	/* Bocadillos (mismo estilo que Recorrido) */
+	.bocadillo,
+	.dialogo {
+		border: 2px solid #0a2217;
+		border-radius: 1rem;
+		background: var(--c-crema);
+		color: var(--c-bosque);
+		box-shadow: 0 4px 0 rgb(0 0 0 / 0.25);
+		font-weight: 800;
+	}
+	.bocadillo {
+		position: absolute;
+		bottom: calc(var(--rw) * 0.2);
+		z-index: 3;
+		width: max-content;
+		max-width: min(11rem, calc(72vw - var(--rw) / 2 - 0.9rem));
+		padding: 0.55rem 0.75rem;
+		font-size: 0.84rem;
+		line-height: 1.25;
+	}
+	.bocadillo::after,
+	.dialogo::after {
+		content: '';
+		position: absolute;
+		width: 0.8rem;
+		height: 0.8rem;
+		background: var(--c-crema);
+		transform: rotate(45deg);
+	}
+	.bocadillo.der {
+		left: 100%;
+		margin-left: 0.5rem;
+		transform-origin: 0 100%;
+	}
+	.bocadillo.der::after {
+		bottom: 0.9rem;
+		left: -0.47rem;
+		border-left: 2px solid #0a2217;
+		border-bottom: 2px solid #0a2217;
+	}
+
+	/* Bocadillo de cada chibi: sobre su cabeza, sin salirse de la pantalla */
+	.dialogo {
+		--wb: min(14.5rem, calc(100cqw - 1.5rem));
+		--izq: clamp(calc(var(--wb) / 2 + 0.75rem), calc(var(--x) * 1cqw), calc(100cqw - var(--wb) / 2 - 0.75rem));
+		position: absolute;
+		left: var(--izq);
+		translate: -50% 0;
+		bottom: calc(var(--fila) + var(--cw) * 1.22 + 1.3rem);
+		z-index: 4;
+		width: var(--wb);
+		padding: 0.7rem 0.85rem 0.8rem;
+		text-align: center;
+		transform-origin: 50% 100%;
+	}
+	.dialogo[hidden] {
+		display: none;
+	}
+	.dialogo::after {
+		bottom: -0.47rem;
+		left: clamp(1.2rem, calc(50% + var(--x) * 1cqw - var(--izq)), calc(100% - 1.8rem));
+		border-right: 2px solid #0a2217;
+		border-bottom: 2px solid #0a2217;
+	}
+	.aviso {
+		font-size: 0.88rem;
+		line-height: 1.3;
+	}
+
+	.boton {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: 0.6rem;
+		border-radius: 9999px;
+		background: var(--c-lima);
+		color: var(--c-bosque);
+		padding: 0.6rem 1.2rem;
+		font-size: 0.9rem;
+		font-weight: 900;
+		box-shadow: 0 4px 0 #6fa72f;
+		transition: transform 0.15s;
+		cursor: pointer;
+	}
+	.boton:hover {
+		transform: translateY(-2px);
+	}
+	.boton:active {
+		transform: translateY(3px);
+		box-shadow: none;
+	}
+
+	/* ===== Ficha (Hoja) ===== */
+	.mini {
+		position: relative;
+		height: 15rem;
+		overflow: hidden;
+		background: linear-gradient(180deg, #5b8fd0 0%, #9ccfe6 38%, #ffe6b0 74%, #ffc08e 100%);
+	}
+	.mini-agua {
+		position: absolute;
+		inset: auto 0 0;
+		height: 4.5rem;
+		background: linear-gradient(180deg, #1aa497 0%, #0d6c6a 50%, #06353a 100%);
+		border-top: 2px solid rgb(255 255 255 / 0.35);
+	}
+	.mini :global(.mini-nenufar) {
+		position: absolute;
+		left: 50%;
+		bottom: 0.6rem;
+		width: 11rem;
+		translate: -50% 0;
+	}
+	.mini-avatar {
+		position: absolute;
+		left: 50%;
+		bottom: 1.6rem;
+		width: 12.5rem;
+		translate: -50% 0;
+		cursor: grab;
+		touch-action: pan-y;
+	}
+	.giro {
+		position: absolute;
+		left: 1rem;
+		top: 1rem;
+		border-radius: 9999px;
+		background: rgb(8 30 22 / 0.7);
+		padding: 0.2rem 0.65rem;
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--c-lima);
+		pointer-events: none;
+	}
+	.x {
+		position: absolute;
+		right: 0.75rem;
+		top: 0.75rem;
+	}
+	.x button {
+		display: flex;
+		width: 2.5rem;
+		height: 2.5rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		background: rgb(8 30 22 / 0.8);
+		color: var(--c-lima);
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+	.cuerpo {
+		padding: 1.2rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+	}
+	.nombre {
+		font-family: var(--font-sans);
+		font-stretch: 100%;
+		font-weight: 900;
+		text-transform: none;
+		letter-spacing: -0.03em;
+		font-size: 2.6rem;
+		line-height: 1;
+		color: var(--c-crema);
+		text-shadow: 0 0.05em 0 var(--c-hoja);
+	}
+	.panel {
+		margin-top: 0.9rem;
+		border-radius: 0.9rem;
+		border: 1px solid rgb(198 242 107 / 0.3);
+		background: rgb(255 244 214 / 0.05);
+	}
+	.fila {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.7rem 1rem;
+		font-size: 0.95rem;
+	}
+	.fila + .fila {
+		border-top: 1px dashed rgb(255 244 214 / 0.25);
+	}
+	.fila dt {
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--c-lima);
+	}
+	.fila dd {
+		text-align: right;
+		font-weight: 700;
+	}
+	.desc {
+		margin-top: 1rem;
+		line-height: 1.55;
+	}
+	.aficiones {
+		margin-top: 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.aficiones .chip {
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+		text-transform: none;
+		padding: 0.3rem 0.8rem;
+	}
+	.cuerpo .boton {
+		width: 100%;
+		margin-top: 1.4rem;
+		padding: 0.8rem 1.2rem;
+	}
+
+	@media (min-width: 640px) {
+		.fase {
+			--cw: 9rem;
+			--rw: 8.5rem;
+			--fila: 12rem;
+			padding-top: 4.5rem;
+		}
+		.bocadillo {
+			max-width: 14rem;
+			padding: 0.7rem 0.95rem;
+			font-size: 1rem;
+		}
+		.sub {
+			font-size: 1rem;
+			max-width: 30rem;
+		}
+		.colinas {
+			height: 12rem;
+		}
+		.colinas.cerca {
+			height: 8.5rem;
+		}
+		.astro {
+			width: 5rem;
+			height: 5rem;
+		}
+		.mini {
+			height: 18rem;
+		}
+		.mini-avatar {
+			width: 15rem;
+		}
+	}
+	@media (min-width: 640px) {
+		.figura {
+			left: -14%;
+			right: -14%;
+		}
+	}
+	@media (min-width: 1024px) {
+		.figura {
+			left: -32%;
+			right: -32%;
+			bottom: calc(var(--w) * 0.06);
+		}
+		.sitio,
+		.dialogo {
+			--x: var(--xg);
+		}
+		.fase {
+			--cw: 11.5rem;
+			--rw: 10.5rem;
+			--fila: 13rem;
+		}
+	}
+
+	/* ===== Animación: solo si hay JS y no se pidió "reducir movimiento" ===== */
+	@media (prefers-reduced-motion: no-preference) {
+		.reflejos {
+			animation: reflejos 5s linear infinite;
+		}
+		.mece {
+			animation: mecer 6s ease-in-out infinite;
+		}
+		.chibi:nth-of-type(3) .mece {
+			animation-delay: -2s;
+		}
+		.chibi:nth-of-type(4) .mece {
+			animation-delay: -4s;
+		}
+
+		.fase[data-anim]:not(.dentro) .cabecera {
+			opacity: 0;
+			translate: 0 1.5rem;
+		}
+		.fase[data-anim] .cabecera {
+			transition:
+				opacity 0.6s ease,
+				translate 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+		}
+		.fase[data-anim]:not(.dentro) .rana,
+		.fase[data-anim]:not(.dentro) .entra {
+			visibility: hidden;
+		}
+		.fase[data-anim]:not(.dentro) .bocadillo,
+		.fase[data-anim]:not(.dentro) .chibi .chip {
+			opacity: 0;
+			scale: 0.5;
+		}
+		.fase[data-anim] .bocadillo {
+			/* Sale cuando la rana ya ha aterrizado */
+			transition:
+				opacity 0.25s ease 1.5s,
+				scale 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) 1.5s;
+		}
+		.chibi {
+			/* Caen después del bocadillo de la rana, uno detrás de otro */
+			--cae: calc(2.1s + var(--i) * 0.15s);
+		}
+		.fase[data-anim] .chibi .chip {
+			transition:
+				opacity 0.25s ease calc(var(--cae) + 0.35s),
+				scale 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--cae) + 0.35s);
+		}
+		.fase[data-anim]:not(.dentro) .astro {
+			translate: 0 4rem;
+			opacity: 0;
+		}
+		.fase[data-anim] .astro {
+			transition:
+				translate 1.6s ease-out,
+				opacity 1s ease;
+		}
+		.fase[data-anim].dentro .rana {
+			--desde: -75vw;
+			--giro: -5deg;
+			animation: salto 1.1s both;
+		}
+		.fase[data-anim].dentro .rana-sitio .onda {
+			animation: onda 1.3s ease-out 0.85s;
+		}
+		.fase[data-anim].dentro .entra {
+			transform-origin: 50% 100%;
+			animation: cae 0.55s both var(--cae);
+		}
+		.fase[data-anim].dentro .chibi .onda {
+			animation: onda 1.3s ease-out calc(var(--cae) + 0.38s);
+		}
+		.dialogo:not([hidden]) {
+			animation: sale 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+		}
+	}
+
+	@keyframes salto {
+		0% {
+			transform: translate(var(--desde), 0);
+			animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+		}
+		50% {
+			transform: translate(calc(var(--desde) * 0.4), -8rem) rotate(var(--giro)) scale(0.95, 1.07);
+			animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.5);
+		}
+		80% {
+			transform: translate(0, 0) scale(1.12, 0.86);
+			animation-timing-function: ease-out;
+		}
+		100% {
+			transform: translate(0, 0);
+		}
+	}
+	/* El chibi cae desde arriba y se chafa un poco al tocar el nenúfar */
+	@keyframes cae {
+		/* Mientras espera su turno (retraso + relleno "both") se queda en este primer fotograma, invisible:
+		   no se ve parado arriba, aparece ya cayendo */
+		0% {
+			opacity: 0;
+			transform: translateY(-22rem);
+			animation-timing-function: linear;
+		}
+		3% {
+			opacity: 1;
+			transform: translateY(-21.5rem);
+			animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.5);
+		}
+		65% {
+			transform: translateY(0) scale(1.1, 0.88);
+			animation-timing-function: ease-out;
+		}
+		82% {
+			transform: translateY(-0.6rem) scale(0.97, 1.04);
+			animation-timing-function: ease-in;
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+	@keyframes sale {
+		from {
+			opacity: 0;
+			scale: 0.5;
+		}
+	}
+	@keyframes onda {
+		0% {
+			opacity: 0.9;
+			transform: scale(0.6);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.7);
+		}
+	}
+	@keyframes reflejos {
+		to {
+			transform: translateY(1.9rem);
+		}
+	}
+	@keyframes mecer {
+		50% {
+			transform: translateY(0.25rem) rotate(1.2deg);
+		}
+	}
+</style>
+
+<script>
+	const VISOR = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js';
+	const fase = document.querySelector<HTMLElement>('#trio');
+
+	if (fase) {
+		// --- Entrada: la rana salta y caen los chibis (una vez) ---
+		const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (!quieto && 'IntersectionObserver' in window) {
+			fase.dataset.anim = '';
+			const obs = new IntersectionObserver(
+				(entradas) => {
+					if (!entradas.some((e) => e.isIntersecting)) return;
+					fase.classList.add('dentro');
+					obs.disconnect();
+				},
+				{ threshold: 0.3 },
+			);
+			obs.observe(fase);
+		}
+
+		// --- <model-viewer> (~300 KB): se carga cuando la escena se acerca a la pantalla ---
+		const cargar = () => {
+			if (customElements.get('model-viewer') || document.querySelector('script[data-model-viewer]')) return;
+			const s = document.createElement('script');
+			s.type = 'module';
+			s.dataset.modelViewer = '';
+			s.src = VISOR;
+			document.head.appendChild(s);
+		};
+		if ('IntersectionObserver' in window) {
+			const cerca = new IntersectionObserver(
+				(entradas) => {
+					if (!entradas.some((e) => e.isIntersecting)) return;
+					cerca.disconnect();
+					cargar();
+				},
+				{ rootMargin: '600px' },
+			);
+			cerca.observe(fase);
+		} else {
+			cargar();
+		}
+
+		// --- Tocar un chibi: bocadillo con su advertencia y "Ver ficha" ---
+		const figuras = fase.querySelectorAll<HTMLButtonElement>('[data-chibi]');
+		const cerrar = () => {
+			fase.querySelectorAll<HTMLElement>('.dialogo').forEach((d) => (d.hidden = true));
+			figuras.forEach((f) => f.setAttribute('aria-expanded', 'false'));
+		};
+		figuras.forEach((f) =>
+			f.addEventListener('click', (ev) => {
+				ev.stopPropagation();
+				cargar();
+				const dialogo = document.getElementById(`dialogo-${f.dataset.chibi}`)!;
+				const abrir = dialogo.hidden;
+				cerrar();
+				if (abrir) {
+					dialogo.hidden = false;
+					f.setAttribute('aria-expanded', 'true');
+				}
+			}),
+		);
+		fase.querySelectorAll('.dialogo').forEach((d) => d.addEventListener('click', (ev) => ev.stopPropagation()));
+		// "Ver ficha" abre la hoja (lo hace Hoja.astro); aquí se recoge el bocadillo
+		fase.querySelectorAll('.dialogo [data-abrir-hoja]').forEach((b) =>
+			b.addEventListener('click', () => {
+				cargar();
+				cerrar();
+			}),
+		);
+		document.addEventListener('click', cerrar);
+		document.addEventListener('keydown', (ev) => ev.key === 'Escape' && cerrar());
+	}
+</script>

@@ -51,6 +51,9 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<!-- Huevo de Pascua: el nenúfar de la primera sección no se toca (ver el script del final) -->
+			<div class="mece" data-huevo role="button" tabindex="0" aria-label="Nenúfar de la rana. Mejor no tocarlo">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-1" cx="45%" cy="40%" r="70%">
@@ -61,9 +64,6 @@ const luciernagas = [
 				<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
 				<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-1)" stroke="#14502f" stroke-width="1.2"></path>
 			</svg>
-			<i class="onda"></i>
-			<p data-cta="antes" class="bocadillo der">Estoy bastante seguro de que no tienes nada mejor que hacer ese día... <br />Pasa, pasa… y no toques el nenúfar.</p>
-			<p data-cta="fiesta" hidden class="bocadillo der">¡Hoy es! Saca el móvil, anda, que no se hacen fotos solas.</p>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -77,6 +77,12 @@ const luciernagas = [
 					/>
 				</div>
 			</div>
+			</div>
+			<i class="onda"></i>
+			<span class="gotas" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+			<p data-cta="antes" class="bocadillo der">Estoy bastante seguro de que no tienes nada mejor que hacer ese día... <br />Pasa, pasa… y no toques el nenúfar.</p>
+			<p data-cta="fiesta" hidden class="bocadillo der">¡Hoy es! Saca el móvil, anda, que no se hacen fotos solas.</p>
+			<p data-huevo-texto hidden class="bocadillo der"></p>
 		</div>
 	</section>
 
@@ -120,6 +126,8 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<div class="mece">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-2" cx="45%" cy="40%" r="70%">
@@ -134,8 +142,6 @@ const luciernagas = [
 					<circle r="3" fill="#ffcf5c"></circle>
 				</g>
 			</svg>
-			<i class="onda"></i>
-			<p class="bocadillo izq">¿Cómo coño se va a llamar así el sitio?.</p>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -148,6 +154,9 @@ const luciernagas = [
 					/>
 				</div>
 			</div>
+			</div>
+			<i class="onda"></i>
+			<p class="bocadillo izq">¿Otro año en mi puta casa?.</p>
 		</div>
 	</section>
 
@@ -192,6 +201,8 @@ const luciernagas = [
 		</div>
 
 		<div class="sitio">
+			<!-- Nenúfar y rana se mecen juntos -->
+			<div class="mece">
 			<svg class="nenufar" viewBox="0 0 120 50" aria-hidden="true">
 				<defs>
 					<radialGradient id="hoja-3" cx="45%" cy="40%" r="70%">
@@ -202,19 +213,6 @@ const luciernagas = [
 				<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)"></ellipse>
 				<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-3)" stroke="#14502f" stroke-width="1.2"></path>
 			</svg>
-			<i class="onda"></i>
-			<!-- El texto depende de si ha confirmado (data-resp: ninguna | si | no; lo decide el script del final).
-			     El envoltorio con data-cta lo gestiona Portada (antes / día de la fiesta); los de dentro, el script. -->
-			<div data-cta="antes">
-				<p data-resp="ninguna" class="bocadillo der">Tic, tac… Es solo cuestión de tiempo... ¿Has confirmado ya o qué?</p>
-				<p data-resp="si" hidden class="bocadillo der">Tic, tac… Ya estás apuntado, así me gusta. Y no llegues tarde.</p>
-				<p data-resp="no" hidden class="bocadillo der">¿Que no vienes? Tú sabrás… Aún estás a tiempo de cambiar de opinión.</p>
-			</div>
-			<div data-cta="fiesta" hidden>
-				<p data-resp="ninguna" class="bocadillo der">Es solo cuestión de tiempo</p>
-				<p data-resp="si" hidden class="bocadillo der">Ya empezó y tú ya estabas apuntado. ¡A disfrutar!</p>
-				<p data-resp="no" hidden class="bocadillo der">Dijiste que no venías… y aquí estás. Anda, pásate.</p>
-			</div>
 			<div class="rana">
 				<div class="flota">
 					<Image
@@ -226,6 +224,20 @@ const luciernagas = [
 						loading="lazy"
 					/>
 				</div>
+			</div>
+			</div>
+			<i class="onda"></i>
+			<!-- El texto depende de si ha confirmado (data-resp: ninguna | si | no; lo decide el script del final).
+			     El envoltorio con data-cta lo gestiona Portada (antes / día de la fiesta); los de dentro, el script. -->
+			<div data-cta="antes">
+				<p data-resp="ninguna" class="bocadillo der">Tic, tac… <br /> Es solo cuestión de tiempo... <br />¿Has confirmado ya o qué?</p>
+				<p data-resp="si" hidden class="bocadillo der">Tic, tac… <br /> Ya estás apuntado, así me gusta. <br /> Y no llegues tarde.</p>
+				<p data-resp="no" hidden class="bocadillo der">¿Que no vienes? Tú sabrás… Aún estás a tiempo de cambiar de opinión.</p>
+			</div>
+			<div data-cta="fiesta" hidden>
+				<p data-resp="ninguna" class="bocadillo der">Es solo cuestión de tiempo</p>
+				<p data-resp="si" hidden class="bocadillo der">Ya empezó y tú ya estabas apuntado. ¡A disfrutar!</p>
+				<p data-resp="no" hidden class="bocadillo der">Dijiste que no venías… y aquí estás. Anda, pásate.</p>
 			</div>
 		</div>
 	</section>
@@ -251,8 +263,8 @@ const luciernagas = [
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		/* Cabe entre la barra de arriba (3,5 rem) y la de abajo del móvil (~4,75 rem + zona segura) */
-		min-height: calc(100svh - 8.25rem - env(safe-area-inset-bottom));
+		/* Cabe bajo la barra de arriba (3,5 rem) */
+		min-height: calc(100svh - 3.5rem);
 		/* Arriba aire; abajo sitio para el agua y la rana (alto de la imagen = 1,18 × ancho) */
 		padding: 2.5rem 1rem calc(var(--alto-agua) + var(--rw) * 0.85);
 	}
@@ -391,6 +403,41 @@ const luciernagas = [
 		width: var(--rw);
 		margin-left: calc(var(--rw) / -2);
 		z-index: 1;
+	}
+	.mece {
+		position: relative;
+	}
+	/* Huevo de Pascua: el nenúfar de la primera sección no se toca */
+	.mece[data-huevo] {
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.mece[data-huevo]:focus-visible {
+		outline: 3px solid var(--c-lima);
+		outline-offset: 4px;
+		border-radius: 1rem;
+	}
+	/* Mientras la rana protesta, el bocadillo de siempre se aparta */
+	.sitio.huevo [data-cta] {
+		display: none;
+	}
+	.gotas {
+		position: absolute;
+		left: 14%;
+		bottom: 0.4rem;
+		width: 0;
+		height: 0;
+		pointer-events: none;
+	}
+	.gotas i {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 9999px;
+		background: #c8f3ee;
+		opacity: 0;
 	}
 	.nenufar {
 		display: block;
@@ -646,9 +693,6 @@ const luciernagas = [
 			--rw: 13.2rem;
 			--agua: 4rem;
 		}
-		.fase {
-			min-height: calc(100svh - 3.5rem); /* en escritorio no hay barra inferior */
-		}
 		.f0 {
 			--x: 22%;
 		}
@@ -668,20 +712,20 @@ const luciernagas = [
 		.reflejos {
 			animation: reflejos 5s linear infinite;
 		}
-		.nenufar {
+		/* Nenúfar y rana se mecen juntos */
+		.mece {
 			animation: mecer 6s ease-in-out infinite;
 		}
-		.f1 .nenufar {
+		.f1 .mece {
 			animation-delay: -2s;
 		}
-		.f2 .nenufar {
+		.f2 .mece {
 			animation-delay: -4s;
 		}
 		.luciernagas i {
 			animation: parpadeo 2.6s ease-in-out infinite;
 			animation-delay: var(--d);
 		}
-		.flota,
 		.titulo {
 			animation: flotar 4.5s ease-in-out 1.3s infinite;
 		}
@@ -815,6 +859,163 @@ const luciernagas = [
 			{ threshold: 0.25 },
 		);
 		rec.querySelectorAll('.fase').forEach((f) => obs.observe(f));
+	}
+
+	// ===== Huevo de Pascua: «no toques el nenúfar» =====
+	// En la primera sección la rana avisa de que no se toque el nenúfar. Si se toca, protesta (dos avisos,
+	// cada vez más nerviosa) y a la tercera se cae al agua con salpicaduras; después vuelve a subirse
+	// empapada. Cada vez que cae cambian los textos. Con «reducir movimiento» solo cambia el bocadillo.
+	const huevo = rec?.querySelector<HTMLElement>('[data-huevo]');
+	if (huevo) {
+		const sitio = huevo.closest<HTMLElement>('.sitio')!;
+		const ranaEl = huevo.querySelector<HTMLElement>('.rana')!;
+		const hoja = huevo.querySelector<SVGElement>('.nenufar')!;
+		const onda = sitio.querySelector<HTMLElement>('.onda')!;
+		const gotas = [...sitio.querySelectorAll<HTMLElement>('.gotas i')];
+		const texto = sitio.querySelector<HTMLElement>('[data-huevo-texto]')!;
+
+		const rondas = [
+			{ avisos: ['¡Eh! ¡Que no se toca!', 'Te lo advierto: una más y me caigo.'], caida: '¡NOOOO…!', vuelta: 'Ya te vale. Mira cómo me has puesto.' },
+			{ avisos: ['¿En serio? ¿Otra vez?', 'Ni se te ocurra.'], caida: '¡¡¡TE ODIOOO…!!!', vuelta: 'Me mudo a otro nenúfar. Este está gafado.' },
+			{ avisos: ['Esto es acoso a una rana.', 'Que no. Que no. Que no.'], caida: '¡PLOOOF!', vuelta: 'Vale, tú ganas. Disfruta del nenúfar.' },
+		];
+		let toques = 0;
+		let ronda = 0;
+		let ocupado = false;
+		let callarEn: number | undefined;
+		let enfriarEn: number | undefined;
+		const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
+		function decir(t: string, ms = 0) {
+			texto.textContent = t;
+			texto.hidden = false;
+			sitio.classList.add('huevo');
+			clearTimeout(callarEn);
+			if (ms) callarEn = window.setTimeout(callar, ms);
+		}
+		function callar() {
+			texto.hidden = true;
+			sitio.classList.remove('huevo');
+		}
+
+		// La rana y el nenúfar se tambalean (más fuerte cuantos más toques)
+		function bambolear(fuerza: number) {
+			hoja.animate(
+				[
+					{ transform: 'rotate(0)' },
+					{ transform: `rotate(${-fuerza}deg)` },
+					{ transform: `rotate(${fuerza * 0.8}deg)` },
+					{ transform: `rotate(${-fuerza * 0.4}deg)` },
+					{ transform: 'rotate(0)' },
+				],
+				{ duration: 500, easing: 'ease-in-out' },
+			);
+			ranaEl.animate(
+				[
+					{ transform: 'rotate(0)' },
+					{ transform: `rotate(${fuerza * 1.4}deg)` },
+					{ transform: `rotate(${-fuerza}deg)` },
+					{ transform: `rotate(${fuerza * 0.5}deg)` },
+					{ transform: 'rotate(0)' },
+				],
+				{ duration: 500, easing: 'ease-in-out' },
+			);
+		}
+
+		// Ondas y gotas donde cae
+		function salpicar() {
+			[1.8, 2.5, 3.2].forEach((fin, i) =>
+				onda.animate(
+					[
+						{ opacity: 0.9, transform: 'scale(0.6)' },
+						{ opacity: 0, transform: `scale(${fin})` },
+					],
+					{ duration: 1200, delay: i * 180, easing: 'ease-out' },
+				),
+			);
+			gotas.forEach((g, i) => {
+				const dx = (i - 2.5) * 0.9;
+				const alto = 2.6 + (i % 3) * 0.8;
+				g.animate(
+					[
+						{ transform: 'translate(0, 0)', opacity: 1 },
+						{ transform: `translate(${dx}rem, ${-alto}rem)`, opacity: 1, offset: 0.5 },
+						{ transform: `translate(${dx * 1.6}rem, 0.8rem)`, opacity: 0 },
+					],
+					{ duration: 850, delay: i * 40, easing: 'ease-out' },
+				);
+			});
+		}
+
+		async function caer(r: (typeof rondas)[number]) {
+			ocupado = true;
+			decir(r.caida);
+			hoja.animate(
+				[
+					{ transform: 'rotate(0)' },
+					{ transform: 'rotate(14deg) translateY(4px)', offset: 0.25 },
+					{ transform: 'rotate(-8deg)', offset: 0.6 },
+					{ transform: 'rotate(0)' },
+				],
+				{ duration: 900, easing: 'ease-in-out' },
+			);
+			// Se tambalea, resbala hacia la izquierda (el bocadillo está a la derecha) y se hunde
+			const caida = ranaEl.animate(
+				[
+					{ transform: 'translate(0, 0) rotate(0)', opacity: 1, offset: 0 },
+					{ transform: 'translate(-0.4rem, -0.5rem) rotate(-14deg)', opacity: 1, offset: 0.18 },
+					{ transform: 'translate(-2.8rem, 0.4rem) rotate(-55deg)', opacity: 1, offset: 0.4 },
+					{ transform: 'translate(-4.2rem, 5.2rem) rotate(-130deg) scale(0.9)', opacity: 1, offset: 0.72 },
+					{ transform: 'translate(-4.6rem, 7.4rem) rotate(-170deg) scale(0.7)', opacity: 0, offset: 1 },
+				],
+				{ duration: 1100, easing: 'ease-in', fill: 'forwards' },
+			);
+			setTimeout(salpicar, 800);
+			await caida.finished;
+			await espera(1500);
+
+			// Vuelve a subirse al nenúfar de un salto, empapada
+			decir(r.vuelta, 3800);
+			ranaEl.animate(
+				[
+					{ transform: 'translate(0, 5rem) scale(0.8)', opacity: 0, offset: 0 },
+					{ transform: 'translate(0, -6.5rem) rotate(-6deg) scale(0.95, 1.07)', opacity: 1, offset: 0.5 },
+					{ transform: 'translate(0, 0) scale(1.12, 0.86)', opacity: 1, offset: 0.82 },
+					{ transform: 'translate(0, 0)', opacity: 1, offset: 1 },
+				],
+				{ duration: 900, easing: 'ease-in-out' },
+			);
+			caida.cancel();
+			salpicar();
+			await espera(900);
+			ocupado = false;
+		}
+
+		function tocar() {
+			if (ocupado) return;
+			const r = rondas[ronda % rondas.length];
+			toques++;
+			// Si dejas de tocar un rato, se le pasa el susto
+			clearTimeout(enfriarEn);
+			enfriarEn = window.setTimeout(() => (toques = 0), 7000);
+
+			if (toques <= r.avisos.length) {
+				if (!quieto) bambolear(toques * 4 + 4);
+				decir(r.avisos[toques - 1], 3500);
+				return;
+			}
+			toques = 0;
+			ronda++;
+			if (quieto) decir(r.vuelta, 3500);
+			else caer(r);
+		}
+		huevo.addEventListener('click', tocar);
+		huevo.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				tocar();
+			}
+		});
 	}
 
 	// Bocadillo de la sección 3 según haya confirmado o no. Se lee con obtenerAsistencia() (hoy en el

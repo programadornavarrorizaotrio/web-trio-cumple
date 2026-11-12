@@ -14,22 +14,10 @@ const fecha = new Intl.DateTimeFormat('es-ES', {
 const llegada = `${fiesta.inicio.slice(0, 11)}${fiesta.llegada}:00${fiesta.inicio.slice(19)}`;
 ---
 
-<!-- Paleta de la charca: las usa el recorrido y el contador -->
+<!-- Paleta de la charca (.selva, en global.css): la usan el recorrido, el contador y la escena del trío -->
 <div id="inicio" data-llegada={llegada} class="selva">
 	<Recorrido fecha={fecha} />
 </div>
-
-<style>
-	.selva {
-		--c-bosque: #0e2a1f;
-		--c-hoja: #1d6b45;
-		--c-lima: #c6f26b;
-		--c-agua: #0f7a72;
-		--c-flor: #ff7fa8;
-		--c-sol: #ffcf5c;
-		--c-crema: #fff4d6;
-	}
-</style>
 
 <script>
 	import { leerSesion, EXIGIR_REGISTRO } from '../registro/sesion';

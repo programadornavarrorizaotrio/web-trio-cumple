@@ -1,77 +1,757 @@
 ---
-import Emblema from '../common/Emblema.astro';
+import { Image } from 'astro:assets';
+import cartas from '../../assets/mascota/cartas.png';
+import estanco from '../../assets/mascota/estanco.png';
+import canciones from '../../assets/mascota/canciones.png';
+import juegos from '../../assets/mascota/juegos.png';
+import fotos from '../../assets/mascota/fotos.png';
+import rsvp from '../../assets/mascota/rsvp.png';
 import FotosDemo from '../cromos/FotosDemo.astro';
 
-// Accesos a cada sección desde la home. Participantes va destacada; el resto en rejilla.
-// Cada ventana enseña un dato vivo (data-dato) que rellena el script.
-const ventanas = [
-	{ href: '/estanco', emoji: '🚬', titulo: 'Estanco', texto: 'Reserva tu tabaco', dato: 'estanco' },
-	{ href: '/canciones', emoji: '🎶', titulo: 'Canciones', texto: 'Pon tú la música' },
-	{ href: '/juegos', emoji: '🎲', titulo: 'Juegos', texto: 'Propón a qué jugamos' },
-	{ href: '/fotos', emoji: '📷', titulo: 'Fotos', texto: 'El carrete de la fiesta' },
+// "Qué se puede hacer en Trioland": la charca como menú. Cada apartado de la web es un nenúfar; al
+// tocar uno, la rana salta hasta él y un bocadillo cuenta para qué sirve (con su botón de entrar).
+// Volver a tocar el nenúfar ya elegido entra en esa página. Sin JS, la rana se queda en el primero y
+// los nenúfares son enlaces normales.
+// Posición de cada nenúfar [x %, y %] en el móvil (zigzag de 2 columnas) y en pantallas grandes (3 columnas).
+const sitios = [
+	{
+		id: 'participantes',
+		pose: 'cartas',
+		href: '/participantes',
+		emoji: '🃏',
+		titulo: 'Participantes',
+		kicker: 'Álbum de cromos',
+		texto: '¿Quién viene? Cada invitado tiene su cromo: ábrelos, colecciónalos y descubre quién es quién antes de la fiesta.',
+		boton: 'Ver álbum',
+		movil: [30, 10],
+		grande: [18, 24],
+	},
+	{
+		id: 'estanco',
+		pose: 'estanco',
+		href: '/estanco',
+		emoji: '🚬',
+		titulo: 'Estanco',
+		kicker: 'Tienda de la fiesta',
+		texto: 'Productos de verdad con su precio. Reserva hasta 2 de cada uno y los pagas en la fiesta.',
+		boton: 'Ir al estanco',
+		movil: [72, 17],
+		grande: [50, 16],
+	},
+	{
+		id: 'canciones',
+		pose: 'canciones',
+		href: '/canciones',
+		emoji: '🎶',
+		titulo: 'Canciones',
+		kicker: 'La banda sonora',
+		texto: 'Añade las que quieras oír: entre todos mezclamos la lista de la fiesta.',
+		boton: 'Poner música',
+		movil: [26, 41],
+		grande: [82, 24],
+	},
+	{
+		id: 'juegos',
+		pose: 'juegos',
+		href: '/juegos',
+		emoji: '🎲',
+		titulo: 'Juegos',
+		kicker: 'Qué hacemos',
+		texto: 'Propón a qué jugamos y mira qué han propuesto los demás.',
+		boton: 'Proponer',
+		movil: [74, 48],
+		grande: [22, 66],
+	},
+	{
+		id: 'fotos',
+		pose: 'fotos',
+		href: '/fotos',
+		emoji: '📷',
+		titulo: 'Fotos',
+		kicker: 'El carrete',
+		texto: 'El carrete de la fiesta: sube las tuyas y mira las del resto.',
+		boton: 'Ver fotos',
+		movil: [30, 71],
+		grande: [54, 72],
+	},
+	{
+		id: 'asistencia',
+		pose: 'rsvp',
+		href: '#asistencia',
+		emoji: '✅',
+		titulo: 'Asistencia',
+		kicker: 'Confirma',
+		texto: 'Dinos si vienes, con cuánta gente y si hay alguna alergia. Lo cambias cuando quieras.',
+		boton: 'Confirmar',
+		movil: [70, 77],
+		grande: [84, 66],
+	},
 ];
+// Poses de la rana (una imagen por pose; el nenúfar elige cuál). Para añadir más: importar la imagen y ponerla aquí.
+const poses = { cartas, estanco, canciones, juegos, fotos, rsvp };
+const luciernagas = [[8, 14, 0], [24, 8, 1.2], [78, 12, 0.6], [92, 26, 1.8], [14, 36, 0.9], [64, 6, 2.2], [48, 20, 0.3], [88, 42, 0.4]];
 ---
 
-<FotosDemo />
+<section class="fase selva" aria-labelledby="que-hacer-titulo">
+	<svg class="ola" viewBox="0 0 400 24" preserveAspectRatio="none" aria-hidden="true">
+		<path d="M0 0H400V10C350 24 300 0 250 10C200 20 150 0 100 10C50 20 25 14 0 10Z"></path>
+	</svg>
+	<div class="cielo" aria-hidden="true">
+		<div class="astro"></div>
+		<div class="luciernagas">
+			{luciernagas.map(([x, y, d]) => <i style={`left:${x}%;top:${y}%;--d:${d}s`}></i>)}
+		</div>
+	</div>
 
-<nav aria-label="Secciones" class="space-y-3">
-	<!-- Participantes: la principal -->
-	<a
-		href="/participantes"
-		class="group relative block overflow-hidden rounded-lg border-2 border-amarillo bg-granate p-5 text-crema shadow-chapa transition-transform active:scale-[0.98]"
-	>
-		<Emblema class="absolute -right-6 -top-6 size-32 text-granate-claro/40" hueco="var(--color-granate)" />
-		<span class="relative block text-xs font-black uppercase tracking-[0.2em] text-amarillo-claro">Álbum de cromos</span>
-		<span class="rotulo relative mt-1 block text-2xl text-amarillo sm:text-4xl">Participantes</span>
-		<span class="relative mt-1 block text-sm text-crema/85">¿Quién viene? Descubre el cromo de cada invitado.</span>
+	<header class="cabecera">
+		<p class="etiqueta">Lo que puedes hacer</p>
+		<h2 id="que-hacer-titulo" class="titulo">Todo Trioland, en un vistazo</h2>
+		<p class="sub">Toca un nenúfar y Enrique te cuenta qué hay allí.</p>
+	</header>
 
-		<!-- Primeros cromos -->
-		<span data-v-caras class="relative mt-4 flex -space-x-2" aria-hidden="true"></span>
+	<FotosDemo />
 
-		<span class="relative mt-4 flex items-center justify-between gap-3 text-sm font-bold">
-			<span><span data-v-conseguidos class="rotulo text-xl text-amarillo">–</span> de <span data-v-total>–</span> cromos</span>
-			<span class="rounded bg-amarillo px-3 py-1.5 text-xs font-black uppercase tracking-wider text-granate-oscuro">Ver álbum →</span>
-		</span>
-		<span class="relative mt-2 block h-1.5 overflow-hidden rounded-full bg-crema/20">
-			<span data-v-progreso class="block h-full w-0 rounded-full bg-amarillo transition-[width] duration-700"></span>
-		</span>
-	</a>
-
-	<!-- Resto de secciones -->
-	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+	<!-- Bocadillo: solo se ve el del nenúfar elegido y se ajusta a su contenido -->
+	<div class="textos" aria-live="polite">
 		{
-			ventanas.map((v) => (
-				<a
-					href={v.href}
-					class="flex min-h-32 flex-col rounded-lg border-2 border-granate/15 bg-white p-4 shadow-chapa transition-transform active:scale-[0.97]"
-				>
-					<span class="text-3xl" aria-hidden="true">
-						{v.emoji}
-					</span>
-					<span class="rotulo mt-2 text-base text-granate sm:text-lg">{v.titulo}</span>
-					<span class="text-sm leading-snug text-tinta-suave">{v.texto}</span>
-					{v.dato && <span data-dato={v.dato} hidden class="mt-auto pt-2 text-xs font-black uppercase tracking-wider text-granate" />}
-				</a>
+			sitios.map((s, i) => (
+				<div class="texto-caja" data-texto={s.id} data-activo={i === 0 ? '' : undefined}>
+					<p class="kicker">{s.kicker}</p>
+					<p class="nombre">{s.emoji} {s.titulo}</p>
+					<p class="texto">{s.texto}</p>
+
+					{s.id === 'participantes' && (
+						<>
+							<span data-v-caras class="caras" aria-hidden="true" />
+							<span class="progreso">
+								<span>
+									<span data-v-conseguidos class="num">–</span> de <span data-v-total>–</span> cromos
+								</span>
+								<span class="barra">
+									<span data-v-progreso class="relleno" />
+								</span>
+							</span>
+						</>
+					)}
+					{s.id === 'estanco' && <span data-dato="estanco" hidden class="dato" />}
+
+					<a href={s.href} class="boton">{s.boton} →</a>
+				</div>
 			))
 		}
 	</div>
-</nav>
+
+	<!-- La charca -->
+	<div class="orilla">
+		<svg class="colinas lejos" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+			<path d="M0 120V70C40 40 80 30 130 55C180 80 220 20 280 35C330 48 370 60 400 40V120Z"></path>
+		</svg>
+		<svg class="colinas cerca" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+			<path d="M0 120V80C60 55 100 75 160 60C220 45 260 85 320 65C360 52 385 62 400 58V120Z"></path>
+		</svg>
+	</div>
+	<div class="charca" data-charca>
+		<div class="fondo" aria-hidden="true"><div class="reflejos"></div></div>
+
+		<div class="pads" data-pads>
+		<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+			<defs>
+				<radialGradient id="hoja-ventanas" cx="45%" cy="40%" r="70%">
+					<stop offset="0" stop-color="#4fae5f"></stop>
+					<stop offset="1" stop-color="#1d6b45"></stop>
+				</radialGradient>
+			</defs>
+		</svg>
+
+		{
+			sitios.map((s, i) => (
+				<a
+					href={s.href}
+					class="hoja"
+					data-hoja={s.id}
+					data-pose={s.pose}
+					aria-current={i === 0 ? 'true' : undefined}
+					style={`--x:${s.movil[0]}%;--y:${s.movil[1]}%;--xg:${s.grande[0]}%;--yg:${s.grande[1]}%;--i:${i}`}
+				>
+					<span class="plato">
+						<svg viewBox="0 0 120 50" aria-hidden="true">
+							<ellipse cx="60" cy="31" rx="56" ry="19" fill="rgb(6 40 38 / 0.6)" />
+							<path d="M60 25L115 21.5A56 20 0 1 0 115 28.5Z" fill="url(#hoja-ventanas)" stroke="#14502f" stroke-width="1.2" />
+						</svg>
+						<i class="onda" />
+					</span>
+					<span class="rotulo-hoja">{s.titulo}</span>
+				</a>
+			))
+		}
+
+		<div class="rana" data-rana data-pose="cartas" aria-hidden="true">
+			<div class="flota">
+				{Object.entries(poses).map(([nombre, src]) => (
+						<Image src={src} alt="" data-pose-img={nombre} widths={[300, 460]} sizes="(min-width: 640px) 120px, 90px" format="webp" loading="eager" />
+					))}
+			</div>
+		</div>
+		</div>
+	</div>
+</section>
 
 <template data-plantilla-cara>
-	<span class="relative grid size-11 place-items-center overflow-hidden rounded-full border-2 border-amarillo bg-granate-oscuro">
-		<img data-c-foto alt="" class="size-full object-cover" hidden />
-		<span data-c-inicial class="rotulo text-base text-amarillo"></span>
+	<span class="cara">
+		<img data-c-foto alt="" hidden />
+		<span data-c-inicial></span>
 	</span>
 </template>
+
+<style>
+	.fase {
+		--pw: 6.4rem; /* ancho del nenúfar */
+		--rw: 5.4rem; /* ancho de la rana */
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		color: var(--c-crema);
+		background: #06353a;
+		padding-top: 3.5rem;
+	}
+	.cielo {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: linear-gradient(180deg, #1b3f6b 0%, #2f6f8f 40%, #7fc4a0 80%, #cfe7a6 100%);
+	}
+	.astro {
+		position: absolute;
+		right: 10%;
+		top: 38%;
+		width: 4rem;
+		height: 4rem;
+		border-radius: 9999px;
+		background: #fff0b8;
+		box-shadow: 0 0 40px 14px rgb(255 214 120 / 0.55);
+	}
+	.luciernagas {
+		position: absolute;
+		inset: 0;
+	}
+	.luciernagas i {
+		position: absolute;
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+		background: #e9ff9a;
+		box-shadow: 0 0 10px 4px rgb(214 255 110 / 0.75);
+		opacity: 0.5;
+	}
+	.ola {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 0;
+		width: 100%;
+		height: 1.4rem;
+	}
+	.ola path {
+		fill: #06353a;
+	}
+
+	/* Cabecera */
+	.cabecera {
+		padding: 0 1rem;
+		text-align: center;
+	}
+	.etiqueta {
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--c-lima);
+		text-shadow: 0 1px 8px rgb(8 30 22 / 0.9);
+	}
+	.titulo {
+		margin: 0.3rem auto 0;
+		max-width: 14ch;
+		font-family: var(--font-sans);
+		font-stretch: 100%;
+		font-weight: 900;
+		text-transform: none;
+		letter-spacing: -0.03em;
+		line-height: 0.95;
+		font-size: clamp(2.4rem, 12vw, 5.5rem);
+		color: var(--c-crema);
+		text-shadow:
+			0 0.035em 0 var(--c-hoja),
+			0 0.07em 0 #0a2217,
+			0 0.14em 0.3em rgb(0 0 0 / 0.45);
+	}
+	.sub {
+		margin-top: 0.9rem;
+		font-weight: 800;
+		color: var(--c-crema);
+		text-shadow: 0 1px 8px rgb(8 30 22 / 0.9);
+	}
+
+	/* Bocadillo del nenúfar elegido: sin altura fija, se ajusta a su contenido */
+	.textos {
+		position: relative;
+		width: calc(100% - 2rem);
+		max-width: 28rem;
+		margin: 1.2rem auto 0;
+		z-index: 2;
+	}
+	.texto-caja {
+		position: relative;
+		border: 2px solid #0a2217;
+		border-radius: 1.4rem;
+		background: var(--c-crema);
+		color: var(--c-bosque);
+		padding: 1.1rem 1.15rem 1.15rem;
+		box-shadow: 0 5px 0 rgb(0 0 0 / 0.28);
+	}
+	.texto-caja:not([data-activo]) {
+		display: none;
+	}
+	/* Colita hacia los nenúfares (abajo) */
+	.texto-caja::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: -0.55rem;
+		width: 0.9rem;
+		height: 0.9rem;
+		margin-left: -0.45rem;
+		background: var(--c-crema);
+		border-right: 2px solid #0a2217;
+		border-bottom: 2px solid #0a2217;
+		transform: rotate(45deg);
+	}
+	.kicker {
+		font-size: 0.68rem;
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--c-hoja);
+	}
+	.nombre {
+		margin-top: 0.1rem;
+		font-size: 1.6rem;
+		font-weight: 900;
+		letter-spacing: -0.02em;
+		line-height: 1.1;
+	}
+	.texto {
+		margin-top: 0.35rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+	.dato {
+		display: inline-block;
+		margin-top: 0.6rem;
+		border-radius: 9999px;
+		background: var(--c-bosque);
+		color: var(--c-lima);
+		padding: 0.15rem 0.7rem;
+		font-size: 0.7rem;
+		font-weight: 900;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	.caras {
+		display: flex;
+		margin-top: 0.8rem;
+		padding-left: 0.5rem;
+	}
+	.caras > :global(*) {
+		margin-left: -0.5rem;
+	}
+	.caras :global(.cara) {
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		overflow: hidden;
+		border-radius: 9999px;
+		border: 2px solid var(--c-crema);
+		background: var(--c-bosque);
+		color: var(--c-lima);
+		font-weight: 900;
+	}
+	.caras :global(.cara img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.progreso {
+		display: block;
+		margin-top: 0.6rem;
+		font-size: 0.82rem;
+		font-weight: 800;
+	}
+	.num {
+		font-size: 1.1rem;
+		font-weight: 900;
+	}
+	.barra {
+		display: block;
+		margin-top: 0.3rem;
+		height: 0.4rem;
+		overflow: hidden;
+		border-radius: 9999px;
+		background: rgb(14 42 31 / 0.18);
+	}
+	.relleno {
+		display: block;
+		height: 100%;
+		width: 0;
+		border-radius: 9999px;
+		background: var(--c-hoja);
+		transition: width 0.7s;
+	}
+	.boton {
+		display: inline-flex;
+		margin-top: 0.9rem;
+		border-radius: 9999px;
+		background: var(--c-bosque);
+		color: var(--c-lima);
+		padding: 0.65rem 1.2rem;
+		font-size: 0.88rem;
+		font-weight: 900;
+		box-shadow: 0 4px 0 #0a2217;
+		transition: transform 0.15s;
+	}
+	.boton:hover {
+		transform: translateY(-2px);
+	}
+	.boton:active {
+		transform: translateY(3px);
+		box-shadow: none;
+	}
+
+	/* Colinas sobre el agua */
+	.orilla {
+		position: relative;
+		width: 100%;
+		height: 4rem;
+		margin-top: 0.4rem;
+		pointer-events: none;
+	}
+	.colinas {
+		position: absolute;
+		left: -10%;
+		bottom: -1px;
+		width: 120%;
+		height: 4.5rem;
+	}
+	.colinas.lejos {
+		opacity: 0.55;
+	}
+	.colinas.lejos path {
+		fill: #3a7d5a;
+	}
+	.colinas.cerca {
+		height: 3.2rem;
+	}
+	.colinas.cerca path {
+		fill: #1e5a3d;
+	}
+
+	/* Agua con los nenúfares */
+	.charca {
+		position: relative;
+		width: 100%;
+		
+		background: linear-gradient(180deg, #1aa497 0%, #0d6c6a 38%, #06353a 100%);
+		border-top: 2px solid rgb(255 255 255 / 0.35);
+	}
+	.fondo {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+	}
+	.pads {
+		position: relative;
+		height: 27rem;
+	}
+	.reflejos {
+		position: absolute;
+		inset: -3rem 0 0;
+		background: repeating-linear-gradient(180deg, transparent 0 14px, rgb(255 255 255 / 0.1) 14px 16px);
+	}
+
+	.hoja {
+		position: absolute;
+		left: var(--x);
+		top: var(--y);
+		width: var(--pw);
+		margin-left: calc(var(--pw) / -2);
+		margin-top: calc(var(--pw) * 0.21);
+		z-index: 2;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.plato {
+		position: relative;
+		display: block;
+		transition: transform 0.2s;
+	}
+	.plato svg {
+		display: block;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 0 0 transparent);
+		transition: filter 0.3s;
+	}
+	.hoja:hover .plato {
+		transform: scale(1.06);
+	}
+	.hoja:active .plato {
+		transform: scale(0.95);
+	}
+	.onda {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 40%;
+		height: 55%;
+		border: 2px solid rgb(255 255 255 / 0.8);
+		border-radius: 50%;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.rotulo-hoja {
+		position: absolute;
+		left: 50%;
+		top: 100%;
+		translate: -50% 0;
+		margin-top: 0.05rem;
+		white-space: nowrap;
+		font-size: 0.8rem;
+		font-weight: 900;
+		letter-spacing: 0.02em;
+		color: var(--c-crema);
+		text-shadow:
+			0 1px 0 #06353a,
+			0 0 6px #06353a,
+			0 0 10px #06353a;
+	}
+	.hoja[aria-current] .rotulo-hoja {
+		color: var(--c-lima);
+	}
+	.hoja[aria-current] .plato svg {
+		filter: drop-shadow(0 0 8px rgb(198 242 107 / 0.85));
+	}
+
+	/* La rana se coloca con transform (lo calcula el script) */
+	.rana {
+		position: absolute;
+		left: 0;
+		top: 0;
+		z-index: 4;
+		width: var(--rw);
+		pointer-events: none;
+		/* Sin JS no se sabe dónde ponerla: oculta hasta que el script la coloca */
+		visibility: hidden;
+	}
+	.rana :global(img.activa) {
+		display: block;
+	}
+	[data-listo] .rana {
+		visibility: visible;
+	}
+	.rana :global(img) {
+		display: none;
+		width: 100%;
+		height: auto;
+		filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.45));
+	}
+
+	@media (min-width: 640px) {
+		.fase {
+			--pw: 8rem;
+			--rw: 7rem;
+			padding-top: 5rem;
+		}
+		.textos {
+			max-width: 32rem;
+		}
+		.nombre {
+			font-size: 1.9rem;
+		}
+		.texto {
+			font-size: 1.02rem;
+		}
+		.orilla {
+			height: 5.5rem;
+		}
+		.colinas {
+			height: 6rem;
+		}
+		.colinas.cerca {
+			height: 4.2rem;
+		}
+		.pads {
+			height: 23rem;
+		}
+		.hoja {
+			left: var(--xg);
+			top: var(--yg);
+		}
+		.rotulo-hoja {
+			font-size: 0.95rem;
+		}
+		.astro {
+			width: 5rem;
+			height: 5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.texto-caja[data-activo] {
+			animation: sale 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+		}
+		.reflejos {
+			animation: reflejos 5s linear infinite;
+		}
+		.luciernagas i {
+			animation: parpadeo 2.6s ease-in-out infinite;
+			animation-delay: var(--d);
+		}
+		/* Cada nenúfar se mece a su aire */
+		.plato {
+			animation: mecer 6s ease-in-out infinite;
+			animation-delay: calc(var(--i) * -1s);
+		}
+		.flota {
+			animation: respirar 3.5s ease-in-out infinite;
+			transform-origin: 50% 100%;
+		}
+	}
+	@keyframes sale {
+		from {
+			opacity: 0;
+			scale: 0.9;
+		}
+	}
+	@keyframes reflejos {
+		to {
+			transform: translateY(1.9rem);
+		}
+	}
+	@keyframes mecer {
+		50% {
+			transform: translateY(0.25rem) rotate(1.2deg);
+		}
+	}
+	@keyframes respirar {
+		50% {
+			transform: scale(1.02, 0.98);
+		}
+	}
+	@keyframes parpadeo {
+		0%,
+		100% {
+			opacity: 0.15;
+			transform: translate(0, 0);
+		}
+		50% {
+			opacity: 1;
+			transform: translate(6px, -8px);
+		}
+	}
+</style>
 
 <script>
 	import { obtenerAlbum } from '../cromos/datos';
 	import { pintarFoto } from '../cromos/pintar';
 	import { estadoEstanco } from '../estanco/datos';
 
-	const $ = (sel: string) => document.querySelector<HTMLElement>(sel)!;
+	const charca = document.querySelector<HTMLElement>('[data-charca]')!;
+	const pads = charca.querySelector<HTMLElement>('[data-pads]')!;
+	const rana = charca.querySelector<HTMLElement>('[data-rana]')!;
+	const hojas = [...charca.querySelectorAll<HTMLAnchorElement>('[data-hoja]')];
+	const textos = [...document.querySelectorAll<HTMLElement>('[data-texto]')];
+	const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	// Solo se ve la imagen de la pose actual
+	const imagenes = [...rana.querySelectorAll<HTMLElement>('[data-pose-img]')];
+	function ponerPose(pose: string) {
+		rana.dataset.pose = pose;
+		imagenes.forEach((i) => i.classList.toggle('activa', i.dataset.poseImg === pose));
+	}
+	ponerPose(hojas[0].dataset.pose ?? 'cartas');
+
+	let actual = hojas[0];
+
+	// Dónde tiene que estar la rana para ir sobre un nenúfar (esquina de la rana, relativa a la charca)
+	function destino(hoja: HTMLElement) {
+		const c = pads.getBoundingClientRect();
+		const p = hoja.querySelector('svg')!.getBoundingClientRect();
+		return {
+			x: p.left - c.left + p.width / 2 - rana.offsetWidth / 2,
+			y: p.top - c.top + p.height * 0.62 - rana.offsetHeight,
+		};
+	}
+	function colocar() {
+		const d = destino(actual);
+		rana.style.transform = `translate(${d.x}px, ${d.y}px)`;
+	}
+
+	function saltar(hoja: HTMLAnchorElement) {
+		const desde = destino(actual);
+		const hasta = destino(hoja);
+		actual.removeAttribute('aria-current');
+		hoja.setAttribute('aria-current', 'true');
+		actual = hoja;
+
+		// Texto del nenúfar elegido
+		textos.forEach((t) => (t.dataset.texto === hoja.dataset.hoja ? t.setAttribute('data-activo', '') : t.removeAttribute('data-activo')));
+
+		rana.style.transform = `translate(${hasta.x}px, ${hasta.y}px)`;
+		const pose = hoja.dataset.pose ?? 'cartas';
+		if (quieto) {
+			ponerPose(pose);
+			return;
+		}
+		// La pose cambia en lo más alto del salto
+		setTimeout(() => ponerPose(pose), 330);
+		const alto = Math.min(desde.y, hasta.y) - 70;
+		rana.animate(
+			[
+				{ transform: `translate(${desde.x}px, ${desde.y}px) scale(1.12, 0.86)`, offset: 0 },
+				{ transform: `translate(${(desde.x + hasta.x) / 2}px, ${alto}px) scale(0.95, 1.07)`, offset: 0.45 },
+				{ transform: `translate(${hasta.x}px, ${hasta.y}px) scale(1.12, 0.86)`, offset: 0.85 },
+				{ transform: `translate(${hasta.x}px, ${hasta.y}px) scale(1, 1)`, offset: 1 },
+			],
+			{ duration: 750, easing: 'ease-in-out' },
+		);
+		// Onda al aterrizar
+		hoja.querySelector('.onda')?.animate(
+			[
+				{ opacity: 0.9, transform: 'scale(0.6)' },
+				{ opacity: 0, transform: 'scale(1.7)' },
+			],
+			{ duration: 1100, delay: 600, easing: 'ease-out' },
+		);
+	}
+
+	// Primer toque: la rana salta y se cuenta el sitio. Segundo toque en el mismo: se entra.
+	hojas.forEach((h) =>
+		h.addEventListener('click', (e) => {
+			if (h === actual) return; // ya elegido: el enlace funciona con normalidad
+			e.preventDefault();
+			saltar(h);
+		}),
+	);
+
+	charca.setAttribute('data-listo', '');
+	colocar();
+	new ResizeObserver(colocar).observe(charca);
 
 	// Participantes: progreso y primeras caras
+	const $ = (sel: string) => document.querySelector<HTMLElement>(sel)!;
 	const { cromos, total } = await obtenerAlbum();
 	$('[data-v-conseguidos]').textContent = String(cromos.length);
 	$('[data-v-total]').textContent = String(total);
@@ -86,11 +766,10 @@ const ventanas = [
 	);
 
 	// Datos de un vistazo
-	const dato = (nombre: string, texto: string) => {
-		const el = $(`[data-dato="${nombre}"]`);
-		el.textContent = texto;
-		el.hidden = false;
-	};
 	const unidades = Object.values((await estadoEstanco()).mias).reduce((a, b) => a + b, 0);
-	if (unidades) dato('estanco', `${unidades} reservado${unidades === 1 ? '' : 's'}`);
+	if (unidades) {
+		const el = $('[data-dato="estanco"]');
+		el.textContent = `${unidades} reservado${unidades === 1 ? '' : 's'}`;
+		el.hidden = false;
+	}
 </script>
