@@ -1,5 +1,6 @@
 ---
 import Hoja from '../common/Hoja.astro';
+import ElegirEquipo from './ElegirEquipo.astro';
 import { MINIJUEGOS } from './liga';
 
 // Hub de /juegos: tablero de hexágonos al estilo Catan. El centro eres tú (equipo, rango, puntos)
@@ -46,14 +47,14 @@ const filas = [
 				<div class="fila">
 					{fila.map((id) =>
 						id === 'centro' ? (
-							<div class="hex hex-centro" role="group" aria-label="Tu estado en la liga">
+							<button type="button" class="hex hex-boton hex-centro" data-centro aria-label="Tu estado en la liga">
 								<span class="hex-int" style="--fondo:#561a26;--texto:#f0bc44">
 									<span class="text-[0.6em] font-black uppercase tracking-widest opacity-80">Tú</span>
-									<strong data-centro-equipo class="text-[1.05em] font-black uppercase leading-none">Sin equipo</strong>
+									<strong data-centro-equipo class="text-[1.05em] font-black uppercase leading-none">Elige equipo</strong>
 									<span data-centro-rango class="text-[0.7em] font-bold">Hierro</span>
 									<span data-centro-puntos class="text-[0.7em] font-bold opacity-80">0 pts</span>
 								</span>
-							</div>
+							</button>
 						) : (
 							<button type="button" class="hex hex-boton" data-hex={id} data-titulo={hexes[id].titulo} data-texto={hexes[id].texto}>
 								<span class="hex-int" style={`--fondo:${hexes[id].fondo};--texto:${hexes[id].color}`}>
@@ -77,6 +78,8 @@ const filas = [
 		Cada hexágono es un juego. La ficha es lo máximo que puedes ganar y cada minijuego se juega una vez al día.
 	</p>
 </div>
+
+<ElegirEquipo />
 
 <Hoja id="hoja-hex" titulo="hoja-hex-titulo">
 	<div class="space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
@@ -168,6 +171,20 @@ const filas = [
 		background: #561a26;
 		color: #f0bc44;
 	}
+	/* Mientras no hay equipo, el centro late para llamar a elegirlo */
+	.hex-centro.sin-equipo {
+		animation: late 1.8s ease-in-out infinite;
+	}
+	@keyframes late {
+		50% {
+			transform: scale(1.05);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.hex-centro.sin-equipo {
+			animation: none;
+		}
+	}
 </style>
 
 <script>
@@ -175,21 +192,45 @@ const filas = [
 
 	const tablero = document.querySelector<HTMLElement>('[data-tablero]')!;
 	const hoja = document.getElementById('hoja-hex') as HTMLDialogElement;
+	const hojaEquipo = document.getElementById('hoja-equipo') as HTMLDialogElement;
+	const centro = tablero.querySelector<HTMLElement>('[data-centro]')!;
+	let estado = await estadoLiga();
+
+	function abrirHoja(titulo: string, texto: string) {
+		hoja.querySelector('[data-hex-titulo]')!.textContent = titulo;
+		hoja.querySelector('[data-hex-texto]')!.textContent = texto;
+		hoja.showModal();
+	}
 
 	// Pintar el estado propio en el hexágono central y marcar los minijuegos ya jugados hoy
-	const estado = await estadoLiga();
-	const poner = (sel: string, texto: string) => (tablero.querySelector(`[data-centro-${sel}]`)!.textContent = texto);
-	poner('equipo', estado.equipo ? equipoPorId(estado.equipo).nombre : 'Sin equipo');
-	poner('rango', estado.rango.nombre);
-	poner('puntos', `${estado.puntos} pts`);
-	for (const id of estado.jugadosHoy) {
-		const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
-		if (ficha) {
-			ficha.textContent = '✓';
-			ficha.classList.add('hecha');
-			ficha.setAttribute('aria-label', `${MINIJUEGOS.find((m) => m.id === id)?.titulo}: ya jugado hoy`);
+	function pintar() {
+		const poner = (sel: string, texto: string) => (centro.querySelector(`[data-centro-${sel}]`)!.textContent = texto);
+		poner('equipo', estado.equipo ? equipoPorId(estado.equipo).nombre : 'Elige equipo');
+		poner('rango', estado.rango.nombre);
+		poner('puntos', `${estado.puntos} pts`);
+		centro.classList.toggle('sin-equipo', !estado.equipo);
+		for (const id of estado.jugadosHoy) {
+			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
+			if (ficha) {
+				ficha.textContent = '✓';
+				ficha.classList.add('hecha');
+				ficha.setAttribute('aria-label', `${MINIJUEGOS.find((m) => m.id === id)?.titulo}: ya jugado hoy`);
+			}
 		}
 	}
+	pintar();
+	document.addEventListener('liga:cambio', async () => {
+		estado = await estadoLiga();
+		pintar();
+	});
+
+	// El centro: sin equipo, a elegirlo; con equipo, tu progreso hacia el siguiente rango
+	centro.addEventListener('click', () => {
+		if (!estado.equipo) return hojaEquipo.showModal();
+		const { nombre, lema } = equipoPorId(estado.equipo);
+		const falta = estado.siguienteRango ? ` Te faltan ${estado.siguienteRango.desde - estado.puntos} puntos para ${estado.siguienteRango.nombre}.` : ' Has llegado al rango máximo.';
+		abrirHoja(`Equipo ${nombre}`, `${lema}. Rango ${estado.rango.nombre} con ${estado.puntos} puntos, puesto ${estado.puesto} de la liga.${falta}`);
+	});
 
 	// Cada hexágono abre su hoja. La fiesta baja a la lista de propuestas.
 	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
@@ -198,9 +239,7 @@ const filas = [
 				document.getElementById('fiesta-lista')?.scrollIntoView({ behavior: 'smooth' });
 				return;
 			}
-			hoja.querySelector('[data-hex-titulo]')!.textContent = boton.dataset.titulo ?? '';
-			hoja.querySelector('[data-hex-texto]')!.textContent = `${boton.dataset.texto} Se abre muy pronto.`;
-			hoja.showModal();
+			abrirHoja(boton.dataset.titulo ?? '', `${boton.dataset.texto} Se abre muy pronto.`);
 		});
 	});
 </script>

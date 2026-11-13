@@ -1,0 +1,68 @@
+---
+import Button from '../common/Button.astro';
+import Hoja from '../common/Hoja.astro';
+import { EQUIPOS } from './liga';
+
+// "Selecciona tu luchador": el invitado elige a uno de los tres cumpleañeros y entra en su equipo.
+// Solo se puede elegir una vez (la RPC `elegir_equipo` lo impide).
+---
+
+<Hoja id="hoja-equipo" titulo="hoja-equipo-titulo">
+	<form data-form-equipo class="space-y-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<div>
+			<h3 id="hoja-equipo-titulo" class="text-2xl text-granate">Elige tu equipo</h3>
+			<p class="mt-1 text-sm text-tinta-suave">Tus puntos van a su marcador y el día de la fiesta se corona al equipo ganador. <strong>Solo puedes elegir una vez.</strong></p>
+		</div>
+
+		<div class="space-y-3">
+			{
+				EQUIPOS.map((e) => (
+					<label class="block cursor-pointer">
+						<input type="radio" name="equipo" value={e.id} required class="peer sr-only" />
+						<span class="flex items-center gap-4 rounded-lg border-2 border-granate/25 bg-white p-3 transition peer-checked:border-granate peer-checked:bg-amarillo/40 peer-checked:shadow-chapa peer-focus-visible:ring-2 peer-focus-visible:ring-granate">
+							<span class="grid h-20 w-20 shrink-0 place-items-end overflow-hidden rounded-md bg-crema-oscuro">
+								<img src={`/${e.poster}`} alt="" width="80" height="80" loading="lazy" class="h-full w-full object-contain object-bottom" />
+							</span>
+							<span class="min-w-0">
+								<span class="block text-xs font-black uppercase tracking-widest text-tinta-suave">Equipo</span>
+								<span class="block text-2xl font-black uppercase leading-none text-granate">{e.nombre}</span>
+								<span class="mt-1 block text-sm font-bold text-tinta-suave">{e.lema}</span>
+							</span>
+						</span>
+					</label>
+				))
+			}
+		</div>
+
+		<p data-error hidden role="alert" class="text-sm font-bold text-granate"></p>
+		<Button type="submit" tamano="lg" class="w-full" data-confirmar disabled>Elige un equipo</Button>
+	</form>
+</Hoja>
+
+<script>
+	import { elegirEquipo, equipoPorId, type EquipoId } from './liga';
+
+	const form = document.querySelector<HTMLFormElement>('[data-form-equipo]')!;
+	const boton = form.querySelector<HTMLButtonElement>('[data-confirmar]')!;
+	const error = form.querySelector<HTMLElement>('[data-error]')!;
+
+	// El botón dice a qué equipo te vas a unir
+	form.addEventListener('change', () => {
+		const id = new FormData(form).get('equipo') as EquipoId | null;
+		boton.disabled = !id;
+		boton.textContent = id ? `Unirme al equipo ${equipoPorId(id).nombre}` : 'Elige un equipo';
+	});
+
+	form.addEventListener('submit', async (ev) => {
+		ev.preventDefault();
+		error.hidden = true;
+		try {
+			await elegirEquipo(new FormData(form).get('equipo') as EquipoId);
+			form.closest('dialog')!.close();
+			document.dispatchEvent(new CustomEvent('liga:cambio'));
+		} catch {
+			error.textContent = 'Ya habías elegido equipo.';
+			error.hidden = false;
+		}
+	});
+</script>
