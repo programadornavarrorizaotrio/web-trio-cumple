@@ -57,7 +57,7 @@ export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | nul
 
 // ───────────────────────── Minijuegos ─────────────────────────
 
-export type MinijuegoId = 'quien-dijo' | 'adivina-cromo' | 'precio-justo';
+export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'precio-justo';
 
 export interface Minijuego {
 	id: MinijuegoId;
@@ -70,8 +70,8 @@ export interface Minijuego {
 }
 
 export const MINIJUEGOS: Minijuego[] = [
-	{ id: 'quien-dijo', titulo: '¿Quién dijo esto?', descripcion: 'Una frase, tres sospechosos.', maxPuntos: 30, recurso: 'Papel' },
-	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Foto difuminada que se va aclarando.', maxPuntos: 30, recurso: 'Filtros' },
+	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel' },
+	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros' },
 	{ id: 'precio-justo', titulo: 'El precio justo', descripcion: 'Acércate al precio del producto del estanco.', maxPuntos: 30, recurso: 'Tabaco' },
 ];
 

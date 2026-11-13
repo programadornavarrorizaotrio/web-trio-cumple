@@ -1,6 +1,7 @@
 ---
 import Hoja from '../common/Hoja.astro';
 import ElegirEquipo from './ElegirEquipo.astro';
+import Partida from './Partida.astro';
 import Ranking from './Ranking.astro';
 import { MINIJUEGOS } from './liga';
 
@@ -26,8 +27,8 @@ const juego = (id: string, icono: string, fondo: string, color: string): Hex => 
 };
 
 const hexes: Record<string, Hex> = {
-	'quien-dijo': juego('quien-dijo', '💬', '#f1e4c6', '#561a26'),
-	'adivina-cromo': juego('adivina-cromo', '🃏', '#c9dba0', '#2a3a12'),
+	'memory-cromos': juego('memory-cromos', '🃏', '#f1e4c6', '#561a26'),
+	'golpea-rana': juego('golpea-rana', '🐸', '#c9dba0', '#2a3a12'),
 	'precio-justo': juego('precio-justo', '🏷️', '#d9a566', '#2a1116'),
 	ranking: { id: 'ranking', icono: '🏆', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.', fondo: '#f0bc44', color: '#561a26' },
 	premios: { id: 'premios', icono: '🎁', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.', fondo: '#f7d88c', color: '#561a26' },
@@ -35,7 +36,7 @@ const hexes: Record<string, Hex> = {
 };
 
 const filas = [
-	['quien-dijo', 'adivina-cromo'],
+	['memory-cromos', 'golpea-rana'],
 	['precio-justo', 'centro', 'ranking'],
 	['premios', 'fiesta'],
 ];
@@ -81,6 +82,7 @@ const filas = [
 </div>
 
 <ElegirEquipo />
+<Partida />
 <Ranking />
 
 <Hoja id="hoja-hex" titulo="hoja-hex-titulo">
@@ -191,6 +193,7 @@ const filas = [
 
 <script>
 	import { estadoLiga, equipoPorId, MINIJUEGOS } from './liga';
+	import { hayJuego, lanzar } from './partida';
 
 	const tablero = document.querySelector<HTMLElement>('[data-tablero]')!;
 	const hoja = document.getElementById('hoja-hex') as HTMLDialogElement;
@@ -238,6 +241,12 @@ const filas = [
 	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
 		boton.addEventListener('click', () => {
 			if (boton.dataset.hex === 'ranking') return; // lo abre Ranking.astro
+			const id = boton.dataset.hex!;
+			if (hayJuego(id)) {
+				if (!estado.equipo) return hojaEquipo.showModal();
+				if (estado.jugadosHoy.includes(id)) return abrirHoja(boton.dataset.titulo ?? '', 'Ya has jugado hoy. Vuelve mañana para otra partida.');
+				return void lanzar(id);
+			}
 			if (boton.dataset.hex === 'fiesta') {
 				document.getElementById('fiesta-lista')?.scrollIntoView({ behavior: 'smooth' });
 				return;
