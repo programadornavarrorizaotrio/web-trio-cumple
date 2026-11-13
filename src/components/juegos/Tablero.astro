@@ -1,0 +1,206 @@
+---
+import Hoja from '../common/Hoja.astro';
+import { MINIJUEGOS } from './liga';
+
+// Hub de /juegos: tablero de hexágonos al estilo Catan. El centro eres tú (equipo, rango, puntos)
+// y cada hexágono de alrededor es un juego o una zona. Los minijuegos dan el "recurso" de su hex
+// y el número es lo máximo que se puede ganar en una partida, como las fichas de Catan.
+interface Hex {
+	id: string;
+	icono: string;
+	titulo: string;
+	/** Recurso de Catan (solo minijuegos) */
+	recurso?: string;
+	/** Ficha con número (solo minijuegos) */
+	ficha?: number;
+	texto: string;
+	fondo: string;
+	color: string;
+}
+
+const juego = (id: string, icono: string, fondo: string, color: string): Hex => {
+	const m = MINIJUEGOS.find((x) => x.id === id)!;
+	return { id, icono, titulo: m.titulo, recurso: m.recurso, ficha: m.maxPuntos, texto: `${m.descripcion} Una partida al día.`, fondo, color };
+};
+
+const hexes: Record<string, Hex> = {
+	'quien-dijo': juego('quien-dijo', '💬', '#f1e4c6', '#561a26'),
+	'adivina-cromo': juego('adivina-cromo', '🃏', '#c9dba0', '#2a3a12'),
+	'precio-justo': juego('precio-justo', '🏷️', '#d9a566', '#2a1116'),
+	ranking: { id: 'ranking', icono: '🏆', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.', fondo: '#f0bc44', color: '#561a26' },
+	premios: { id: 'premios', icono: '🎁', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.', fondo: '#f7d88c', color: '#561a26' },
+	fiesta: { id: 'fiesta', icono: '🎉', titulo: 'La fiesta', texto: '', fondo: '#8e3345', color: '#fbf4e4' },
+};
+
+const filas = [
+	['quien-dijo', 'adivina-cromo'],
+	['precio-justo', 'centro', 'ranking'],
+	['premios', 'fiesta'],
+];
+---
+
+<div class="[container-type:inline-size]" data-tablero>
+	<div class="tablero mx-auto">
+		{
+			filas.map((fila) => (
+				<div class="fila">
+					{fila.map((id) =>
+						id === 'centro' ? (
+							<div class="hex hex-centro" role="group" aria-label="Tu estado en la liga">
+								<span class="hex-int" style="--fondo:#561a26;--texto:#f0bc44">
+									<span class="text-[0.6em] font-black uppercase tracking-widest opacity-80">Tú</span>
+									<strong data-centro-equipo class="text-[1.05em] font-black uppercase leading-none">Sin equipo</strong>
+									<span data-centro-rango class="text-[0.7em] font-bold">Hierro</span>
+									<span data-centro-puntos class="text-[0.7em] font-bold opacity-80">0 pts</span>
+								</span>
+							</div>
+						) : (
+							<button type="button" class="hex hex-boton" data-hex={id} data-titulo={hexes[id].titulo} data-texto={hexes[id].texto}>
+								<span class="hex-int" style={`--fondo:${hexes[id].fondo};--texto:${hexes[id].color}`}>
+									<span class="text-[1.6em] leading-none" aria-hidden="true">{hexes[id].icono}</span>
+									<span class="text-[0.78em] font-black uppercase leading-tight">{hexes[id].titulo}</span>
+									{hexes[id].recurso && <span class="text-[0.6em] font-bold uppercase tracking-wider opacity-70">{hexes[id].recurso}</span>}
+									{hexes[id].ficha && (
+										<span data-ficha class="ficha" aria-label={`Hasta ${hexes[id].ficha} puntos`}>
+											{hexes[id].ficha}
+										</span>
+									)}
+								</span>
+							</button>
+						),
+					)}
+				</div>
+			))
+		}
+	</div>
+	<p class="mx-auto mt-4 max-w-sm text-center text-xs text-tinta-suave">
+		Cada hexágono es un juego. La ficha es lo máximo que puedes ganar y cada minijuego se juega una vez al día.
+	</p>
+</div>
+
+<Hoja id="hoja-hex" titulo="hoja-hex-titulo">
+	<div class="space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<h3 id="hoja-hex-titulo" data-hex-titulo class="text-2xl text-granate"></h3>
+		<p data-hex-texto class="text-tinta-suave"></p>
+		<form method="dialog">
+			<button class="w-full rounded border-2 border-granate/25 py-3 text-sm font-bold text-granate">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<style>
+	.tablero {
+		/* Ancho de un hexágono: caben 3 en fila, con un máximo en pantallas grandes */
+		--w: min(31cqw, 9.5rem);
+		--h: calc(var(--w) * 1.1547);
+		font-size: calc(var(--w) * 0.12);
+		width: 100%;
+	}
+	.fila {
+		display: flex;
+		justify-content: center;
+	}
+	/* Las filas se encajan: cada una sube 1/4 de hexágono (menos una holgura) */
+	.fila + .fila {
+		margin-top: calc(var(--w) * -0.2887 + 0.3rem);
+	}
+	.hex {
+		--punta: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+		width: var(--w);
+		height: var(--h);
+		margin-inline: 0.15rem;
+		padding: 3px;
+		flex: none;
+		clip-path: var(--punta);
+		background: #561a26;
+		transition:
+			transform 0.15s ease-out,
+			background-color 0.15s;
+	}
+	.hex-int {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.15em;
+		width: 100%;
+		height: 100%;
+		padding: 0 0.6em;
+		text-align: center;
+		clip-path: var(--punta);
+		background: var(--fondo);
+		color: var(--texto);
+	}
+	.hex-boton {
+		cursor: pointer;
+	}
+	.hex-boton:active {
+		transform: scale(0.96);
+	}
+	@media (hover: hover) {
+		.hex-boton:hover {
+			transform: scale(1.05);
+			background: #f0bc44;
+		}
+	}
+	/* El outline se recortaría con el clip-path: el foco se marca con el borde */
+	.hex-boton:focus-visible {
+		outline: none;
+		background: #f0bc44;
+		padding: 5px;
+		transform: scale(1.05);
+	}
+	/* Ficha de Catan */
+	.ficha {
+		display: grid;
+		place-items: center;
+		min-width: 2em;
+		height: 2em;
+		margin-top: 0.1em;
+		border-radius: 999px;
+		border: 2px solid #561a26;
+		background: #fbf4e4;
+		color: #742434;
+		font-size: 0.8em;
+		font-weight: 900;
+	}
+	.ficha.hecha {
+		background: #561a26;
+		color: #f0bc44;
+	}
+</style>
+
+<script>
+	import { estadoLiga, equipoPorId, MINIJUEGOS } from './liga';
+
+	const tablero = document.querySelector<HTMLElement>('[data-tablero]')!;
+	const hoja = document.getElementById('hoja-hex') as HTMLDialogElement;
+
+	// Pintar el estado propio en el hexágono central y marcar los minijuegos ya jugados hoy
+	const estado = await estadoLiga();
+	const poner = (sel: string, texto: string) => (tablero.querySelector(`[data-centro-${sel}]`)!.textContent = texto);
+	poner('equipo', estado.equipo ? equipoPorId(estado.equipo).nombre : 'Sin equipo');
+	poner('rango', estado.rango.nombre);
+	poner('puntos', `${estado.puntos} pts`);
+	for (const id of estado.jugadosHoy) {
+		const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
+		if (ficha) {
+			ficha.textContent = '✓';
+			ficha.classList.add('hecha');
+			ficha.setAttribute('aria-label', `${MINIJUEGOS.find((m) => m.id === id)?.titulo}: ya jugado hoy`);
+		}
+	}
+
+	// Cada hexágono abre su hoja. La fiesta baja a la lista de propuestas.
+	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
+		boton.addEventListener('click', () => {
+			if (boton.dataset.hex === 'fiesta') {
+				document.getElementById('fiesta-lista')?.scrollIntoView({ behavior: 'smooth' });
+				return;
+			}
+			hoja.querySelector('[data-hex-titulo]')!.textContent = boton.dataset.titulo ?? '';
+			hoja.querySelector('[data-hex-texto]')!.textContent = `${boton.dataset.texto} Se abre muy pronto.`;
+			hoja.showModal();
+		});
+	});
+</script>

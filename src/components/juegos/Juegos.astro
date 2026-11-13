@@ -3,6 +3,7 @@ import Button from '../common/Button.astro';
 import Campo from '../common/Campo.astro';
 import Hoja from '../common/Hoja.astro';
 import { MAX_JUEGOS } from './datos';
+import Tablero from './Tablero.astro';
 
 // Juegos para la fiesta: lista de propuestas y formulario en una hoja inferior.
 const lugares = [
@@ -12,7 +13,11 @@ const lugares = [
 ];
 ---
 
-<div data-juegos>
+<Tablero />
+
+<div data-juegos id="fiesta-lista" class="mt-14 scroll-mt-20 sm:mt-20">
+	<h3 class="text-2xl text-granate sm:text-3xl">Juegos para la fiesta</h3>
+	<p class="mb-5 mt-1 text-tinta-suave">¿Qué hacemos entre canción y canción? Propón un juego y mira los de los demás.</p>
 	<Button data-abrir-hoja="hoja-juego" aria-haspopup="dialog" tamano="lg" class="w-full sm:w-auto">+ Proponer un juego</Button>
 	<p class="mt-2 text-xs text-tinta-suave">Puedes proponer hasta {MAX_JUEGOS}.</p>
 
