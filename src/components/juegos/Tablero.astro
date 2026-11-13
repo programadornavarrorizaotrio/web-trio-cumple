@@ -1,6 +1,7 @@
 ---
 import Hoja from '../common/Hoja.astro';
 import ElegirEquipo from './ElegirEquipo.astro';
+import Ranking from './Ranking.astro';
 import { MINIJUEGOS } from './liga';
 
 // Hub de /juegos: tablero de hexágonos al estilo Catan. El centro eres tú (equipo, rango, puntos)
@@ -80,6 +81,7 @@ const filas = [
 </div>
 
 <ElegirEquipo />
+<Ranking />
 
 <Hoja id="hoja-hex" titulo="hoja-hex-titulo">
 	<div class="space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
@@ -235,6 +237,7 @@ const filas = [
 	// Cada hexágono abre su hoja. La fiesta baja a la lista de propuestas.
 	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
 		boton.addEventListener('click', () => {
+			if (boton.dataset.hex === 'ranking') return; // lo abre Ranking.astro
 			if (boton.dataset.hex === 'fiesta') {
 				document.getElementById('fiesta-lista')?.scrollIntoView({ behavior: 'smooth' });
 				return;

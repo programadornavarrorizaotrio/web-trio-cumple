@@ -1,0 +1,109 @@
+---
+import Hoja from '../common/Hoja.astro';
+
+// Hoja del hexágono Ranking: tu rango, marcador por equipos y clasificación individual.
+// Se rellena al abrirla, para que refleje los puntos del momento.
+---
+
+<Hoja id="hoja-ranking" titulo="hoja-ranking-titulo">
+	<div class="space-y-6 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<h3 id="hoja-ranking-titulo" class="text-2xl text-granate">Ranking</h3>
+
+		<section data-mi-rango hidden aria-label="Tu rango" class="rounded-lg bg-granate p-4 text-crema">
+			<div class="flex items-baseline justify-between gap-3">
+				<strong data-rango-actual class="text-xl font-black uppercase text-amarillo"></strong>
+				<span data-rango-puntos class="text-sm font-bold"></span>
+			</div>
+			<div class="mt-3 h-2.5 overflow-hidden rounded-full bg-granate-oscuro" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+				<div data-rango-barra class="h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></div>
+			</div>
+			<p data-rango-falta class="mt-2 text-xs font-bold text-crema/80"></p>
+		</section>
+
+		<section aria-labelledby="rk-equipos">
+			<h4 id="rk-equipos" class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-granate">Por equipos</h4>
+			<ul data-equipos class="space-y-3"></ul>
+		</section>
+
+		<section aria-labelledby="rk-todos">
+			<h4 id="rk-todos" class="mb-2 text-xs font-black uppercase tracking-[0.2em] text-granate">Clasificación</h4>
+			<ol data-clasificacion class="divide-y-2 divide-dashed divide-granate/10 rounded-lg border-2 border-granate/15 bg-white"></ol>
+		</section>
+
+		<form method="dialog">
+			<button class="w-full rounded border-2 border-granate/25 py-3 text-sm font-bold text-granate">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<script>
+	import { estadoLiga, ranking, marcadorEquipos, equipoPorId } from './liga';
+
+	const hoja = document.getElementById('hoja-ranking') as HTMLDialogElement;
+	const q = <T extends HTMLElement>(sel: string) => hoja.querySelector<T>(sel)!;
+
+	// Todo el texto va con textContent: los nombres vienen de los invitados
+	function el(etiqueta: string, clase: string, texto?: string) {
+		const e = document.createElement(etiqueta);
+		e.className = clase;
+		if (texto !== undefined) e.textContent = texto;
+		return e;
+	}
+
+	async function pintar() {
+		const [estado, marcador, filas] = await Promise.all([estadoLiga(), marcadorEquipos(), ranking(20)]);
+
+		// Tu rango y lo que falta para el siguiente
+		const rango = q('[data-mi-rango]');
+		rango.hidden = !estado.equipo;
+		if (estado.equipo) {
+			const { rango: actual, siguienteRango: sig, puntos } = estado;
+			q('[data-rango-actual]').textContent = actual.nombre;
+			q('[data-rango-puntos]').textContent = `${puntos} pts · puesto ${estado.puesto}`;
+			const pct = sig ? Math.round(((puntos - actual.desde) / (sig.desde - actual.desde)) * 100) : 100;
+			q('[data-rango-barra]').style.width = `${pct}%`;
+			q('[data-rango-barra]').parentElement!.setAttribute('aria-valuenow', String(pct));
+			q('[data-rango-falta]').textContent = sig ? `${sig.desde - puntos} puntos para ${sig.nombre}` : 'Rango máximo alcanzado';
+		}
+
+		// Marcador por equipos: barras proporcionales al líder
+		const max = Math.max(1, ...marcador.map((m) => m.puntos));
+		q('[data-equipos]').replaceChildren(
+			...marcador.map(({ equipo, puntos, miembros }, i) => {
+				const li = el('li', '');
+				const cab = el('div', 'flex items-baseline justify-between gap-3');
+				const nombre = el('span', 'font-black uppercase text-granate', `${i === 0 ? '👑 ' : ''}${equipo.nombre}`);
+				if (estado.equipo === equipo.id) nombre.append(el('span', 'ml-2 rounded-sm bg-amarillo px-1.5 py-0.5 align-middle text-[0.6rem] tracking-wider text-granate-oscuro', 'Tu equipo'));
+				cab.append(nombre, el('span', 'text-sm font-bold text-tinta-suave', `${puntos} pts · ${miembros} jug.`));
+				const pista = el('div', 'mt-1 h-3 overflow-hidden rounded-full bg-crema-oscuro');
+				const barra = el('div', 'h-full rounded-full');
+				barra.style.cssText = `width:${Math.round((puntos / max) * 100)}%;background:${equipo.color}`;
+				pista.append(barra);
+				li.append(cab, pista);
+				return li;
+			}),
+		);
+
+		// Clasificación individual con tu fila resaltada
+		q('[data-clasificacion]').replaceChildren(
+			...filas.map((f, i) => {
+				const li = el('li', `flex items-center gap-3 px-3 py-2.5 ${f.yo ? 'bg-amarillo/40' : ''}`);
+				if (f.yo) li.setAttribute('aria-current', 'true');
+				const pos = el('span', 'w-6 shrink-0 text-center text-sm font-black text-granate', String(i + 1));
+				const punto = el('span', 'h-3 w-3 shrink-0 rounded-full');
+				punto.style.background = equipoPorId(f.equipo).color;
+				punto.title = equipoPorId(f.equipo).nombre;
+				const quien = el('span', 'min-w-0 flex-1');
+				quien.append(el('span', 'block truncate text-sm font-bold', f.yo ? `${f.nombre} (tú)` : f.nombre), el('span', 'block text-xs text-tinta-suave', f.rango));
+				li.append(pos, punto, quien, el('span', 'text-sm font-black text-granate', `${f.puntos}`));
+				return li;
+			}),
+		);
+	}
+
+	document.querySelector('[data-hex="ranking"]')?.addEventListener('click', async () => {
+		await pintar();
+		hoja.showModal();
+		hoja.scrollTop = 0; // el foco inicial cae en "Cerrar", al final, y la hoja saldría desplazada
+	});
+</script>

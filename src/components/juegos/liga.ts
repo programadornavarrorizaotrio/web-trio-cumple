@@ -15,13 +15,18 @@ export interface Equipo {
 	nombre: string;
 	lema: string;
 	poster: string;
+	/** Color del equipo en marcadores y barras */
+	color: string;
 }
+
+const COLORES: Record<EquipoId, string> = { pencho: '#f0bc44', fran: '#6fa43a', juan: '#4a7fc1' };
 
 export const EQUIPOS: Equipo[] = trio.map((t) => ({
 	id: t.slug as EquipoId,
 	nombre: t.nombre,
 	lema: t.lema,
 	poster: t.poster,
+	color: COLORES[t.slug as EquipoId],
 }));
 
 export const equipoPorId = (id: EquipoId) => EQUIPOS.find((e) => e.id === id)!;
