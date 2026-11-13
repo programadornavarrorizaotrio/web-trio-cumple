@@ -7,8 +7,8 @@ export const instrucciones = 'La rana asoma por los agujeros: tócala antes de q
 
 // Ajustes de dificultad (ms): al principio es tranquilo y al final va rápido
 const DURACION = 30_000;
-const INTERVALO = [900, 450] as const; // entre apariciones: inicio → final
-const VIDA = [1000, 550] as const; // cuánto se queda fuera: inicio → final
+const INTERVALO = [1400, 850] as const; // entre apariciones: inicio → final
+const VIDA = [750, 400] as const; // cuánto se queda fuera: inicio → final
 const AGUJEROS = 9;
 const PROB_DORADA = 0.08;
 const MAX = MINIJUEGOS.find((m) => m.id === 'golpea-rana')!.maxPuntos;
@@ -70,12 +70,12 @@ export function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: Contex
 			bajadas.set(b, window.setTimeout(() => bajar(b), entre(VIDA, p)));
 		}
 
-		// Aparece una rana cada cierto tiempo, y dos a la vez en la segunda mitad
+		// Aparece una rana cada cierto tiempo, y dos a la vez en el último tramo
 		function turno() {
 			if (terminada) return;
 			const p = Math.min(1, (performance.now() - inicio) / DURACION);
 			const fuera = agujeros.filter((b) => b.classList.contains('arriba')).length;
-			if (fuera < (p < 0.4 ? 1 : 2)) subir(p);
+			if (fuera < (p < 0.6 ? 1 : 2)) subir(p);
 			timerTurno = window.setTimeout(turno, entre(INTERVALO, p) * (0.8 + Math.random() * 0.4));
 		}
 		let timerTurno = window.setTimeout(turno, 600);
