@@ -2,6 +2,7 @@
 import { getImage } from 'astro:assets';
 import Button from '../common/Button.astro';
 import rana from '../../assets/mascota/saluda.png';
+import FotosDemo from '../cromos/FotosDemo.astro';
 
 // Ventana a pantalla completa donde se juega un minijuego. La abre `lanzar(id)` de partida.ts
 // y cada juego pinta su tablero dentro de [data-area].
@@ -50,6 +51,9 @@ const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' 
 		</div>
 	</div>
 </dialog>
+
+<!-- Fotos de ejemplo del trío para el memory (TODO: vendrán de listar_cromos) -->
+<FotosDemo />
 
 <style is:global>
 	/* === Golpea la rana === */
@@ -160,6 +164,104 @@ const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' 
 		}
 		.rana-pop {
 			animation-duration: 0.01s;
+		}
+	}
+
+	/* === Memory de cromos === */
+	.memo-hud {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+		color: var(--color-amarillo);
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+	.memo-campo {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.6rem;
+		touch-action: manipulation;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.memo-carta {
+		aspect-ratio: 3 / 4;
+		padding: 0;
+		border: 0;
+		background: none;
+		perspective: 600px;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.memo-int {
+		position: relative;
+		display: block;
+		width: 100%;
+		height: 100%;
+		transform-style: preserve-3d;
+		transition: transform 0.35s;
+	}
+	.memo-carta.vuelta .memo-int {
+		transform: rotateY(180deg);
+	}
+	.memo-cara {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		border: 3px solid var(--color-amarillo);
+		border-radius: 0.6rem;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.memo-dorso {
+		background:
+			radial-gradient(circle at 50% 50%, var(--color-granate-claro) 0 22%, transparent 23%),
+			repeating-linear-gradient(45deg, var(--color-granate), var(--color-granate) 8px, var(--color-granate-oscuro) 8px 16px);
+	}
+	.memo-frente {
+		display: flex;
+		flex-direction: column;
+		transform: rotateY(180deg);
+		background: var(--color-crema);
+	}
+	.memo-frente img {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		object-fit: cover;
+		object-position: 50% 20%;
+		-webkit-user-drag: none;
+	}
+	.memo-numero {
+		display: grid;
+		flex: 1;
+		place-items: center;
+		background: var(--color-granate-claro);
+		color: var(--color-amarillo);
+		font-size: 1.5rem;
+		font-weight: 900;
+	}
+	.memo-nombre {
+		padding: 0.25rem;
+		background: var(--color-granate);
+		color: var(--color-amarillo);
+		font-size: 0.7rem;
+		font-weight: 900;
+		line-height: 1.1;
+		text-align: center;
+		text-transform: uppercase;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.memo-carta.pareja .memo-cara {
+		border-color: #c6f26b;
+		box-shadow: 0 0 0 2px #c6f26b;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.memo-int {
+			transition: none;
 		}
 	}
 </style>

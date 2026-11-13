@@ -25,6 +25,7 @@ export interface Minijuego {
 
 const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	'golpea-rana': () => import('./golpea-rana'),
+	'memory-cromos': () => import('./memory-cromos'),
 };
 
 export const hayJuego = (id: string): id is MinijuegoId => id in modulos;
