@@ -32,7 +32,7 @@ export const EQUIPOS: Equipo[] = trio.map((t) => ({
 export const equipoPorId = (id: EquipoId) => EQUIPOS.find((e) => e.id === id)!;
 
 // ───────────────────────── Rangos ─────────────────────────
-// Umbrales pensados para ~3 minijuegos al día de hasta 30 puntos cada uno.
+// Umbrales pensados para unos 5 minijuegos al día de hasta 24-30 puntos cada uno.
 
 export interface Rango {
 	nombre: string;
@@ -57,7 +57,7 @@ export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | nul
 
 // ───────────────────────── Minijuegos ─────────────────────────
 
-export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'precio-justo';
+export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'dados-catan' | 'adivina-cromo' | 'wordle-trio';
 
 export interface Minijuego {
 	id: MinijuegoId;
@@ -72,7 +72,9 @@ export interface Minijuego {
 export const MINIJUEGOS: Minijuego[] = [
 	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel' },
 	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros' },
-	{ id: 'precio-justo', titulo: 'El precio justo', descripcion: 'Acércate al precio del producto del estanco.', maxPuntos: 30, recurso: 'Tabaco' },
+	{ id: 'dados-catan', titulo: 'Dados de Catan', descripcion: 'Tira los dados: cuanto más alto, mejor. Pero cuidado con el 7.', maxPuntos: 24, recurso: 'Mechero' },
+	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco' },
+	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza' },
 ];
 
 // ───────────────────────── Estado simulado ─────────────────────────

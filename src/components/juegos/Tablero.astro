@@ -5,8 +5,8 @@ import Partida from './Partida.astro';
 import Ranking from './Ranking.astro';
 import { MINIJUEGOS } from './liga';
 
-// Hub de /juegos: tablero de hexágonos al estilo Catan. El centro eres tú (equipo, rango, puntos)
-// y cada hexágono de alrededor es un juego o una zona. Los minijuegos dan el "recurso" de su hex
+// Hub de /juegos: tablero de hexágonos al estilo Catan. Arriba, una tarjeta con tu estado (equipo,
+// rango, puntos) y debajo un hexágono por juego o zona. Los minijuegos dan el "recurso" de su hex
 // y el número es lo máximo que se puede ganar en una partida, como las fichas de Catan.
 interface Hex {
 	id: string;
@@ -29,49 +29,61 @@ const juego = (id: string, icono: string, fondo: string, color: string): Hex => 
 const hexes: Record<string, Hex> = {
 	'memory-cromos': juego('memory-cromos', '🃏', '#f1e4c6', '#561a26'),
 	'golpea-rana': juego('golpea-rana', '🐸', '#c9dba0', '#2a3a12'),
-	'precio-justo': juego('precio-justo', '🏷️', '#d9a566', '#2a1116'),
+	'dados-catan': juego('dados-catan', '🎲', '#d9a566', '#2a1116'),
+	'adivina-cromo': juego('adivina-cromo', '🕵️', '#bcd6e6', '#12303f'),
+	'wordle-trio': juego('wordle-trio', '🔤', '#d9c9ec', '#3a1f52'),
 	ranking: { id: 'ranking', icono: '🏆', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.', fondo: '#f0bc44', color: '#561a26' },
 	premios: { id: 'premios', icono: '🎁', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.', fondo: '#f7d88c', color: '#561a26' },
 	fiesta: { id: 'fiesta', icono: '🎉', titulo: 'La fiesta', texto: '', fondo: '#8e3345', color: '#fbf4e4' },
 };
 
 const filas = [
-	['memory-cromos', 'golpea-rana'],
-	['precio-justo', 'centro', 'ranking'],
-	['premios', 'fiesta'],
+	['memory-cromos', 'golpea-rana', 'dados-catan'],
+	['adivina-cromo', 'wordle-trio'],
+	['ranking', 'premios', 'fiesta'],
 ];
 ---
 
 <div class="[container-type:inline-size]" data-tablero>
+	<button
+		type="button"
+		data-centro
+		aria-label="Tu estado en la liga"
+		class="tarjeta-yo mx-auto mb-5 block w-full max-w-md rounded-lg bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
+	>
+		<span class="flex items-center justify-between gap-3">
+			<span>
+				<span class="block text-[0.65rem] font-black uppercase tracking-widest opacity-80">Tu equipo</span>
+				<strong data-centro-equipo class="block text-2xl font-black uppercase leading-none">Elige equipo</strong>
+			</span>
+			<span class="text-right">
+				<span data-centro-rango class="block text-lg font-black uppercase">Hierro</span>
+				<span data-centro-puntos class="block text-xs font-bold opacity-80">0 pts</span>
+			</span>
+		</span>
+		<span class="mt-3 block h-2 overflow-hidden rounded-full bg-granate" aria-hidden="true">
+			<span data-centro-barra class="block h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></span>
+		</span>
+	</button>
+
 	<div class="tablero mx-auto">
 		{
 			filas.map((fila) => (
 				<div class="fila">
-					{fila.map((id) =>
-						id === 'centro' ? (
-							<button type="button" class="hex hex-boton hex-centro" data-centro aria-label="Tu estado en la liga">
-								<span class="hex-int" style="--fondo:#561a26;--texto:#f0bc44">
-									<span class="text-[0.6em] font-black uppercase tracking-widest opacity-80">Tú</span>
-									<strong data-centro-equipo class="text-[1.05em] font-black uppercase leading-none">Elige equipo</strong>
-									<span data-centro-rango class="text-[0.7em] font-bold">Hierro</span>
-									<span data-centro-puntos class="text-[0.7em] font-bold opacity-80">0 pts</span>
-								</span>
-							</button>
-						) : (
-							<button type="button" class="hex hex-boton" data-hex={id} data-titulo={hexes[id].titulo} data-texto={hexes[id].texto}>
-								<span class="hex-int" style={`--fondo:${hexes[id].fondo};--texto:${hexes[id].color}`}>
-									<span class="text-[1.6em] leading-none" aria-hidden="true">{hexes[id].icono}</span>
-									<span class="text-[0.78em] font-black uppercase leading-tight">{hexes[id].titulo}</span>
-									{hexes[id].recurso && <span class="text-[0.6em] font-bold uppercase tracking-wider opacity-70">{hexes[id].recurso}</span>}
-									{hexes[id].ficha && (
-										<span data-ficha class="ficha" aria-label={`Hasta ${hexes[id].ficha} puntos`}>
-											{hexes[id].ficha}
-										</span>
-									)}
-								</span>
-							</button>
-						),
-					)}
+					{fila.map((id) => (
+						<button type="button" class="hex hex-boton" data-hex={id} data-titulo={hexes[id].titulo} data-texto={hexes[id].texto}>
+							<span class="hex-int" style={`--fondo:${hexes[id].fondo};--texto:${hexes[id].color}`}>
+								<span class="text-[1.6em] leading-none" aria-hidden="true">{hexes[id].icono}</span>
+								<span class="text-[0.78em] font-black uppercase leading-tight">{hexes[id].titulo}</span>
+								{hexes[id].recurso && <span class="text-[0.6em] font-bold uppercase tracking-wider opacity-70">{hexes[id].recurso}</span>}
+								{hexes[id].ficha && (
+									<span data-ficha class="ficha" aria-label={`Hasta ${hexes[id].ficha} puntos`}>
+										{hexes[id].ficha}
+									</span>
+								)}
+							</span>
+						</button>
+					))}
 				</div>
 			))
 		}
@@ -176,16 +188,16 @@ const filas = [
 		color: #f0bc44;
 	}
 	/* Mientras no hay equipo, el centro late para llamar a elegirlo */
-	.hex-centro.sin-equipo {
+	.tarjeta-yo.sin-equipo {
 		animation: late 1.8s ease-in-out infinite;
 	}
 	@keyframes late {
 		50% {
-			transform: scale(1.05);
+			transform: scale(1.02);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.hex-centro.sin-equipo {
+		.tarjeta-yo.sin-equipo {
 			animation: none;
 		}
 	}
@@ -214,6 +226,9 @@ const filas = [
 		poner('rango', estado.rango.nombre);
 		poner('puntos', `${estado.puntos} pts`);
 		centro.classList.toggle('sin-equipo', !estado.equipo);
+		const { rango, siguienteRango: sig, puntos } = estado;
+		const pct = sig ? Math.round(((puntos - rango.desde) / (sig.desde - rango.desde)) * 100) : 100;
+		centro.querySelector<HTMLElement>('[data-centro-barra]')!.style.width = `${pct}%`;
 		for (const id of estado.jugadosHoy) {
 			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
 			if (ficha) {
