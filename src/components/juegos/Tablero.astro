@@ -103,6 +103,14 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 			<span data-tirar-texto>🎲 Tirar los dados</span>
 		</button>
 		<p data-hoy class="mx-auto mb-5 mt-2.5 max-w-md text-center text-sm font-bold text-granate"></p>
+		<p
+			data-prueba
+			hidden
+			class="mx-auto mb-5 max-w-md rounded-lg border-2 border-dashed border-extra bg-white p-3 text-center text-xs font-bold text-tinta"
+		>
+			🧪 Modo prueba: juegas a lo que quieras, las veces que quieras, pero no suma puntos.
+			<button type="button" data-prueba-salir class="ml-1 underline">Salir</button>
+		</p>
 	</div>
 
 	<!-- El mar, con su marco de madera. En móvil ocupa todo el ancho -->
@@ -325,7 +333,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 </style>
 
 <script>
-	import { estadoLiga, equipoPorId, MINIJUEGOS } from './liga';
+	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, salirModoPrueba } from './liga';
 	import { lanzar } from './partida';
 	import { abrirTirada } from './tirada';
 
@@ -351,6 +359,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		const { rango, siguienteRango: sig, puntos } = estado;
 		const pct = sig ? Math.round(((puntos - rango.desde) / (sig.desde - rango.desde)) * 100) : 100;
 		centro.querySelector<HTMLElement>('[data-centro-barra]')!.style.width = `${pct}%`;
+		tablero.querySelector<HTMLElement>('[data-prueba]')!.hidden = !modoPrueba();
 		// Botón de tirar y resumen del día
 		const tirar = tablero.querySelector<HTMLButtonElement>('[data-tirar]')!;
 		const restantes = estado.tiradasMax - estado.tiradasHoy;
@@ -367,7 +376,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		tablero.querySelectorAll<HTMLElement>('[data-hex]').forEach((hex) => {
 			const m = MINIJUEGOS.find((x) => x.id === hex.dataset.hex);
 			if (!m) return;
-			hex.dataset.estado = !m.disponible ? 'pronto' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
+			hex.dataset.estado = !m.disponible ? 'pronto' : modoPrueba() ? 'libre' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
 		});
 		for (const id of estado.jugadosHoy) {
 			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
@@ -392,6 +401,11 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		abrirHoja(`Equipo ${nombre}`, `${lema}. Rango ${estado.rango.nombre} con ${estado.puntos} puntos, puesto ${estado.puesto} de la liga.${falta}`);
 	});
 
+	tablero.querySelector('[data-prueba-salir]')!.addEventListener('click', () => {
+		salirModoPrueba();
+		location.assign(location.pathname);
+	});
+
 	// Tirada diaria
 	tablero.querySelector('[data-tirar]')!.addEventListener('click', () => {
 		if (!estado.equipo) return hojaEquipo.showModal();
@@ -404,8 +418,9 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 			if (boton.dataset.hex === 'ranking' || boton.dataset.hex === 'premios') return; // los abren Ranking.astro y Premios.astro
 			const m = MINIJUEGOS.find((x) => x.id === boton.dataset.hex);
 			if (m) {
-				if (!estado.equipo) return hojaEquipo.showModal();
+				if (m.disponible && modoPrueba()) return void lanzar(m.id);
 				if (!m.disponible) return abrirHoja(m.titulo, `${m.descripcion} Se abre muy pronto.`);
+				if (!estado.equipo) return hojaEquipo.showModal();
 				if (estado.jugadosHoy.includes(m.id)) return abrirHoja(m.titulo, 'Ya has jugado hoy a este. Vuelve mañana.');
 				if (estado.asignadosHoy.includes(m.id)) return void lanzar(m.id);
 				const puedeTirar = estado.tiradasHoy < estado.tiradasMax;

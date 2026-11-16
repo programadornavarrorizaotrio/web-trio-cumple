@@ -131,6 +131,32 @@ export function hoy(): string {
 	return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
 }
 
+const CLAVE_PRUEBA = 'trio-modo-prueba';
+
+/**
+ * Modo prueba para los desarrolladores: `?probar=si` lo activa (y se recuerda en el navegador) y `?probar=no`
+ * lo desactiva. Dentro se puede jugar a cualquier juego disponible sin tirar los dados y las veces que se
+ * quiera, pero NO suma puntos ni toca la liga.
+ */
+export function modoPrueba(): boolean {
+	try {
+		const param = new URLSearchParams(location.search).get('probar');
+		if (param === 'si') localStorage.setItem(CLAVE_PRUEBA, '1');
+		if (param === 'no') localStorage.removeItem(CLAVE_PRUEBA);
+		return localStorage.getItem(CLAVE_PRUEBA) === '1';
+	} catch {
+		return false;
+	}
+}
+
+export function salirModoPrueba() {
+	try {
+		localStorage.removeItem(CLAVE_PRUEBA);
+	} catch {
+		// sin almacenamiento: nada que borrar
+	}
+}
+
 /** Fin de semana en Madrid (en pruebas se fuerza con `?finde=si`). */
 export function esFinDeSemana(): boolean {
 	if (new URLSearchParams(location.search).get('finde') === 'si') return true;
@@ -293,6 +319,11 @@ export async function tirarDados(): Promise<ResultadoTirada> {
  * Aquí, en modo simulado, el cliente manda los puntos que ha calculado el propio minijuego.
  */
 export async function registrarPartida(minijuego: MinijuegoId, puntos: number): Promise<{ puntos: number; rango: Rango; subeDeRango: boolean }> {
+	if (modoPrueba()) {
+		// Modo prueba: se juega sin tocar la liga
+		const tope = MINIJUEGOS.find((m) => m.id === minijuego)!.maxPuntos;
+		return { puntos: Math.min(tope, Math.round(puntos)), rango: rangoDe(puntosPropios(leerLocal())).actual, subeDeRango: false };
+	}
 	const l = leerLocal();
 	if (!l.equipo) throw new Error('sin-equipo');
 	if (!l.dias[hoy()]?.asignados.includes(minijuego)) throw new Error('no-asignado');

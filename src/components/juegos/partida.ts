@@ -1,6 +1,6 @@
 // Lanzador común de minijuegos: pantalla de instrucciones → partida → resultado.
 // Cada minijuego es un módulo que exporta `instrucciones` y `jugar`; aquí solo se registra cuál es cuál.
-import { registrarPartida, type MinijuegoId, MINIJUEGOS } from './liga';
+import { registrarPartida, modoPrueba, type MinijuegoId, MINIJUEGOS } from './liga';
 
 export interface Resultado {
 	/** Puntos de la partida (la liga los acota al máximo del minijuego) */
@@ -73,7 +73,7 @@ export async function lanzar(id: MinijuegoId) {
 
 		if (!dialogo.open) return;
 		q('[data-final-puntos]').textContent = String(puntos);
-		q('[data-final-etiqueta]').textContent = puntos < 0 ? 'puntos que te quita el diablillo' : 'puntos para tu equipo';
+		q('[data-final-etiqueta]').textContent = modoPrueba() ? 'puntos (modo prueba: no suman)' : puntos < 0 ? 'puntos que te quita el diablillo' : 'puntos para tu equipo';
 		q('[data-final-detalle]').textContent = resultado.detalle ?? '';
 		q('[data-final-subida]').textContent = subida;
 		pantalla('final');
