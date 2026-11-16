@@ -264,4 +264,81 @@ const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' 
 			transition: none;
 		}
 	}
+
+	/* === Dados de Catan === */
+	.dados-escena {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+		text-align: center;
+	}
+	.dados-par {
+		display: flex;
+		gap: 1.25rem;
+		padding: 1.5rem;
+		border: 0;
+		border-radius: 1rem;
+		background: #12402c;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.dado {
+		display: grid;
+		grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+		width: 5.5rem;
+		height: 5.5rem;
+		padding: 0.6rem;
+		border-radius: 1rem;
+		background: var(--color-crema);
+		box-shadow: 0 5px 0 #b9ac8c;
+	}
+	.dado-pip {
+		align-self: center;
+		justify-self: center;
+		width: 0.95rem;
+		height: 0.95rem;
+		border-radius: 50%;
+		background: var(--color-granate);
+	}
+	.dado.rodando {
+		animation: dado-rueda 0.35s linear infinite;
+	}
+	.dado.rodando:nth-child(2) {
+		animation-direction: reverse;
+	}
+	@keyframes dado-rueda {
+		25% {
+			transform: translateY(-14px) rotate(25deg);
+		}
+		50% {
+			transform: translateY(0) rotate(-12deg);
+		}
+		75% {
+			transform: translateY(-8px) rotate(18deg);
+		}
+	}
+	.dados-total {
+		min-height: 5rem;
+		color: var(--color-amarillo);
+		font-size: 4.5rem;
+		font-weight: 900;
+		line-height: 1;
+	}
+	.dados-mensaje {
+		min-height: 1.75rem;
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.dados-escena.ladron .dados-total,
+	.dados-escena.ladron .dados-mensaje {
+		color: #ff7f6e;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.dado.rodando {
+			animation: none;
+		}
+	}
 </style>
