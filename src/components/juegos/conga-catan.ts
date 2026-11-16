@@ -9,7 +9,7 @@ import type { Cromo } from '../cromos/tipos';
 import { MINIJUEGOS } from './liga';
 import type { Contexto, Resultado } from './partida';
 
-export const instrucciones = 'Desliza el dedo para guiar a la rana. Cada cerveza o recurso que comas suma a un invitado a la conga. No choques con las paredes, con la conga ni con el ladrón.';
+export const instrucciones = 'Desliza el dedo para guiar a la rana. Cada cerveza o recurso que comas suma a un invitado a la conga. No choques con las paredes, con la conga ni con el diablillo ladrón.';
 
 const COLUMNAS = 11;
 const FILAS = 14;
@@ -53,11 +53,11 @@ function cargar(src: string): Promise<HTMLImageElement | null> {
 	});
 }
 
-export async function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: Contexto): Promise<Resultado> {
+export async function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc, ladronSrc }: Contexto): Promise<Resultado> {
 	// La conga: primero los especiales (el trío), luego el resto con foto y, al final, los que no tienen
 	const { cromos } = await obtenerAlbum();
 	const orden = [...cromos.filter((c) => c.especial), ...barajar(cromos.filter((c) => !c.especial && c.foto)), ...barajar(cromos.filter((c) => !c.especial && !c.foto))];
-	const [rana, ...fotos] = await Promise.all([cargar(ranaSrc), ...orden.map((c) => (c.foto ? cargar(c.foto) : Promise.resolve(null)))]);
+	const [rana, diablillo, ...fotos] = await Promise.all([cargar(ranaSrc), cargar(ladronSrc), ...orden.map((c) => (c.foto ? cargar(c.foto) : Promise.resolve(null)))]);
 	const invitados: Invitado[] = orden.map((cromo, i) => ({ cromo, foto: fotos[i] }));
 	if (!invitados.length) invitados.push({ cromo: { id: '?', numero: 0, nombre: '?', apodo: '', frase: null, foto: null }, foto: null });
 
@@ -155,8 +155,25 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: 
 			ladrones.forEach((l) => {
 				ctx.shadowColor = 'rgb(0 0 0 / 0.5)';
 				ctx.shadowBlur = 4;
-				ctx.fillStyle = '#1d1d1f';
-				emoji('♟︎', l, 0.9); // presentación de texto: toma el color negro en vez del emoji morado
+				if (diablillo) {
+					// El ladrón es la rana en versión diablillo: se recorta la cabeza con los cuernos
+					const { cx, cy } = centro(l);
+					// Solo la cabeza con los cuernos y el inicio de la corbata (recorte en proporción de la imagen)
+					// Fondo oscuro con borde rojo: se distingue del pasto y de la rana, que también son verdes
+					ctx.beginPath();
+					ctx.arc(cx, cy, lado * 0.46, 0, Math.PI * 2);
+					ctx.fillStyle = '#3a1410';
+					ctx.fill();
+					ctx.lineWidth = Math.max(2, lado * 0.08);
+					ctx.strokeStyle = '#e0432e';
+					ctx.stroke();
+					const ancho = lado * 1.04;
+					const alto = ancho * (0.5 / 0.58);
+					ctx.drawImage(diablillo, diablillo.width * 0.17, 0, diablillo.width * 0.58, diablillo.width * 0.5, cx - ancho / 2, cy - alto * 0.52, ancho, alto);
+				} else {
+					ctx.fillStyle = '#1d1d1f';
+					emoji('♟︎', l, 0.9); // sin imagen: peón negro
+				}
 				ctx.shadowBlur = 0;
 			});
 			if (comida) emoji(comida.emoji, comida.pos);
@@ -210,7 +227,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: 
 				const cuerpo = come ? culebra : culebra.slice(0, -1);
 				if (nueva.x < 0 || nueva.y < 0 || nueva.x >= COLUMNAS || nueva.y >= FILAS) return terminar('¡Pared!');
 				if (cuerpo.some((s) => iguales(s, nueva))) return terminar('¡Te pisaste!');
-				if (ladrones.some((l) => iguales(l, nueva))) return terminar('¡El ladrón!');
+				if (ladrones.some((l) => iguales(l, nueva))) return terminar('¡El diablillo!');
 				culebra = [nueva, ...cuerpo];
 				if (come) {
 					comidas++;

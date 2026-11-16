@@ -1,5 +1,7 @@
 ---
+import { getImage } from 'astro:assets';
 import Hoja from '../common/Hoja.astro';
+import ladron from '../../assets/mascota/ladron.png';
 import ElegirEquipo from './ElegirEquipo.astro';
 import Partida from './Partida.astro';
 import Premios from './Premios.astro';
@@ -64,6 +66,8 @@ const mapa: Celda[][] = [
 	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'conga-catan' }, { r: 'colinas' }],
 	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
 ];
+// El ladrón de Catan es la rana en versión diablillo
+const { src: ladronUrl } = await getImage({ src: ladron, width: 180, format: 'webp' });
 const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${t.color}`;
 ---
 
@@ -117,8 +121,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 							) : (
 								<div class="hex" aria-hidden="true" style={estilo(T[c.r])}>
 									<span class="hex-int">
-										<span class="hex-deco">{T[c.r].deco}</span>
-										{c.ladron && <span class="ladron">♟️</span>}
+										{c.ladron ? <img class="ladron" src={ladronUrl} alt="" width="90" height="140" /> : <span class="hex-deco">{T[c.r].deco}</span>}
 									</span>
 								</div>
 							),
@@ -233,12 +236,10 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		filter: saturate(0.8);
 	}
 	.ladron {
-		position: absolute;
-		right: 26%;
-		bottom: 18%;
-		font-size: calc(var(--w) * 0.34);
-		line-height: 1;
-		filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.5));
+		height: calc(var(--h) * 0.66);
+		width: auto;
+		margin-top: calc(var(--h) * 0.06);
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.45));
 	}
 	.hex-boton {
 		cursor: pointer;

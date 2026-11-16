@@ -12,6 +12,8 @@ export interface Resultado {
 export interface Contexto {
 	/** Imagen optimizada de la rana mascota */
 	ranaSrc: string;
+	/** Imagen optimizada del diablillo (el ladrón) */
+	ladronSrc: string;
 }
 
 export interface Minijuego {
@@ -56,7 +58,7 @@ export async function lanzar(id: MinijuegoId) {
 		pantalla('juego');
 		const area = q('[data-area]');
 		area.replaceChildren();
-		const resultado = await juego.jugar(area, control.signal, { ranaSrc: dialogo.dataset.ranaSrc ?? '' });
+		const resultado = await juego.jugar(area, control.signal, { ranaSrc: dialogo.dataset.ranaSrc ?? '', ladronSrc: dialogo.dataset.ladronSrc ?? '' });
 
 		let subida = '';
 		let puntos = resultado.puntos;

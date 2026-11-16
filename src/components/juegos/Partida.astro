@@ -2,16 +2,19 @@
 import { getImage } from 'astro:assets';
 import Button from '../common/Button.astro';
 import rana from '../../assets/mascota/saluda.png';
+import ladron from '../../assets/mascota/ladron.png';
 import FotosDemo from '../cromos/FotosDemo.astro';
 
 // Ventana a pantalla completa donde se juega un minijuego. La abre `lanzar(id)` de partida.ts
 // y cada juego pinta su tablero dentro de [data-area].
 const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' });
+const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'webp' });
 ---
 
 <dialog
 	data-partida
 	data-rana-src={ranaSrc}
+	data-ladron-src={ladronSrc}
 	aria-label="Minijuego"
 	class="fixed inset-0 m-0 hidden h-dvh max-h-none w-dvw max-w-none overflow-y-auto bg-granate-oscuro p-0 text-crema backdrop:bg-black/70 open:block"
 >
