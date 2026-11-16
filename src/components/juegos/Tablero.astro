@@ -5,91 +5,131 @@ import Partida from './Partida.astro';
 import Ranking from './Ranking.astro';
 import { MINIJUEGOS } from './liga';
 
-// Hub de /juegos: tablero de hexágonos al estilo Catan. Arriba, una tarjeta con tu estado (equipo,
-// rango, puntos) y debajo un hexágono por juego o zona. Los minijuegos dan el "recurso" de su hex
-// y el número es lo máximo que se puede ganar en una partida, como las fichas de Catan.
-interface Hex {
-	id: string;
-	icono: string;
-	titulo: string;
-	/** Recurso de Catan (solo minijuegos) */
-	recurso?: string;
-	/** Ficha con número (solo minijuegos) */
-	ficha?: number;
-	texto: string;
+// Hub de /juegos: una isla de Catan de 19 hexágonos (3-4-5-4-3) rodeada de mar. Los 8 del centro son
+// juegos o zonas; el resto son terreno de relleno, a la espera de que vayan pasando cosas.
+// Los hexágonos con ficha numerada se pueden pulsar: el número es lo máximo que se gana en una partida.
+// Arriba, una tarjeta con tu estado (equipo, rango, puntos).
+
+interface Terreno {
 	fondo: string;
+	borde: string;
 	color: string;
+	deco: string;
 }
 
-const juego = (id: string, icono: string, fondo: string, color: string): Hex => {
+// Terrenos de Catan. `oro` y `puerto` son para las zonas que no son un recurso.
+const T: Record<string, Terreno> = {
+	bosque: { fondo: '#3f7d3a', borde: '#255222', color: '#ffffff', deco: '🌲' },
+	colinas: { fondo: '#c4593a', borde: '#82361f', color: '#ffffff', deco: '🧱' },
+	pasto: { fondo: '#a9d160', borde: '#6c9a2c', color: '#27390f', deco: '🐑' },
+	campos: { fondo: '#efce52', borde: '#b8942a', color: '#3d2d05', deco: '🌾' },
+	montana: { fondo: '#9ea4ad', borde: '#656b75', color: '#1d2127', deco: '⛰️' },
+	desierto: { fondo: '#ead9a0', borde: '#b9a56a', color: '#46290f', deco: '🏜️' },
+	oro: { fondo: '#f0bc44', borde: '#b98a22', color: '#46290f', deco: '' },
+	puerto: { fondo: '#58a8cc', borde: '#2f7596', color: '#06283a', deco: '' },
+};
+
+interface Zona {
+	terreno: string;
+	icono: string;
+	corto: string;
+	titulo: string;
+	texto: string;
+	ficha?: number;
+}
+
+const juego = (id: string, terreno: string, icono: string, corto: string): Zona => {
 	const m = MINIJUEGOS.find((x) => x.id === id)!;
-	return { id, icono, titulo: m.titulo, recurso: m.recurso, ficha: m.maxPuntos, texto: `${m.descripcion} Una partida al día.`, fondo, color };
+	return { terreno, icono, corto, titulo: m.titulo, texto: `${m.descripcion} Una partida al día.`, ficha: m.maxPuntos };
 };
 
-const hexes: Record<string, Hex> = {
-	'memory-cromos': juego('memory-cromos', '🃏', '#f1e4c6', '#561a26'),
-	'golpea-rana': juego('golpea-rana', '🐸', '#c9dba0', '#2a3a12'),
-	'dados-catan': juego('dados-catan', '🎲', '#d9a566', '#2a1116'),
-	'adivina-cromo': juego('adivina-cromo', '🕵️', '#bcd6e6', '#12303f'),
-	'wordle-trio': juego('wordle-trio', '🔤', '#d9c9ec', '#3a1f52'),
-	ranking: { id: 'ranking', icono: '🏆', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.', fondo: '#f0bc44', color: '#561a26' },
-	premios: { id: 'premios', icono: '🎁', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.', fondo: '#f7d88c', color: '#561a26' },
-	fiesta: { id: 'fiesta', icono: '🎉', titulo: 'La fiesta', texto: '', fondo: '#8e3345', color: '#fbf4e4' },
+const zonas: Record<string, Zona> = {
+	'memory-cromos': juego('memory-cromos', 'pasto', '🃏', 'Memory'),
+	'golpea-rana': juego('golpea-rana', 'bosque', '🐸', 'Rana'),
+	'dados-catan': juego('dados-catan', 'montana', '🎲', 'Dados'),
+	'adivina-cromo': juego('adivina-cromo', 'campos', '🕵️', 'Cromo'),
+	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
+	ranking: { terreno: 'oro', icono: '🏆', corto: 'Ranking', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.' },
+	premios: { terreno: 'puerto', icono: '🎁', corto: 'Premios', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.' },
+	fiesta: { terreno: 'desierto', icono: '🎉', corto: 'Fiesta', titulo: 'La fiesta', texto: '' },
 };
 
-const filas = [
-	['memory-cromos', 'golpea-rana', 'dados-catan'],
-	['adivina-cromo', 'wordle-trio'],
-	['ranking', 'premios', 'fiesta'],
+// Cada celda: una zona jugable (`z`) o terreno de relleno (`r`). `ladron` pone la ficha negra del ladrón.
+type Celda = { z: string } | { r: string; ladron?: boolean };
+const mapa: Celda[][] = [
+	[{ r: 'bosque' }, { r: 'pasto' }, { r: 'campos' }],
+	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { r: 'montana' }],
+	[{ r: 'pasto' }, { z: 'dados-catan' }, { z: 'fiesta' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
+	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'ranking' }, { r: 'colinas' }],
+	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
 ];
+const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${t.color}`;
 ---
 
-<div class="[container-type:inline-size]" data-tablero>
-	<button
-		type="button"
-		data-centro
-		aria-label="Tu estado en la liga"
-		class="tarjeta-yo mx-auto mb-5 block w-full max-w-md rounded-lg bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
-	>
-		<span class="flex items-center justify-between gap-3">
-			<span>
-				<span class="block text-[0.65rem] font-black uppercase tracking-widest opacity-80">Tu equipo</span>
-				<strong data-centro-equipo class="block text-2xl font-black uppercase leading-none">Elige equipo</strong>
+<div class="[container-type:inline-size] -mx-4 sm:mx-0" data-tablero>
+	<div class="px-4 sm:px-0">
+		<button
+			type="button"
+			data-centro
+			aria-label="Tu estado en la liga"
+			class="tarjeta-yo mx-auto mb-5 block w-full max-w-md rounded-lg border-2 border-amarillo-oscuro bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
+		>
+			<span class="flex items-center justify-between gap-3">
+				<span>
+					<span class="block text-[0.65rem] font-black uppercase tracking-widest opacity-80">Tu equipo</span>
+					<strong data-centro-equipo class="rotulo block text-2xl leading-none">Elige equipo</strong>
+				</span>
+				<span class="text-right">
+					<span data-centro-rango class="rotulo block text-lg">Hierro</span>
+					<span data-centro-puntos class="block text-xs font-bold opacity-80">0 pts</span>
+				</span>
 			</span>
-			<span class="text-right">
-				<span data-centro-rango class="block text-lg font-black uppercase">Hierro</span>
-				<span data-centro-puntos class="block text-xs font-bold opacity-80">0 pts</span>
+			<span class="mt-3 block h-2 overflow-hidden rounded-full bg-granate" aria-hidden="true">
+				<span data-centro-barra class="block h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></span>
 			</span>
-		</span>
-		<span class="mt-3 block h-2 overflow-hidden rounded-full bg-granate" aria-hidden="true">
-			<span data-centro-barra class="block h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></span>
-		</span>
-	</button>
-
-	<div class="tablero mx-auto">
-		{
-			filas.map((fila) => (
-				<div class="fila">
-					{fila.map((id) => (
-						<button type="button" class="hex hex-boton" data-hex={id} data-titulo={hexes[id].titulo} data-texto={hexes[id].texto}>
-							<span class="hex-int" style={`--fondo:${hexes[id].fondo};--texto:${hexes[id].color}`}>
-								<span class="text-[1.6em] leading-none" aria-hidden="true">{hexes[id].icono}</span>
-								<span class="text-[0.78em] font-black uppercase leading-tight">{hexes[id].titulo}</span>
-								{hexes[id].recurso && <span class="text-[0.6em] font-bold uppercase tracking-wider opacity-70">{hexes[id].recurso}</span>}
-								{hexes[id].ficha && (
-									<span data-ficha class="ficha" aria-label={`Hasta ${hexes[id].ficha} puntos`}>
-										{hexes[id].ficha}
-									</span>
-								)}
-							</span>
-						</button>
-					))}
-				</div>
-			))
-		}
+		</button>
 	</div>
-	<p class="mx-auto mt-4 max-w-sm text-center text-xs text-tinta-suave">
-		Cada hexágono es un juego. La ficha es lo máximo que puedes ganar y cada minijuego se juega una vez al día.
+
+	<!-- El mar, con su marco de madera. En móvil ocupa todo el ancho -->
+	<div class="mar relative mx-auto max-w-[44rem] border-y-[5px] border-granate sm:rounded-2xl sm:border-[5px]">
+		<span class="barco absolute left-3 top-1 text-2xl" aria-hidden="true">⛵</span>
+		<span class="barco absolute bottom-1 right-4 text-2xl [animation-delay:-2s]" aria-hidden="true">⛵</span>
+		<span class="absolute right-5 top-2 text-lg opacity-70" aria-hidden="true">🧭</span>
+
+		<div class="tablero mx-auto">
+			{
+				mapa.map((fila) => (
+					<div class="fila">
+						{fila.map((c) =>
+							'z' in c ? (
+								<button type="button" class="hex hex-boton" data-hex={c.z} data-titulo={zonas[c.z].titulo} data-texto={zonas[c.z].texto} aria-label={zonas[c.z].titulo} style={estilo(T[zonas[c.z].terreno])}>
+									<span class="hex-int">
+										<span class="hex-icono" aria-hidden="true">{zonas[c.z].icono}</span>
+										<span class="hex-nombre">{zonas[c.z].corto}</span>
+										{zonas[c.z].ficha && (
+											<span data-ficha class="ficha" aria-label={`Hasta ${zonas[c.z].ficha} puntos`}>
+												{zonas[c.z].ficha}
+											</span>
+										)}
+									</span>
+								</button>
+							) : (
+								<div class="hex" aria-hidden="true" style={estilo(T[c.r])}>
+									<span class="hex-int">
+										<span class="hex-deco">{T[c.r].deco}</span>
+										{c.ladron && <span class="ladron">♟️</span>}
+									</span>
+								</div>
+							),
+						)}
+					</div>
+				))
+			}
+		</div>
+	</div>
+
+	<p class="mx-auto mt-4 max-w-sm px-4 text-center text-xs text-tinta-suave">
+		Toca un hexágono con ficha. El número es lo máximo que puedes ganar y cada minijuego se juega una vez al día. El resto de la isla está por descubrir.
 	</p>
 </div>
 
@@ -108,12 +148,29 @@ const filas = [
 </Hoja>
 
 <style>
+	/* Mar: azul con olas dibujadas */
+	.mar {
+		padding: 1.5rem 0.4rem;
+		background-color: #2a85b5;
+		background-image:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='22'%3E%3Cpath d='M0 11q5.5-7 11 0t11 0 11 0 11 0' fill='none' stroke='%23ffffff' stroke-opacity='.22' stroke-width='1.6'/%3E%3C/svg%3E"),
+			linear-gradient(180deg, #3a9bc8, #1f6a97);
+		box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.12);
+	}
+	.barco {
+		animation: mece 4s ease-in-out infinite;
+	}
+	@keyframes mece {
+		50% {
+			transform: translateY(-3px) rotate(3deg);
+		}
+	}
 	.tablero {
-		/* Ancho de un hexágono: caben 3 en fila, con un máximo en pantallas grandes */
-		--w: min(31cqw, 9.5rem);
+		/* Ancho de un hexágono: caben 5 en la fila más larga, con un máximo en pantallas grandes */
+		--w: min(calc((100cqw - 1.5rem) / 5), 7.5rem);
 		--h: calc(var(--w) * 1.1547);
-		font-size: calc(var(--w) * 0.12);
-		width: 100%;
+		width: calc(var(--w) * 5 + 0.7rem);
+		max-width: 100%;
 	}
 	.fila {
 		display: flex;
@@ -121,73 +178,107 @@ const filas = [
 	}
 	/* Las filas se encajan: cada una sube 1/4 de hexágono (menos una holgura) */
 	.fila + .fila {
-		margin-top: calc(var(--w) * -0.2887 + 0.3rem);
+		margin-top: calc(var(--w) * -0.2887 + 2px);
 	}
 	.hex {
 		--punta: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+		display: block;
 		width: var(--w);
 		height: var(--h);
-		margin-inline: 0.15rem;
-		padding: 3px;
+		margin-inline: 1px;
+		padding: 2px;
+		border: 0;
 		flex: none;
 		clip-path: var(--punta);
-		background: #561a26;
+		/* El borde de cada hexágono toma el color de su terreno */
+		background: var(--borde);
 		transition:
 			transform 0.15s ease-out,
 			background-color 0.15s;
 	}
 	.hex-int {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.15em;
+		gap: 0.1rem;
 		width: 100%;
 		height: 100%;
-		padding: 0 0.6em;
-		text-align: center;
 		clip-path: var(--punta);
-		background: var(--fondo);
+		background:
+			radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.25), transparent 55%),
+			var(--fondo);
 		color: var(--texto);
+		text-align: center;
+		box-shadow: inset 0 -6px 10px rgb(0 0 0 / 0.12);
+	}
+	.hex-icono {
+		font-size: calc(var(--w) * 0.3);
+		line-height: 1;
+	}
+	.hex-nombre {
+		font-size: max(0.5rem, calc(var(--w) * 0.14));
+		font-weight: 900;
+		letter-spacing: 0.02em;
+		line-height: 1;
+		text-transform: uppercase;
+	}
+	.hex-deco {
+		font-size: calc(var(--w) * 0.34);
+		line-height: 1;
+		opacity: 0.55;
+		filter: saturate(0.8);
+	}
+	.ladron {
+		position: absolute;
+		right: 26%;
+		bottom: 18%;
+		font-size: calc(var(--w) * 0.34);
+		line-height: 1;
+		filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.5));
 	}
 	.hex-boton {
 		cursor: pointer;
 	}
 	.hex-boton:active {
-		transform: scale(0.96);
+		transform: scale(0.95);
 	}
 	@media (hover: hover) {
 		.hex-boton:hover {
-			transform: scale(1.05);
-			background: #f0bc44;
+			transform: scale(1.06);
+			background: #fff;
 		}
 	}
 	/* El outline se recortaría con el clip-path: el foco se marca con el borde */
 	.hex-boton:focus-visible {
 		outline: none;
-		background: #f0bc44;
-		padding: 5px;
-		transform: scale(1.05);
+		background: #fff;
+		padding: 4px;
+		transform: scale(1.06);
 	}
-	/* Ficha de Catan */
+	/* Ficha numerada de Catan */
 	.ficha {
 		display: grid;
 		place-items: center;
-		min-width: 2em;
-		height: 2em;
-		margin-top: 0.1em;
+		min-width: calc(var(--w) * 0.3);
+		height: calc(var(--w) * 0.3);
+		margin-top: 0.1rem;
 		border-radius: 999px;
-		border: 2px solid #561a26;
-		background: #fbf4e4;
-		color: #742434;
-		font-size: 0.8em;
+		border: 1.5px solid #8a6f3a;
+		background: #f6ead0;
+		color: #3d2512;
+		font-family: var(--font-rotulo);
+		font-size: max(0.6rem, calc(var(--w) * 0.17));
 		font-weight: 900;
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
 	}
 	.ficha.hecha {
-		background: #561a26;
-		color: #f0bc44;
+		background: #46290f;
+		border-color: #46290f;
+		color: #f0c14b;
 	}
-	/* Mientras no hay equipo, el centro late para llamar a elegirlo */
+	/* Mientras no hay equipo, la tarjeta late para llamar a elegirlo */
 	.tarjeta-yo.sin-equipo {
 		animation: late 1.8s ease-in-out infinite;
 	}
@@ -197,7 +288,8 @@ const filas = [
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.tarjeta-yo.sin-equipo {
+		.tarjeta-yo.sin-equipo,
+		.barco {
 			animation: none;
 		}
 	}
