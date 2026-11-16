@@ -1,0 +1,74 @@
+---
+import Hoja from '../common/Hoja.astro';
+
+// Hoja del hexágono Premios: lista de premios con tu estado y, si lo tienes, el código para
+// enseñar en la fiesta. Los premios y sus textos vienen de `premios()` (liga.ts), editables más adelante.
+---
+
+<Hoja id="hoja-premios" titulo="hoja-premios-titulo">
+	<div class="space-y-5 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<div>
+			<h3 id="hoja-premios-titulo" class="text-2xl text-granate">Premios</h3>
+			<p data-premios-cierre class="mt-1 text-sm text-tinta-suave"></p>
+		</div>
+
+		<ul data-premios class="space-y-3"></ul>
+
+		<p class="text-xs text-tinta-suave">Cuando consigas uno, enséñale el código a uno de los tres en la fiesta. Cada premio se entrega una sola vez.</p>
+
+		<form method="dialog">
+			<button class="w-full rounded border-2 border-granate/25 py-3 text-sm font-bold text-granate">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<script>
+	import { premios, ligaCerrada, type EstadoPremio } from './liga';
+
+	const hoja = document.getElementById('hoja-premios') as HTMLDialogElement;
+
+	// Cómo se presenta cada estado: etiqueta, color de la etiqueta y de la tarjeta
+	const ESTADOS: Record<EstadoPremio, { texto: string; etiqueta: string; tarjeta: string }> = {
+		conseguido: { texto: 'Conseguido', etiqueta: 'bg-amarillo text-granate-oscuro', tarjeta: 'border-amarillo bg-amarillo/25' },
+		'en-juego': { texto: 'En juego', etiqueta: 'bg-granate text-amarillo', tarjeta: 'border-granate/25 bg-white' },
+		bloqueado: { texto: 'Bloqueado', etiqueta: 'bg-crema-oscuro text-tinta-suave', tarjeta: 'border-granate/15 bg-white' },
+		perdido: { texto: 'No ha podido ser', etiqueta: 'bg-crema-oscuro text-tinta-suave', tarjeta: 'border-granate/10 bg-white opacity-60' },
+	};
+
+	// Todo el texto con textContent: los premios los editará una persona
+	function el(etiqueta: string, clase: string, texto?: string) {
+		const e = document.createElement(etiqueta);
+		e.className = clase;
+		if (texto !== undefined) e.textContent = texto;
+		return e;
+	}
+
+	async function pintar() {
+		const lista = await premios();
+		hoja.querySelector('[data-premios-cierre]')!.textContent = ligaCerrada()
+			? 'La liga ha terminado: estos son los resultados.'
+			: 'Los de podio y equipo se deciden cuando termine la liga, en la fiesta.';
+
+		hoja.querySelector('[data-premios]')!.replaceChildren(
+			...lista.map((p) => {
+				const e = ESTADOS[p.estado];
+				const li = el('li', `rounded-lg border-2 p-4 ${e.tarjeta}`);
+				const cabecera = el('div', 'flex items-start justify-between gap-3');
+				cabecera.append(el('h4', 'rotulo text-lg text-granate', p.titulo), el('span', `shrink-0 rounded-sm px-2 py-0.5 text-[0.6rem] font-black uppercase tracking-wider ${e.etiqueta}`, p.entregado ? 'Entregado' : e.texto));
+				li.append(cabecera, el('p', 'mt-1 text-sm text-tinta-suave', p.descripcion), el('p', 'mt-2 text-sm font-bold', p.detalle));
+				if (p.codigo) {
+					const codigo = el('div', 'mt-3 rounded-md border-2 border-dashed border-granate bg-crema py-2 text-center');
+					codigo.append(el('span', 'block text-[0.6rem] font-black uppercase tracking-widest text-tinta-suave', 'Tu código'), el('strong', 'block font-mono text-2xl tracking-widest text-granate', p.codigo));
+					li.append(codigo);
+				}
+				return li;
+			}),
+		);
+	}
+
+	document.querySelector('[data-hex="premios"]')?.addEventListener('click', async () => {
+		await pintar();
+		hoja.showModal();
+		hoja.scrollTop = 0; // el foco inicial cae en "Cerrar", al final
+	});
+</script>

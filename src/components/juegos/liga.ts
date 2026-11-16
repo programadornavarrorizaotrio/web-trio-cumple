@@ -3,6 +3,7 @@
 // Contrato con la base de datos. Hoy todo es simulado en el navegador (localStorage) para poder
 // construir la interfaz; cada función marca la RPC que la sustituirá. Todas reciben la clave de
 // sesión (`invitadoActual().clave`) y las puntuaciones las calcula el SERVIDOR, no el navegador.
+import fiesta from '../../data/fiesta.json';
 import trio from '../../data/trio.json';
 import { invitadoActual } from '../registro/sesion';
 
@@ -208,8 +209,25 @@ export async function registrarPartida(minijuego: MinijuegoId, puntos: number): 
 }
 
 // ───────────────────────── Premios ─────────────────────────
+//
+// Los premios y su texto son contenido EDITABLE: hoy son datos de relleno ("por anunciar"); cuando
+// exista el admin de los organizadores saldrán de la base de datos (TODO(admin)).
 
-export type Requisito = { tipo: 'puesto'; hasta: number } | { tipo: 'rango'; rango: string };
+/** Cierre de la liga: el comienzo de la fiesta. Hasta entonces, podio y equipo ganador están "en juego". */
+const CIERRE_LIGA = new Date(fiesta.inicio).getTime();
+
+/** En pruebas se puede forzar con `?liga=cerrada` o `?liga=abierta` (como `?estanco=cerrado`). */
+export function ligaCerrada(): boolean {
+	const forzado = new URLSearchParams(location.search).get('liga');
+	if (forzado === 'cerrada') return true;
+	if (forzado === 'abierta') return false;
+	return Date.now() >= CIERRE_LIGA;
+}
+
+export type Requisito =
+	| { tipo: 'rango'; rango: string }
+	| { tipo: 'podio'; hasta: number }
+	| { tipo: 'equipo' };
 
 export interface Premio {
 	id: string;
@@ -218,34 +236,89 @@ export interface Premio {
 	requisito: Requisito;
 }
 
+export type EstadoPremio = 'conseguido' | 'bloqueado' | 'en-juego' | 'perdido';
+
 export interface PremioEstado extends Premio {
-	conseguido: boolean;
+	estado: EstadoPremio;
+	/** Texto de progreso: "Te faltan 40 puntos para Plata", "Vas el 4º", etc. */
+	detalle: string;
 	/** Código para enseñar en la fiesta; solo si está conseguido */
 	codigo: string | null;
+	/** Ya se lo han dado en la fiesta */
+	entregado: boolean;
 }
 
-// Los premios salen del estanco; el texto es de ejemplo hasta cerrar cuáles son.
 const PREMIOS: Premio[] = [
-	{ id: 'oro', titulo: 'Campeón de la liga', descripcion: 'Una cajetilla a elegir del estanco.', requisito: { tipo: 'puesto', hasta: 1 } },
-	{ id: 'podio', titulo: 'Podio', descripcion: 'Un mechero del estanco.', requisito: { tipo: 'puesto', hasta: 3 } },
-	{ id: 'oro-rango', titulo: 'Rango Oro', descripcion: 'Un chupito de la casa.', requisito: { tipo: 'rango', rango: 'Oro' } },
+	{ id: 'rango-plata', titulo: 'Rango Plata', descripcion: 'Premio por anunciar.', requisito: { tipo: 'rango', rango: 'Plata' } },
+	{ id: 'rango-oro', titulo: 'Rango Oro', descripcion: 'Premio por anunciar.', requisito: { tipo: 'rango', rango: 'Oro' } },
+	{ id: 'podio', titulo: 'Podio de la liga', descripcion: 'Premio por anunciar. Para los 3 primeros al cierre.', requisito: { tipo: 'podio', hasta: 3 } },
+	{ id: 'campeon', titulo: 'Campeón de la liga', descripcion: 'Premio por anunciar. Para el primero al cierre.', requisito: { tipo: 'podio', hasta: 1 } },
+	{ id: 'equipo', titulo: 'Equipo ganador', descripcion: 'Premio por anunciar. Para todo el equipo que gane.', requisito: { tipo: 'equipo' } },
 ];
 
-// TODO(DB): RPC `listar_premios(clave)`. El código lo genera el servidor, único por invitado y premio,
-// y debe poder marcarse como entregado desde el panel de Supabase.
+const ordinal = (n: number) => `${n}º`;
+
+/**
+ * TODO(DB): RPC `listar_premios(clave)`. El servidor decide el estado y genera el código (único por
+ * invitado y premio, no adivinable: si lo calcula el navegador se podría inventar uno válido). Debe poder
+ * marcarse como entregado desde el panel de Supabase / el admin, y no repetirse una vez entregado.
+ * TODO(admin): la lista de premios y sus textos se editan desde el admin.
+ */
 export async function premios(): Promise<PremioEstado[]> {
 	const l = leerLocal();
 	const yo = invitadoActual();
-	const puesto = filas().findIndex((f) => f.yo) + 1;
+	const cerrada = ligaCerrada();
+	const todas = filas();
+	const puesto = todas.findIndex((f) => f.yo) + 1;
+	const puntos = puntosPropios(l);
+	const mio = rangoDe(puntos).actual.nombre;
 	const indiceRango = (nombre: string) => RANGOS.findIndex((r) => r.nombre === nombre);
-	const mio = rangoDe(puntosPropios(l)).actual.nombre;
+	const lider = l.equipo ? marcadorDe(todas)[0]?.id : null;
+	const puestoEquipo = l.equipo ? marcadorDe(todas).findIndex((m) => m.id === l.equipo) + 1 : 0;
+
 	return PREMIOS.map((p) => {
-		const conseguido =
-			!!l.equipo &&
-			(p.requisito.tipo === 'puesto'
-				? puesto > 0 && puesto <= p.requisito.hasta
-				: indiceRango(mio) >= indiceRango(p.requisito.rango));
-		const codigo = conseguido && yo ? `${p.id.toUpperCase()}-${yo.id.toUpperCase()}`.slice(0, 14) : null;
-		return { ...p, conseguido, codigo };
+		let estado: EstadoPremio = 'bloqueado';
+		let detalle = '';
+		const r = p.requisito;
+
+		if (!l.equipo) {
+			detalle = 'Elige un equipo para empezar a puntuar.';
+		} else if (r.tipo === 'rango') {
+			if (indiceRango(mio) >= indiceRango(r.rango)) {
+				estado = 'conseguido';
+				detalle = `Has llegado a ${r.rango}.`;
+			} else {
+				detalle = `Te faltan ${RANGOS[indiceRango(r.rango)].desde - puntos} puntos para ${r.rango}.`;
+			}
+		} else if (r.tipo === 'podio') {
+			if (!cerrada) {
+				estado = 'en-juego';
+				detalle = `Vas el ${ordinal(puesto)}. Se decide al cierre de la liga.`;
+			} else if (puesto > 0 && puesto <= r.hasta) {
+				estado = 'conseguido';
+				detalle = `Terminaste el ${ordinal(puesto)}.`;
+			} else {
+				estado = 'perdido';
+				detalle = `Terminaste el ${ordinal(puesto)}.`;
+			}
+		} else {
+			if (!cerrada) {
+				estado = 'en-juego';
+				detalle = `Tu equipo va el ${ordinal(puestoEquipo)}. Se decide al cierre de la liga.`;
+			} else if (lider === l.equipo) {
+				estado = 'conseguido';
+				detalle = 'Tu equipo ha ganado la liga.';
+			} else {
+				estado = 'perdido';
+				detalle = `Tu equipo terminó el ${ordinal(puestoEquipo)}.`;
+			}
+		}
+
+		const codigo = estado === 'conseguido' && yo ? `${p.id.replace(/-/g, '').toUpperCase().slice(0, 8)}-${yo.id.toUpperCase()}` : null;
+		return { ...p, estado, detalle, codigo, entregado: false };
 	});
+}
+
+function marcadorDe(todas: FilaRanking[]) {
+	return EQUIPOS.map((e) => ({ id: e.id, puntos: todas.filter((f) => f.equipo === e.id).reduce((s, f) => s + f.puntos, 0) })).sort((a, b) => b.puntos - a.puntos);
 }
