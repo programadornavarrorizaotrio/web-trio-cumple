@@ -39,7 +39,7 @@ export const CONFIG = {
 	/** Tiradas de dados al día: el número que sale decide a qué juego toca jugar */
 	tiradasEntreSemana: 1,
 	tiradasFinDeSemana: 2,
-	/** Puntos que quita el diablillo (el 7 de los dados o el 0 de la ruleta) */
+	/** Puntos que quita el diablillo (el 7 de los dados o el 67 de la ruleta) */
 	penalizacionDiablo: 10,
 };
 
@@ -88,7 +88,7 @@ export interface Minijuego {
 export const MINIJUEGOS: Minijuego[] = [
 	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel', numero: 8, disponible: true },
 	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros', numero: 6, disponible: true },
-	{ id: 'ruleta-casino', titulo: 'Ruleta de casino', descripcion: 'Apuesta a un color, un par o un número y gira. Cuidado con el cero: es el diablillo.', maxPuntos: 30, recurso: 'Mechero', numero: 4, disponible: true },
+	{ id: 'ruleta-casino', titulo: 'Ruleta de casino', descripcion: 'Apuesta a un color, un par o un número y gira. Cuidado con el 67: es el diablillo.', maxPuntos: 30, recurso: 'Mechero', numero: 4, disponible: true },
 	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco', numero: 9, disponible: true },
 	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al diablillo.', maxPuntos: 30, recurso: 'Cebada', numero: 5, disponible: true },
 	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza', numero: 10, disponible: false },
@@ -289,7 +289,7 @@ export async function tirarDados(): Promise<ResultadoTirada> {
  * TODO(DB): RPC `registrar_partida(clave, minijuego, respuestas)`.
  * El servidor corrige las respuestas (las soluciones NO viajan al navegador) y calcula los puntos.
  * Debe fallar con 'sin-equipo', con 'no-asignado' si hoy no le ha tocado ese juego con los dados y con
- * 'ya-jugado' si ya lo jugó hoy. Los puntos pueden ser negativos (el 0 de la ruleta es el diablillo).
+ * 'ya-jugado' si ya lo jugó hoy. Los puntos pueden ser negativos (el 67 de la ruleta es el diablillo).
  * Aquí, en modo simulado, el cliente manda los puntos que ha calculado el propio minijuego.
  */
 export async function registrarPartida(minijuego: MinijuegoId, puntos: number): Promise<{ puntos: number; rango: Rango; subeDeRango: boolean }> {

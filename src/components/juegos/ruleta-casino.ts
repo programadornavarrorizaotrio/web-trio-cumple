@@ -1,20 +1,24 @@
-// Ruleta de casino con apuesta: ruleta europea de 37 casillas (0-36). Eliges una apuesta y giras una vez.
-// Acertar da puntos (más cuanto más arriesgas). El 0 es el diablillo: te quita puntos.
+// Ruleta de casino con apuesta: 37 casillas, del 1 al 36 y el 67 (que ocupa el sitio del 0 de la ruleta europea).
+// Eliges una apuesta y giras una vez.
+// Acertar da puntos (más cuanto más arriesgas). El 67 es el diablillo: te quita puntos.
 //
 // TODO(DB): el giro debería hacerlo el SERVIDOR (RPC `girar_ruleta(clave, apuesta)` que devuelva el número);
 // si se gira en el navegador, alguien podría elegir el resultado.
-// TODO(admin): los puntos de cada apuesta y la penalización del 0 se editarán desde el admin.
+// TODO(admin): los puntos de cada apuesta y la penalización del 67 se editarán desde el admin.
 import { CONFIG, MINIJUEGOS } from './liga';
 import type { Resultado } from './partida';
 
-export const instrucciones = 'Elige una apuesta y gira la ruleta una vez. Acertar da puntos: cuanto más arriesgas, más ganas. Pero si sale el 0, aparece el diablillo y te quita puntos.';
+export const instrucciones = 'Elige una apuesta y gira la ruleta una vez. Acertar da puntos: cuanto más arriesgas, más ganas. Pero si sale el 67, aparece el diablillo y te quita puntos.';
 
 const MAX = MINIJUEGOS.find((m) => m.id === 'ruleta-casino')!.maxPuntos;
 
-// Orden de las casillas en la ruleta europea, en el sentido de las agujas del reloj
-const ORDEN = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+// La casilla del diablillo: el 67 ocupa el sitio del 0 de la ruleta europea
+const DIABLO = 67;
+
+// Orden de las casillas, en el sentido de las agujas del reloj (como la ruleta europea)
+const ORDEN = [DIABLO, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const ROJOS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
-const colorDe = (n: number) => (n === 0 ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro');
+const colorDe = (n: number) => (n === DIABLO ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro');
 const PINTURA = { verde: '#2e8b3d', rojo: '#c0392b', negro: '#1d1d1f' };
 
 const DURACION_GIRO = 4300;
@@ -33,7 +37,7 @@ const APUESTAS: Apuesta[] = [
 	{ id: 'rojo', texto: 'Rojo', puntos: 12, gana: (n) => colorDe(n) === 'rojo' },
 	{ id: 'negro', texto: 'Negro', puntos: 12, gana: (n) => colorDe(n) === 'negro' },
 	{ id: 'par', texto: 'Par', puntos: 12, gana: (n) => n > 0 && n % 2 === 0 },
-	{ id: 'impar', texto: 'Impar', puntos: 12, gana: (n) => n % 2 === 1 },
+	{ id: 'impar', texto: 'Impar', puntos: 12, gana: (n) => n !== DIABLO && n % 2 === 1 },
 	{ id: 'd1', texto: '1–12', puntos: 20, gana: (n) => n >= 1 && n <= 12 },
 	{ id: 'd2', texto: '13–24', puntos: 20, gana: (n) => n >= 13 && n <= 24 },
 	{ id: 'd3', texto: '25–36', puntos: 20, gana: (n) => n >= 25 && n <= 36 },
@@ -41,7 +45,11 @@ const APUESTAS: Apuesta[] = [
 ];
 
 const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-const casillaAlAzar = () => crypto.getRandomValues(new Uint32Array(1))[0] % 37;
+// Sale una de 37 casillas: la 0 de la ruleta europea es aquí el 67
+const casillaAlAzar = () => {
+	const n = crypto.getRandomValues(new Uint32Array(1))[0] % 37;
+	return n === 0 ? DIABLO : n;
+};
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, clase: string, texto?: string) {
 	const e = document.createElement(tag);
@@ -181,12 +189,12 @@ export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado>
 			if (terminada) return;
 
 			const color = colorDe(ganador);
-			const acierta = ganador !== 0 && apuesta.gana(ganador, numero);
+			const acierta = ganador !== DIABLO && apuesta.gana(ganador, numero);
 			let puntos = 0;
 			let texto = `Salió el ${ganador} ${color}.`;
-			if (ganador === 0) {
+			if (ganador === DIABLO) {
 				puntos = -CONFIG.penalizacionDiablo;
-				texto = '¡Salió el 0! El diablillo te quita puntos';
+				texto = '¡Salió el 67! El diablillo te quita puntos';
 				resultado.classList.add('mal');
 			} else if (acierta) {
 				puntos = apuesta.puntos;
@@ -196,9 +204,9 @@ export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado>
 				texto += ' No has acertado';
 			}
 			resultado.textContent = texto;
-			navigator.vibrate?.(ganador === 0 ? [80, 40, 80] : acierta ? 30 : 10);
+			navigator.vibrate?.(ganador === DIABLO ? [80, 40, 80] : acierta ? 30 : 10);
 			await esperar(PAUSA_FINAL);
-			terminar(puntos, ganador === 0 ? 'Salió el 0: el diablillo' : `Salió el ${ganador} ${color}${acierta ? ' y acertaste' : ''}`);
+			terminar(puntos, ganador === DIABLO ? 'Salió el 67: el diablillo' : `Salió el ${ganador} ${color}${acierta ? ' y acertaste' : ''}`);
 		});
 
 		escena.append(rueda, resultado, apuestasEl, numerosEl, girar);
