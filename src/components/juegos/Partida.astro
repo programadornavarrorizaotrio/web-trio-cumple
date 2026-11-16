@@ -47,7 +47,7 @@ const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'we
 		<div data-pantalla="final" hidden class="w-full text-center">
 			<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">Partida terminada</p>
 			<p class="rotulo mt-3 text-7xl text-amarillo"><span data-final-puntos>0</span></p>
-			<p class="text-sm font-bold uppercase tracking-widest">puntos para tu equipo</p>
+			<p data-final-etiqueta class="text-sm font-bold uppercase tracking-widest">puntos para tu equipo</p>
 			<p data-final-detalle class="mt-3 text-crema/80"></p>
 			<p data-final-subida class="mt-2 text-lg font-black text-amarillo"></p>
 			<Button tamano="lg" class="mt-8 w-full" onclick="this.closest('dialog').close()">Volver al tablero</Button>
@@ -426,5 +426,161 @@ const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'we
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+
+	/* === Tirada diaria de dados === */
+	.tirada-acciones {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		margin-top: 0.5rem;
+	}
+	.tirada-boton {
+		width: 100%;
+		padding: 1rem;
+		border: 0;
+		border-radius: 0.3rem;
+		background: var(--color-amarillo);
+		color: var(--color-granate-oscuro);
+		font-weight: 900;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		box-shadow: 0 4px 0 var(--color-amarillo-oscuro);
+		cursor: pointer;
+	}
+	.tirada-boton:disabled {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+	.tirada-boton-sec {
+		border: 2px solid rgb(251 244 228 / 0.4);
+		background: transparent;
+		color: var(--color-crema);
+		box-shadow: none;
+	}
+	.tirada-diablillo {
+		height: 9rem;
+		width: auto;
+		filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.5));
+	}
+
+	/* === Ruleta de casino === */
+	.ruleta-escena {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.9rem;
+		width: 100%;
+	}
+	.ruleta-rueda {
+		position: relative;
+		width: 16.5rem;
+		height: 16.5rem;
+		margin-top: 0.75rem;
+	}
+	.ruleta-rueda canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		box-shadow:
+			0 0 0 5px var(--color-amarillo),
+			0 6px 0 5px var(--color-amarillo-oscuro);
+		transition: transform 4.2s cubic-bezier(0.12, 0.65, 0.12, 1);
+	}
+	.ruleta-marca {
+		position: absolute;
+		top: -1.1rem;
+		left: 50%;
+		z-index: 2;
+		width: 0;
+		height: 0;
+		transform: translateX(-50%);
+		border-top: 1.3rem solid #fff;
+		border-right: 0.7rem solid transparent;
+		border-left: 0.7rem solid transparent;
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.5));
+	}
+	.ruleta-resultado {
+		min-height: 2.6rem;
+		text-align: center;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.ruleta-resultado.bien {
+		color: #c6f26b;
+	}
+	.ruleta-resultado.mal {
+		color: #ff7f6e;
+	}
+	.ruleta-apuestas {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.4rem;
+		width: 100%;
+	}
+	.ruleta-apuesta {
+		min-height: 3rem;
+		padding: 0.25rem;
+		border: 3px solid var(--color-amarillo);
+		border-radius: 0.5rem;
+		background: var(--color-granate);
+		color: var(--color-crema);
+		font-size: 0.8rem;
+		font-weight: 900;
+		line-height: 1.1;
+		cursor: pointer;
+	}
+	.ruleta-apuesta small {
+		display: block;
+		font-size: 0.65rem;
+		opacity: 0.85;
+	}
+	.ruleta-apuesta[data-color='rojo'] {
+		background: #8a2a20;
+	}
+	.ruleta-apuesta[data-color='negro'] {
+		background: #1d1d1f;
+	}
+	.ruleta-apuesta.sel {
+		background: var(--color-amarillo);
+		color: var(--color-granate-oscuro);
+	}
+	.ruleta-numeros {
+		display: grid;
+		grid-template-columns: repeat(9, 1fr);
+		gap: 0.25rem;
+		width: 100%;
+	}
+	.ruleta-numeros[hidden] {
+		display: none;
+	}
+	.ruleta-numero {
+		aspect-ratio: 1;
+		padding: 0;
+		border: 2px solid transparent;
+		border-radius: 0.3rem;
+		color: #fff;
+		font-size: 0.8rem;
+		font-weight: 900;
+		cursor: pointer;
+	}
+	.ruleta-numero[data-color='rojo'] {
+		background: #c0392b;
+	}
+	.ruleta-numero[data-color='negro'] {
+		background: #1d1d1f;
+	}
+	.ruleta-numero.sel {
+		border-color: var(--color-amarillo);
+		box-shadow: 0 0 0 2px var(--color-amarillo);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ruleta-rueda canvas {
+			transition-duration: 0.3s;
+		}
 	}
 </style>

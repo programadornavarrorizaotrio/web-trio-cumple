@@ -5,12 +5,13 @@ import ladron from '../../assets/mascota/ladron.png';
 import ElegirEquipo from './ElegirEquipo.astro';
 import Partida from './Partida.astro';
 import Premios from './Premios.astro';
+import Tirada from './Tirada.astro';
 import Ranking from './Ranking.astro';
 import { MINIJUEGOS } from './liga';
 
 // Hub de /juegos: una isla de Catan de 19 hexágonos (3-4-5-4-3) rodeada de mar. Los 8 del centro son
 // juegos o zonas; el resto son terreno de relleno, a la espera de que vayan pasando cosas.
-// Los hexágonos con ficha numerada se pueden pulsar: el número es lo máximo que se gana en una partida.
+// Los hexágonos con ficha numerada son juegos: si la tirada de dados del día saca ese número, toca jugar a ese.
 // Arriba, una tarjeta con tu estado (equipo, rango, puntos).
 
 interface Terreno {
@@ -43,13 +44,13 @@ interface Zona {
 
 const juego = (id: string, terreno: string, icono: string, corto: string): Zona => {
 	const m = MINIJUEGOS.find((x) => x.id === id)!;
-	return { terreno, icono, corto, titulo: m.titulo, texto: `${m.descripcion} Una partida al día.`, ficha: m.maxPuntos };
+	return { terreno, icono, corto, titulo: m.titulo, texto: `${m.descripcion} Una partida al día.`, ficha: m.numero };
 };
 
 const zonas: Record<string, Zona> = {
 	'memory-cromos': juego('memory-cromos', 'pasto', '🃏', 'Memory'),
 	'golpea-rana': juego('golpea-rana', 'bosque', '🐸', 'Rana'),
-	'dados-catan': juego('dados-catan', 'montana', '🎲', 'Dados'),
+	'ruleta-casino': juego('ruleta-casino', 'montana', '🎰', 'Ruleta'),
 	'adivina-cromo': juego('adivina-cromo', 'campos', '🕵️', 'Cromo'),
 	'conga-catan': juego('conga-catan', 'campos', '🐍', 'Conga'),
 	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
@@ -62,7 +63,7 @@ type Celda = { z: string } | { r: string; ladron?: boolean };
 const mapa: Celda[][] = [
 	[{ r: 'bosque' }, { r: 'pasto' }, { r: 'campos' }],
 	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { r: 'montana' }],
-	[{ r: 'pasto' }, { z: 'dados-catan' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
+	[{ r: 'pasto' }, { z: 'ruleta-casino' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
 	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'conga-catan' }, { r: 'colinas' }],
 	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
 ];
@@ -77,7 +78,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 			type="button"
 			data-centro
 			aria-label="Tu estado en la liga"
-			class="tarjeta-yo mx-auto mb-5 block w-full max-w-md rounded-lg border-2 border-amarillo-oscuro bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
+			class="tarjeta-yo mx-auto mb-3 block w-full max-w-md rounded-lg border-2 border-amarillo-oscuro bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
 		>
 			<span class="flex items-center justify-between gap-3">
 				<span>
@@ -93,6 +94,15 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 				<span data-centro-barra class="block h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></span>
 			</span>
 		</button>
+
+		<button
+			type="button"
+			data-tirar
+			class="tirar mx-auto block w-full max-w-md rounded-lg bg-amarillo px-4 py-3.5 text-base font-black uppercase tracking-wider text-granate-oscuro shadow-chapa-amarillo [font-stretch:110%] disabled:pointer-events-none disabled:opacity-60"
+		>
+			<span data-tirar-texto>🎲 Tirar los dados</span>
+		</button>
+		<p data-hoy class="mx-auto mb-5 mt-2.5 max-w-md text-center text-sm font-bold text-granate"></p>
 	</div>
 
 	<!-- El mar, con su marco de madera. En móvil ocupa todo el ancho -->
@@ -112,7 +122,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 										<span class="hex-icono" aria-hidden="true">{zonas[c.z].icono}</span>
 										<span class="hex-nombre">{zonas[c.z].corto}</span>
 										{zonas[c.z].ficha && (
-											<span data-ficha class="ficha" aria-label={`Hasta ${zonas[c.z].ficha} puntos`}>
+											<span data-ficha class="ficha" aria-label={`Ficha ${zonas[c.z].ficha}`}>
 												{zonas[c.z].ficha}
 											</span>
 										)}
@@ -133,7 +143,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 	</div>
 
 	<p class="mx-auto mt-4 max-w-sm px-4 text-center text-xs text-tinta-suave">
-		Toca un hexágono con ficha. El número es lo máximo que puedes ganar y cada minijuego se juega una vez al día. El resto de la isla está por descubrir.
+		Tira los dados cada día: el número que salga es la ficha del hexágono que produce, y ese es tu juego de hoy. Si sale el 7, el diablillo te quita puntos. El resto de la isla está por descubrir.
 	</p>
 </div>
 
@@ -141,6 +151,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 <Partida />
 <Ranking />
 <Premios />
+<Tirada />
 
 <Hoja id="hoja-hex" titulo="hoja-hex-titulo">
 	<div class="space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
@@ -281,6 +292,20 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		border-color: #46290f;
 		color: #f0c14b;
 	}
+	/* Hexágonos según la tirada de hoy: el que te toca brilla y el resto se apaga */
+	.hex[data-estado='cerrado'],
+	.hex[data-estado='pronto'] {
+		filter: saturate(0.4) brightness(0.92);
+	}
+	.hex[data-estado='hoy'] {
+		animation: brilla 1.4s ease-in-out infinite;
+	}
+	@keyframes brilla {
+		50% {
+			background: #fff6cc;
+			transform: scale(1.07);
+		}
+	}
 	/* Mientras no hay equipo, la tarjeta late para llamar a elegirlo */
 	.tarjeta-yo.sin-equipo {
 		animation: late 1.8s ease-in-out infinite;
@@ -292,6 +317,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.tarjeta-yo.sin-equipo,
+		.hex[data-estado='hoy'],
 		.barco {
 			animation: none;
 		}
@@ -300,7 +326,8 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 
 <script>
 	import { estadoLiga, equipoPorId, MINIJUEGOS } from './liga';
-	import { hayJuego, lanzar } from './partida';
+	import { lanzar } from './partida';
+	import { abrirTirada } from './tirada';
 
 	const tablero = document.querySelector<HTMLElement>('[data-tablero]')!;
 	const hoja = document.getElementById('hoja-hex') as HTMLDialogElement;
@@ -324,6 +351,24 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		const { rango, siguienteRango: sig, puntos } = estado;
 		const pct = sig ? Math.round(((puntos - rango.desde) / (sig.desde - rango.desde)) * 100) : 100;
 		centro.querySelector<HTMLElement>('[data-centro-barra]')!.style.width = `${pct}%`;
+		// Botón de tirar y resumen del día
+		const tirar = tablero.querySelector<HTMLButtonElement>('[data-tirar]')!;
+		const restantes = estado.tiradasMax - estado.tiradasHoy;
+		tirar.disabled = !!estado.equipo && restantes <= 0;
+		tirar.querySelector('[data-tirar-texto]')!.textContent = !estado.equipo
+			? '🎲 Elige equipo para tirar'
+			: restantes > 0
+				? `🎲 Tirar los dados${estado.tiradasMax > 1 ? ` (${restantes} de ${estado.tiradasMax})` : ''}`
+				: 'Ya has tirado hoy';
+		const titulos = estado.asignadosHoy.map((id) => `${MINIJUEGOS.find((m) => m.id === id)?.titulo}${estado.jugadosHoy.includes(id) ? ' ✓' : ''}`);
+		const partes = [titulos.length ? `Hoy te toca: ${titulos.join(' y ')}` : '', estado.diablosHoy ? 'Hoy te salió el diablillo' : ''].filter(Boolean);
+		tablero.querySelector('[data-hoy]')!.textContent = !estado.equipo ? '' : partes.length ? partes.join(' · ') : 'Tira los dados para saber a qué juegas hoy.';
+		// Estado de cada hexágono de juego: el que toca brilla, el resto se apaga
+		tablero.querySelectorAll<HTMLElement>('[data-hex]').forEach((hex) => {
+			const m = MINIJUEGOS.find((x) => x.id === hex.dataset.hex);
+			if (!m) return;
+			hex.dataset.estado = !m.disponible ? 'pronto' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
+		});
 		for (const id of estado.jugadosHoy) {
 			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
 			if (ficha) {
@@ -347,15 +392,24 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		abrirHoja(`Equipo ${nombre}`, `${lema}. Rango ${estado.rango.nombre} con ${estado.puntos} puntos, puesto ${estado.puesto} de la liga.${falta}`);
 	});
 
+	// Tirada diaria
+	tablero.querySelector('[data-tirar]')!.addEventListener('click', () => {
+		if (!estado.equipo) return hojaEquipo.showModal();
+		void abrirTirada({ tiradaActual: estado.tiradasHoy + 1, tiradasMax: estado.tiradasMax });
+	});
+
 	// Cada hexágono abre su hoja o su minijuego
 	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
 		boton.addEventListener('click', () => {
 			if (boton.dataset.hex === 'ranking' || boton.dataset.hex === 'premios') return; // los abren Ranking.astro y Premios.astro
-			const id = boton.dataset.hex!;
-			if (hayJuego(id)) {
+			const m = MINIJUEGOS.find((x) => x.id === boton.dataset.hex);
+			if (m) {
 				if (!estado.equipo) return hojaEquipo.showModal();
-				if (estado.jugadosHoy.includes(id)) return abrirHoja(boton.dataset.titulo ?? '', 'Ya has jugado hoy. Vuelve mañana para otra partida.');
-				return void lanzar(id);
+				if (!m.disponible) return abrirHoja(m.titulo, `${m.descripcion} Se abre muy pronto.`);
+				if (estado.jugadosHoy.includes(m.id)) return abrirHoja(m.titulo, 'Ya has jugado hoy a este. Vuelve mañana.');
+				if (estado.asignadosHoy.includes(m.id)) return void lanzar(m.id);
+				const puedeTirar = estado.tiradasHoy < estado.tiradasMax;
+				return abrirHoja(m.titulo, `Hoy no te ha tocado este juego: su ficha es el ${m.numero}. ${puedeTirar ? 'Tira los dados para ver qué te toca.' : 'Vuelve mañana a tirar.'}`);
 			}
 			abrirHoja(boton.dataset.titulo ?? '', `${boton.dataset.texto} Se abre muy pronto.`);
 		});

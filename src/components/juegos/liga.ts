@@ -32,8 +32,19 @@ export const EQUIPOS: Equipo[] = trio.map((t) => ({
 
 export const equipoPorId = (id: EquipoId) => EQUIPOS.find((e) => e.id === id)!;
 
+// ───────────────────────── Configuración ─────────────────────────
+// Valores del sistema de puntos. TODO(admin): los editarán los organizadores; hoy son fijos.
+
+export const CONFIG = {
+	/** Tiradas de dados al día: el número que sale decide a qué juego toca jugar */
+	tiradasEntreSemana: 1,
+	tiradasFinDeSemana: 2,
+	/** Puntos que quita el diablillo (el 7 de los dados o el 0 de la ruleta) */
+	penalizacionDiablo: 10,
+};
+
 // ───────────────────────── Rangos ─────────────────────────
-// Umbrales pensados para unos 5 minijuegos al día de hasta 24-30 puntos cada uno.
+// Umbrales pensados para ~1 juego al día (hasta 30 puntos) y 2 en fin de semana.
 
 export interface Rango {
 	nombre: string;
@@ -42,12 +53,12 @@ export interface Rango {
 
 export const RANGOS: Rango[] = [
 	{ nombre: 'Hierro', desde: 0 },
-	{ nombre: 'Bronce', desde: 40 },
-	{ nombre: 'Plata', desde: 100 },
-	{ nombre: 'Oro', desde: 200 },
-	{ nombre: 'Platino', desde: 350 },
-	{ nombre: 'Diamante', desde: 550 },
-	{ nombre: 'Challenger', desde: 800 },
+	{ nombre: 'Bronce', desde: 30 },
+	{ nombre: 'Plata', desde: 80 },
+	{ nombre: 'Oro', desde: 150 },
+	{ nombre: 'Platino', desde: 230 },
+	{ nombre: 'Diamante', desde: 320 },
+	{ nombre: 'Challenger', desde: 420 },
 ];
 
 export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | null } {
@@ -58,7 +69,7 @@ export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | nul
 
 // ───────────────────────── Minijuegos ─────────────────────────
 
-export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'dados-catan' | 'adivina-cromo' | 'conga-catan' | 'wordle-trio';
+export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'ruleta-casino' | 'adivina-cromo' | 'conga-catan' | 'wordle-trio';
 
 export interface Minijuego {
 	id: MinijuegoId;
@@ -68,32 +79,46 @@ export interface Minijuego {
 	maxPuntos: number;
 	/** Recurso de Catan que da el hexágono en el tablero */
 	recurso: string;
+	/** Ficha numerada del hexágono: si la tirada del día saca este número, toca jugar a este juego */
+	numero: number;
+	/** Si ya se puede jugar. Los que no, no producen: si sale su número se vuelve a tirar */
+	disponible: boolean;
 }
 
 export const MINIJUEGOS: Minijuego[] = [
-	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel' },
-	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros' },
-	{ id: 'dados-catan', titulo: 'Dados de Catan', descripcion: 'Tira los dados: cuanto más alto, mejor. Pero cuidado con el 7.', maxPuntos: 24, recurso: 'Mechero' },
-	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco' },
-	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al ladrón.', maxPuntos: 30, recurso: 'Cebada' },
-	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza' },
+	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel', numero: 8, disponible: true },
+	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros', numero: 6, disponible: true },
+	{ id: 'ruleta-casino', titulo: 'Ruleta de casino', descripcion: 'Apuesta a un color, un par o un número y gira. Cuidado con el cero: es el diablillo.', maxPuntos: 30, recurso: 'Mechero', numero: 4, disponible: true },
+	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco', numero: 9, disponible: true },
+	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al diablillo.', maxPuntos: 30, recurso: 'Cebada', numero: 5, disponible: true },
+	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza', numero: 10, disponible: false },
 ];
 
 // ───────────────────────── Estado simulado ─────────────────────────
 
 const CLAVE_DEMO = 'trio-demo-liga';
 
+interface DiaLocal {
+	/** Tiradas de dados gastadas ese día */
+	tiradas: number;
+	/** Juegos que le han tocado ese día (jugados o no) */
+	asignados: MinijuegoId[];
+	/** Veces que le ha salido el diablillo ese día */
+	diablos?: number;
+}
+
 interface Local {
 	equipo: EquipoId | null;
-	/** Puntos propios por día (YYYY-MM-DD en Madrid) y minijuego */
-	partidas: Record<string, Partial<Record<MinijuegoId, number>>>;
+	/** Puntos propios por día (YYYY-MM-DD en Madrid) y minijuego. La clave `diablo` guarda lo que le quitó el 7 */
+	partidas: Record<string, Record<string, number>>;
+	dias: Record<string, DiaLocal>;
 }
 
 function leerLocal(): Local {
 	try {
-		return { equipo: null, partidas: {}, ...JSON.parse(localStorage.getItem(CLAVE_DEMO) ?? '{}') };
+		return { equipo: null, partidas: {}, dias: {}, ...JSON.parse(localStorage.getItem(CLAVE_DEMO) ?? '{}') };
 	} catch {
-		return { equipo: null, partidas: {} };
+		return { equipo: null, partidas: {}, dias: {} };
 	}
 }
 
@@ -106,18 +131,28 @@ export function hoy(): string {
 	return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
 }
 
+/** Fin de semana en Madrid (en pruebas se fuerza con `?finde=si`). */
+export function esFinDeSemana(): boolean {
+	if (new URLSearchParams(location.search).get('finde') === 'si') return true;
+	const dia = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', weekday: 'short' }).format(new Date());
+	return dia === 'Sat' || dia === 'Sun';
+}
+
+const tiradasDelDia = () => (esFinDeSemana() ? CONFIG.tiradasFinDeSemana : CONFIG.tiradasEntreSemana);
+
+/** Puntos totales: nunca por debajo de 0, aunque el diablillo haya quitado de más. */
 const puntosPropios = (l: Local) =>
-	Object.values(l.partidas).reduce((suma, dia) => suma + Object.values(dia).reduce((s, p) => s + (p ?? 0), 0), 0);
+	Math.max(0, Object.values(l.partidas).reduce((suma, dia) => suma + Object.values(dia).reduce((s, p) => s + p, 0), 0));
 
 // Resto de invitados de ejemplo para que el ranking tenga vida.
 const EJEMPLO: { id: string; nombre: string; equipo: EquipoId; puntos: number }[] = [
-	{ id: 'e1', nombre: 'Sergio Gil', equipo: 'juan', puntos: 412 },
-	{ id: 'e2', nombre: 'Lucía Martín', equipo: 'fran', puntos: 365 },
-	{ id: 'e3', nombre: 'Carlos Ruiz', equipo: 'pencho', puntos: 298 },
-	{ id: 'e4', nombre: 'Paula Sanz', equipo: 'pencho', puntos: 240 },
-	{ id: 'e5', nombre: 'Álvaro Díaz', equipo: 'fran', puntos: 171 },
-	{ id: 'e6', nombre: 'Irene Vega', equipo: 'juan', puntos: 96 },
-	{ id: 'e7', nombre: 'Hugo Prieto', equipo: 'fran', puntos: 38 },
+	{ id: 'e1', nombre: 'Sergio Gil', equipo: 'juan', puntos: 206 },
+	{ id: 'e2', nombre: 'Lucía Martín', equipo: 'fran', puntos: 182 },
+	{ id: 'e3', nombre: 'Carlos Ruiz', equipo: 'pencho', puntos: 149 },
+	{ id: 'e4', nombre: 'Paula Sanz', equipo: 'pencho', puntos: 120 },
+	{ id: 'e5', nombre: 'Álvaro Díaz', equipo: 'fran', puntos: 85 },
+	{ id: 'e6', nombre: 'Irene Vega', equipo: 'juan', puntos: 48 },
+	{ id: 'e7', nombre: 'Hugo Prieto', equipo: 'fran', puntos: 19 },
 ];
 
 // ───────────────────────── API ─────────────────────────
@@ -130,6 +165,12 @@ export interface EstadoLiga {
 	siguienteRango: Rango | null;
 	/** Minijuegos ya jugados hoy */
 	jugadosHoy: MinijuegoId[];
+	/** Juegos que le han tocado hoy con la tirada de dados (jugados o no) */
+	asignadosHoy: MinijuegoId[];
+	/** Veces que le ha salido el diablillo hoy */
+	diablosHoy: number;
+	tiradasHoy: number;
+	tiradasMax: number;
 	/** Puesto individual (1 = primero) */
 	puesto: number;
 }
@@ -164,7 +205,11 @@ export async function estadoLiga(): Promise<EstadoLiga> {
 		puntos,
 		rango: actual,
 		siguienteRango: siguiente,
-		jugadosHoy: Object.keys(l.partidas[hoy()] ?? {}) as MinijuegoId[],
+		jugadosHoy: Object.keys(l.partidas[hoy()] ?? {}).filter((k) => MINIJUEGOS.some((m) => m.id === k)) as MinijuegoId[],
+		asignadosHoy: l.dias[hoy()]?.asignados ?? [],
+		diablosHoy: l.dias[hoy()]?.diablos ?? 0,
+		tiradasHoy: l.dias[hoy()]?.tiradas ?? 0,
+		tiradasMax: tiradasDelDia(),
 		puesto: puesto || filas().length + 1,
 	};
 }
@@ -190,23 +235,78 @@ export async function marcadorEquipos(): Promise<{ equipo: Equipo; puntos: numbe
 	}).sort((a, b) => b.puntos - a.puntos);
 }
 
+export interface Tirada {
+	a: number;
+	b: number;
+	suma: number;
+}
+
+export type ResultadoTirada =
+	| { tipo: 'juego'; juego: MinijuegoId; tiradas: Tirada[] }
+	| { tipo: 'diablo'; perdidos: number; tiradas: Tirada[] };
+
+const dado6 = () => 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 6);
+
+/**
+ * TODO(DB): RPC `tirar_dados(clave)`. Tira el SERVIDOR (si lo hace el navegador se podría elegir el resultado)
+ * y devuelve todas las tiradas hasta dar con algo: el 7 es el diablillo (quita CONFIG.penalizacionDiablo,
+ * sin bajar de 0) y cualquier otro número que sea de un juego disponible no asignado ya hoy es el juego del día.
+ * Si sale un número sin juego se vuelve a tirar sin gastar la tirada del día. Debe fallar con 'sin-equipo' y 'sin-tiradas'.
+ */
+export async function tirarDados(): Promise<ResultadoTirada> {
+	const l = leerLocal();
+	if (!l.equipo) throw new Error('sin-equipo');
+	const dia = (l.dias[hoy()] ??= { tiradas: 0, asignados: [] });
+	if (dia.tiradas >= tiradasDelDia()) throw new Error('sin-tiradas');
+
+	const tiradas: Tirada[] = [];
+	for (let i = 0; i < 200; i++) {
+		const a = dado6();
+		const b = dado6();
+		const suma = a + b;
+		tiradas.push({ a, b, suma });
+		if (suma === 7) {
+			const perdidos = Math.min(CONFIG.penalizacionDiablo, puntosPropios(l));
+			const partidas = (l.partidas[hoy()] ??= {});
+			partidas.diablo = (partidas.diablo ?? 0) - perdidos;
+			dia.tiradas++;
+			dia.diablos = (dia.diablos ?? 0) + 1;
+			guardarLocal(l);
+			return { tipo: 'diablo', perdidos, tiradas };
+		}
+		const juego = MINIJUEGOS.find((m) => m.numero === suma && m.disponible && !dia.asignados.includes(m.id));
+		if (juego) {
+			dia.asignados.push(juego.id);
+			dia.tiradas++;
+			guardarLocal(l);
+			return { tipo: 'juego', juego: juego.id, tiradas };
+		}
+	}
+	throw new Error('sin-juegos');
+}
+
 /**
  * TODO(DB): RPC `registrar_partida(clave, minijuego, respuestas)`.
  * El servidor corrige las respuestas (las soluciones NO viajan al navegador) y calcula los puntos.
- * Debe fallar con 'sin-equipo' si no ha elegido equipo y con 'ya-jugado' si ya jugó hoy ese minijuego.
+ * Debe fallar con 'sin-equipo', con 'no-asignado' si hoy no le ha tocado ese juego con los dados y con
+ * 'ya-jugado' si ya lo jugó hoy. Los puntos pueden ser negativos (el 0 de la ruleta es el diablillo).
  * Aquí, en modo simulado, el cliente manda los puntos que ha calculado el propio minijuego.
  */
 export async function registrarPartida(minijuego: MinijuegoId, puntos: number): Promise<{ puntos: number; rango: Rango; subeDeRango: boolean }> {
 	const l = leerLocal();
 	if (!l.equipo) throw new Error('sin-equipo');
+	if (!l.dias[hoy()]?.asignados.includes(minijuego)) throw new Error('no-asignado');
 	const dia = (l.partidas[hoy()] ??= {});
 	if (dia[minijuego] !== undefined) throw new Error('ya-jugado');
 	const max = MINIJUEGOS.find((m) => m.id === minijuego)!.maxPuntos;
 	const antes = rangoDe(puntosPropios(l)).actual;
-	dia[minijuego] = Math.max(0, Math.min(max, Math.round(puntos)));
+	let valor = Math.min(max, Math.round(puntos));
+	// Lo que se quita no puede pasar de la penalización ni de lo que ya tiene
+	if (valor < 0) valor = -Math.min(-valor, CONFIG.penalizacionDiablo, puntosPropios(l));
+	dia[minijuego] = valor;
 	guardarLocal(l);
 	const despues = rangoDe(puntosPropios(l)).actual;
-	return { puntos: dia[minijuego]!, rango: despues, subeDeRango: despues.nombre !== antes.nombre };
+	return { puntos: valor, rango: despues, subeDeRango: despues.nombre !== antes.nombre };
 }
 
 // ───────────────────────── Premios ─────────────────────────

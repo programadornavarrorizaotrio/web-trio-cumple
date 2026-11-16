@@ -28,7 +28,7 @@ export interface Minijuego {
 const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	'golpea-rana': () => import('./golpea-rana'),
 	'memory-cromos': () => import('./memory-cromos'),
-	'dados-catan': () => import('./dados-catan'),
+	'ruleta-casino': () => import('./ruleta-casino'),
 	'adivina-cromo': () => import('./adivina-cromo'),
 	'conga-catan': () => import('./conga-catan'),
 };
@@ -73,6 +73,7 @@ export async function lanzar(id: MinijuegoId) {
 
 		if (!dialogo.open) return;
 		q('[data-final-puntos]').textContent = String(puntos);
+		q('[data-final-etiqueta]').textContent = puntos < 0 ? 'puntos que te quita el diablillo' : 'puntos para tu equipo';
 		q('[data-final-detalle]').textContent = resultado.detalle ?? '';
 		q('[data-final-subida]').textContent = subida;
 		pantalla('final');
