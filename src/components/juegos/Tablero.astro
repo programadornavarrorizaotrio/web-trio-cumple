@@ -51,7 +51,6 @@ const zonas: Record<string, Zona> = {
 	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
 	ranking: { terreno: 'oro', icono: '🏆', corto: 'Ranking', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.' },
 	premios: { terreno: 'puerto', icono: '🎁', corto: 'Premios', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.' },
-	fiesta: { terreno: 'desierto', icono: '🎉', corto: 'Fiesta', titulo: 'La fiesta', texto: '' },
 };
 
 // Cada celda: una zona jugable (`z`) o terreno de relleno (`r`). `ladron` pone la ficha negra del ladrón.
@@ -59,8 +58,8 @@ type Celda = { z: string } | { r: string; ladron?: boolean };
 const mapa: Celda[][] = [
 	[{ r: 'bosque' }, { r: 'pasto' }, { r: 'campos' }],
 	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { r: 'montana' }],
-	[{ r: 'pasto' }, { z: 'dados-catan' }, { z: 'fiesta' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
-	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'ranking' }, { r: 'colinas' }],
+	[{ r: 'pasto' }, { z: 'dados-catan' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
+	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { r: 'campos' }, { r: 'colinas' }],
 	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
 ];
 const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${t.color}`;
@@ -344,7 +343,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		abrirHoja(`Equipo ${nombre}`, `${lema}. Rango ${estado.rango.nombre} con ${estado.puntos} puntos, puesto ${estado.puesto} de la liga.${falta}`);
 	});
 
-	// Cada hexágono abre su hoja. La fiesta baja a la lista de propuestas.
+	// Cada hexágono abre su hoja o su minijuego
 	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
 		boton.addEventListener('click', () => {
 			if (boton.dataset.hex === 'ranking') return; // lo abre Ranking.astro
@@ -353,10 +352,6 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 				if (!estado.equipo) return hojaEquipo.showModal();
 				if (estado.jugadosHoy.includes(id)) return abrirHoja(boton.dataset.titulo ?? '', 'Ya has jugado hoy. Vuelve mañana para otra partida.');
 				return void lanzar(id);
-			}
-			if (boton.dataset.hex === 'fiesta') {
-				document.getElementById('fiesta-lista')?.scrollIntoView({ behavior: 'smooth' });
-				return;
 			}
 			abrirHoja(boton.dataset.titulo ?? '', `${boton.dataset.texto} Se abre muy pronto.`);
 		});
