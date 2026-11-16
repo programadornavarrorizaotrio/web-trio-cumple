@@ -19,6 +19,7 @@ const color: Record<Tema, string> = {
 	cartas: 'text-crema',
 	riverland: 'text-crema',
 	charca: 'text-amarillo',
+	tuenti: 'text-crema',
 };
 ---
 
@@ -27,6 +28,8 @@ const color: Record<Tema, string> = {
 		<Image src={logo} alt="" class="h-9 w-auto max-w-40 object-contain" height={72} />
 	) : tema === 'estanco' ? (
 		<Rotulo />
+	) : tema === 'tuenti' ? (
+		<span class="text-[1.65rem] font-bold lowercase leading-none tracking-[-0.04em] text-white [text-shadow:0_1px_0_#24496f]">triofeliz</span>
 	) : (
 		<span class:list={['inline-flex items-center gap-2', color[tema]]}>
 			{icono && <Image src={icono} alt="" height={80} class="h-9 w-auto shrink-0 rounded-[3px] shadow-[0_1px_3px_rgb(0_0_0/0.5)]" />}

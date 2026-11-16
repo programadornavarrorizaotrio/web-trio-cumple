@@ -211,6 +211,37 @@
 	box-shadow: 0 2px 0 0 #0b0b0b;
 }
 
+/* Fotos: red social de 2008. Azul de cabecera, fondo gris azulado, cajas blancas y letra pequeña de sistema. */
+:root[data-tema='tuenti'] {
+	--color-granate: #3b6ea5;
+	--color-granate-oscuro: #2a5482;
+	--color-granate-claro: #e3ecf6;
+	--color-amarillo: #ffffff;
+	--color-amarillo-claro: #dce8f5;
+	--color-amarillo-oscuro: #c3d3e5;
+	--color-crema: #e9eef4;
+	--color-crema-oscuro: #d5dee9;
+	--color-tinta: #333333;
+	--color-tinta-suave: #888888;
+	--color-extra: #5fa83b;
+	--font-sans: Tahoma, Verdana, 'Segoe UI', 'Lucida Grande', 'DejaVu Sans', sans-serif;
+	--font-rotulo: Tahoma, Verdana, 'Segoe UI', 'Lucida Grande', 'DejaVu Sans', sans-serif;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 700;
+	--rotulo-mayusculas: none;
+	--rotulo-espaciado: -0.01em;
+	--rotulo-interlineado: 1.1;
+	--radius-lg: 0.25rem;
+	--shadow-chapa: none;
+	--shadow-chapa-amarillo: none;
+}
+
+/* Tuenti: cabecera plana con degradado suave y borde inferior oscuro */
+:root[data-tema='tuenti'] header[data-barra] {
+	background: linear-gradient(#4a7db4, #3b6ea5);
+	box-shadow: 0 1px 0 0 #24496f;
+}
+
 /* === Paleta de la charca (Trioland) ===
  * No es un tema de página: se activa con la clase .selva en el contenedor que la use
  * (portada y escena del trío de la home). Las secciones oscuras de la charca leen estas variables.

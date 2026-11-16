@@ -1,19 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/common/Section.astro';
 import Fotos from '../components/fotos/Fotos.astro';
 ---
 
 <Layout title="Fotos · Trio Feliz">
-	<main>
-		<h1 class="sr-only">Fotos de la fiesta</h1>
-		<Section
-			id="fotos"
-			antetitulo="Carrete"
-			titulo="Fotos de la fiesta"
-			subtitulo="Todo lo que pase en la fiesta, en un mismo carrete. Sube las tuyas y llévate las de los demás."
-		>
+	<main class="flex-1 bg-crema px-3 pb-12 pt-4 sm:pt-8">
+		<div class="mx-auto max-w-2xl">
+			<header class="mb-3 px-0.5">
+				<h1 class="text-lg font-bold text-granate-oscuro">Fotos de la fiesta</h1>
+				<p class="text-[12px] text-tinta-suave">Lo que pasa en la fiesta, subido por los que están en la fiesta.</p>
+			</header>
 			<Fotos />
-		</Section>
+		</div>
 	</main>
 </Layout>
