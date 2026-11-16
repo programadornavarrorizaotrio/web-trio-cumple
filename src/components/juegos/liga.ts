@@ -58,7 +58,7 @@ export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | nul
 
 // ───────────────────────── Minijuegos ─────────────────────────
 
-export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'dados-catan' | 'adivina-cromo' | 'wordle-trio';
+export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'dados-catan' | 'adivina-cromo' | 'conga-catan' | 'wordle-trio';
 
 export interface Minijuego {
 	id: MinijuegoId;
@@ -75,6 +75,7 @@ export const MINIJUEGOS: Minijuego[] = [
 	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros' },
 	{ id: 'dados-catan', titulo: 'Dados de Catan', descripcion: 'Tira los dados: cuanto más alto, mejor. Pero cuidado con el 7.', maxPuntos: 24, recurso: 'Mechero' },
 	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco' },
+	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al ladrón.', maxPuntos: 30, recurso: 'Cebada' },
 	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza' },
 ];
 

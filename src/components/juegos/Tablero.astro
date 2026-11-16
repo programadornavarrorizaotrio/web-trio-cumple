@@ -49,6 +49,7 @@ const zonas: Record<string, Zona> = {
 	'golpea-rana': juego('golpea-rana', 'bosque', '🐸', 'Rana'),
 	'dados-catan': juego('dados-catan', 'montana', '🎲', 'Dados'),
 	'adivina-cromo': juego('adivina-cromo', 'campos', '🕵️', 'Cromo'),
+	'conga-catan': juego('conga-catan', 'campos', '🐍', 'Conga'),
 	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
 	ranking: { terreno: 'oro', icono: '🏆', corto: 'Ranking', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.' },
 	premios: { terreno: 'puerto', icono: '🎁', corto: 'Premios', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.' },
@@ -60,7 +61,7 @@ const mapa: Celda[][] = [
 	[{ r: 'bosque' }, { r: 'pasto' }, { r: 'campos' }],
 	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { r: 'montana' }],
 	[{ r: 'pasto' }, { z: 'dados-catan' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
-	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { r: 'campos' }, { r: 'colinas' }],
+	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'conga-catan' }, { r: 'colinas' }],
 	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
 ];
 const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${t.color}`;

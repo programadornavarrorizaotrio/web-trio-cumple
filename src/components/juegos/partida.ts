@@ -28,6 +28,7 @@ const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	'memory-cromos': () => import('./memory-cromos'),
 	'dados-catan': () => import('./dados-catan'),
 	'adivina-cromo': () => import('./adivina-cromo'),
+	'conga-catan': () => import('./conga-catan'),
 };
 
 export const hayJuego = (id: string): id is MinijuegoId => id in modulos;
