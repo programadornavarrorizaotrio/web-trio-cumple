@@ -442,8 +442,8 @@ const equipos = await Promise.all(EQUIPOS.map(async (e) => ({ ...e, splash: awai
 		error.hidden = true;
 		try {
 			await elegirEquipo(new FormData(form).get('equipo') as EquipoId);
-		} catch {
-			error.textContent = 'Ya habías elegido equipo.';
+		} catch (e) {
+			error.textContent = e instanceof Error && e.message === 'ya-elegido' ? 'Ya habías elegido equipo.' : 'No se ha podido fijar el equipo. Inténtalo otra vez.';
 			error.hidden = false;
 			fijando = false;
 			return;

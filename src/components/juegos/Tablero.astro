@@ -338,7 +338,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 </style>
 
 <script>
-	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, olvidarEquipo, salirModoPrueba } from './liga';
+	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, olvidarEquipo, puedeOlvidarEquipo, salirModoPrueba } from './liga';
 	import { lanzar } from './partida';
 	import { abrirTirada } from './tirada';
 
@@ -411,8 +411,11 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		location.assign(location.pathname);
 	});
 
-	// Modo prueba: olvidar el equipo y volver a la selección de campeón
-	tablero.querySelector('[data-prueba-equipo]')!.addEventListener('click', async () => {
+	// Modo prueba: olvidar el equipo y volver a la selección de campeón (solo con los datos simulados: en la base
+	// de datos el equipo es definitivo)
+	const botonCambiarEquipo = tablero.querySelector<HTMLButtonElement>('[data-prueba-equipo]')!;
+	botonCambiarEquipo.hidden = !puedeOlvidarEquipo();
+	botonCambiarEquipo.addEventListener('click', async () => {
 		olvidarEquipo();
 		estado = await estadoLiga();
 		pintar();

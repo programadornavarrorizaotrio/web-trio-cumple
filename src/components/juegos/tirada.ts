@@ -228,8 +228,17 @@ export async function abrirTirada(opciones: { tiradaActual: number; tiradasMax: 
 		let res: ResultadoTirada;
 		try {
 			res = await tirarDados();
-		} catch {
-			mensaje.textContent = 'No tienes más tiradas hoy.';
+		} catch (e) {
+			const codigo = e instanceof Error ? e.message : '';
+			mensaje.textContent =
+				codigo === 'sin-tiradas'
+					? 'No tienes más tiradas hoy.'
+					: codigo === 'liga-cerrada'
+						? 'La liga ya ha terminado.'
+						: codigo === 'sin-juegos'
+							? 'Hoy ya te han tocado todos los juegos.'
+							: 'No se han podido tirar los dados. Inténtalo otra vez.';
+			tirando = false;
 			return;
 		}
 		marco.classList.add('usado');

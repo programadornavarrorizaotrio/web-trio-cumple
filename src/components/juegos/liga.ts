@@ -1,11 +1,14 @@
 // La liga del Trío: equipos, puntos, rangos, ranking y premios.
 //
-// Contrato con la base de datos. Hoy todo es simulado en el navegador (localStorage) para poder
-// construir la interfaz; cada función marca la RPC que la sustituirá. Todas reciben la clave de
-// sesión (`invitadoActual().clave`) y las puntuaciones las calcula el SERVIDOR, no el navegador.
+// Contrato con la base de datos. Cada función llama a su RPC (supabase/migrations/…_liga.sql) cuando el
+// invitado está registrado en la base de datos (`usaBD()`); si no, sigue con los datos simulados en el
+// navegador (localStorage), que sirven para probar la web sin Supabase. Los dados, la ruleta y las cartas
+// los decide el SERVIDOR; el navegador solo manda los puntos de los minijuegos de habilidad, con tope.
+// El modo prueba (`?probar=si`) nunca toca la liga, tampoco con base de datos.
 import fiesta from '../../data/fiesta.json';
 import trio from '../../data/trio.json';
 import { invitadoActual } from '../registro/sesion';
+import { rpcConClave, usaBD } from '../../lib/rpc';
 
 // ───────────────────────── Equipos ─────────────────────────
 
@@ -111,7 +114,7 @@ export interface Minijuego {
 	recurso: string;
 	/** Ficha numerada del hexágono: si la tirada del día saca este número, toca jugar a este juego. Null en los libres */
 	numero: number | null;
-	/** Juego de casino: sin tirada ni ficha, se puede jugar siempre y se apuestan puntos propios (ver `apostarEnCasino`) */
+	/** Juego de casino: sin tirada ni ficha, se puede jugar siempre y se apuestan puntos propios (ver `girarRuleta` y `repartirBlackjack`) */
 	libre?: boolean;
 	/** Si ya se puede jugar. Los que no, no producen: si sale su número se vuelve a tirar */
 	disponible: boolean;
@@ -192,10 +195,13 @@ export function salirModoPrueba() {
 
 /**
  * Para los desarrolladores (botón "Cambiar equipo" del modo prueba): olvida el equipo elegido, sin tocar los
- * puntos, para volver a pasar por la selección de campeón.
- * TODO(DB): cuando el equipo esté en la base de datos esto dejará de servir.
+ * puntos, para volver a pasar por la selección de campeón. Solo con los datos simulados: en la base de datos
+ * el equipo es para siempre (habría que borrarlo desde el panel de Supabase).
  */
+export const puedeOlvidarEquipo = () => !usaBD();
+
 export function olvidarEquipo() {
+	if (!puedeOlvidarEquipo()) return;
 	try {
 		guardarLocal({ ...leerLocal(), equipo: null });
 	} catch {
@@ -266,8 +272,9 @@ function filas(): FilaRanking[] {
 		.map((f) => ({ ...f, rango: rangoDe(f.puntos).actual.nombre }));
 }
 
-// TODO(DB): RPC `estado_liga(clave)`
+// RPC `estado_liga(clave)`
 export async function estadoLiga(): Promise<EstadoLiga> {
+	if (usaBD()) return rpcConClave<EstadoLiga>('estado_liga');
 	const l = leerLocal();
 	const puntos = puntosPropios(l);
 	const { actual, siguiente } = rangoDe(puntos);
@@ -286,20 +293,26 @@ export async function estadoLiga(): Promise<EstadoLiga> {
 	};
 }
 
-// TODO(DB): RPC `elegir_equipo(clave, equipo)`. Solo se puede una vez: debe fallar con 'ya-elegido'.
+// RPC `elegir_equipo(clave, equipo)`. Solo se puede una vez: falla con 'ya-elegido'.
 export async function elegirEquipo(equipo: EquipoId): Promise<void> {
+	if (usaBD()) return rpcConClave<void>('elegir_equipo', { equipo });
 	const l = leerLocal();
 	if (l.equipo) throw new Error('ya-elegido');
 	guardarLocal({ ...l, equipo });
 }
 
-// TODO(DB): RPC `ranking_liga(clave, limite)`: individual, ordenado por puntos.
+// RPC `ranking_liga(clave, limite)`: individual, ordenado por puntos.
 export async function ranking(limite = 20): Promise<FilaRanking[]> {
+	if (usaBD()) return (await rpcConClave<FilaRanking[] | null>('ranking_liga', { limite })) ?? [];
 	return filas().slice(0, limite);
 }
 
-// TODO(DB): RPC `marcador_equipos(clave)`: suma de puntos de cada equipo.
+// RPC `marcador_equipos(clave)`: suma de puntos de cada equipo.
 export async function marcadorEquipos(): Promise<{ equipo: Equipo; puntos: number; miembros: number }[]> {
+	if (usaBD()) {
+		const filas = (await rpcConClave<{ equipo: EquipoId; puntos: number; miembros: number }[] | null>('marcador_equipos')) ?? [];
+		return filas.map((f) => ({ ...f, equipo: equipoPorId(f.equipo) })).sort((a, b) => b.puntos - a.puntos);
+	}
 	const todas = filas();
 	return EQUIPOS.map((equipo) => {
 		const suyas = todas.filter((f) => f.equipo === equipo.id);
@@ -320,12 +333,13 @@ export type ResultadoTirada =
 const dado6 = () => 1 + (crypto.getRandomValues(new Uint32Array(1))[0] % 6);
 
 /**
- * TODO(DB): RPC `tirar_dados(clave)`. Tira el SERVIDOR (si lo hace el navegador se podría elegir el resultado)
+ * RPC `tirar_dados(clave)`. Tira el SERVIDOR (si lo hace el navegador se podría elegir el resultado)
  * y devuelve todas las tiradas hasta dar con algo: el 7 es el diablillo (quita CONFIG.penalizacionDiablo,
  * sin bajar de 0) y cualquier otro número que sea de un juego disponible no asignado ya hoy es el juego del día.
  * Si sale un número sin juego se vuelve a tirar sin gastar la tirada del día. Debe fallar con 'sin-equipo' y 'sin-tiradas'.
  */
 export async function tirarDados(): Promise<ResultadoTirada> {
+	if (usaBD()) return rpcConClave<ResultadoTirada>('tirar_dados');
 	const l = leerLocal();
 	if (!l.equipo) throw new Error('sin-equipo');
 	const dia = (l.dias[hoy()] ??= { tiradas: 0, asignados: [] });
@@ -358,11 +372,10 @@ export async function tirarDados(): Promise<ResultadoTirada> {
 }
 
 /**
- * TODO(DB): RPC `registrar_partida(clave, minijuego, respuestas)`.
- * El servidor corrige las respuestas (las soluciones NO viajan al navegador) y calcula los puntos.
- * Debe fallar con 'sin-equipo', con 'no-asignado' si hoy no le ha tocado ese juego con los dados y con
- * 'ya-jugado' si ya lo jugó hoy. Los puntos pueden ser negativos (el 67 de la ruleta es el diablillo).
- * Aquí, en modo simulado, el cliente manda los puntos que ha calculado el propio minijuego.
+ * RPC `registrar_partida(clave, minijuego, puntos)`. El navegador manda los puntos que calcula el minijuego y el
+ * servidor los acota al máximo del juego. Falla con 'sin-equipo', con 'no-asignado' si hoy no le ha tocado ese
+ * juego con los dados, con 'ya-jugado' si ya lo jugó hoy y con 'liga-cerrada'.
+ * TODO: en los juegos con respuesta (adivina el cromo, wordle) que corrija el servidor.
  */
 export async function registrarPartida(minijuego: MinijuegoId, puntos: number): Promise<{ puntos: number; rango: Rango; subeDeRango: boolean }> {
 	if (modoPrueba()) {
@@ -370,6 +383,7 @@ export async function registrarPartida(minijuego: MinijuegoId, puntos: number): 
 		const tope = MINIJUEGOS.find((m) => m.id === minijuego)!.maxPuntos;
 		return { puntos: Math.min(tope, Math.round(puntos)), rango: rangoDe(puntosPropios(leerLocal())).actual, subeDeRango: false };
 	}
+	if (usaBD()) return rpcConClave('registrar_partida', { minijuego, puntos: Math.round(puntos) });
 	const l = leerLocal();
 	if (!l.equipo) throw new Error('sin-equipo');
 	if (!l.dias[hoy()]?.asignados.includes(minijuego)) throw new Error('no-asignado');
@@ -396,38 +410,241 @@ export type CasinoId = 'ruleta-casino' | 'blackjack';
 const BANCA_PRUEBA = 100;
 let bancaPrueba = BANCA_PRUEBA;
 
-/** Lo que paga como máximo una apuesta, por cada punto apostado (la ruleta paga 35 a 1 al pleno) */
-const PAGO_MAXIMO: Record<CasinoId, number> = { 'ruleta-casino': 35, blackjack: 1.5 };
+/** Mueve los puntos del casino simulado: la banca virtual en modo prueba, o la liga guardada en el navegador */
+function moverLocal(puntos: number): number {
+	if (modoPrueba()) {
+		bancaPrueba = Math.max(0, bancaPrueba + puntos);
+		return bancaPrueba;
+	}
+	const l = leerLocal();
+	const dia = (l.partidas[hoy()] ??= {});
+	dia.casino = (dia.casino ?? 0) + puntos;
+	guardarLocal(l);
+	return puntosPropios(l);
+}
 
-/**
- * TODO(DB): RPC `banca_casino(clave)`: los puntos que se pueden apostar (= los puntos de la liga).
- */
+const puntosLocales = () => (modoPrueba() ? bancaPrueba : puntosPropios(leerLocal()));
+
+/** Lo mismo que comprueba el servidor antes de cada apuesta */
+function validarLocal(cantidad: number) {
+	if (!modoPrueba() && !leerLocal().equipo) throw new Error('sin-equipo');
+	if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > CONFIG.apuestaMaximaCasino) throw new Error('apuesta-invalida');
+	if (cantidad > puntosLocales()) throw new Error('sin-puntos');
+}
+
+/** Con base de datos y fuera del modo prueba, el casino lo lleva el servidor */
+const casinoEnBD = () => usaBD() && !modoPrueba();
+
+/** RPC `banca_casino(clave)`: los puntos que se pueden apostar (= los puntos de la liga). */
 export async function bancaCasino(): Promise<{ puntos: number; prueba: boolean }> {
 	if (modoPrueba()) return { puntos: bancaPrueba, prueba: true };
+	if (usaBD()) return { ...(await rpcConClave<{ puntos: number }>('banca_casino')), prueba: false };
 	return { puntos: puntosPropios(leerLocal()), prueba: false };
 }
 
-/**
- * TODO(DB): RPC `apostar_casino(clave, juego)`. El SERVIDOR debe repartir las cartas / girar la ruleta y
- * devolver el resultado: si lo calcula el navegador, alguien podría escribir el que quiera. Debe fallar con
- * 'sin-equipo', 'sin-puntos' (apuesta mayor que sus puntos) y 'apuesta-invalida'.
- * Aquí, en modo simulado, el cliente manda lo apostado y el resultado neto (positivo si gana, negativo si pierde).
- * `apuesta` es lo que estaba en juego (en blackjack, doblado si dobló).
- */
-export async function apostarEnCasino(juego: CasinoId, apuesta: number, neto: number): Promise<{ puntos: number }> {
-	if (modoPrueba()) {
-		bancaPrueba = Math.max(0, bancaPrueba + neto);
-		return { puntos: bancaPrueba };
+// ── Ruleta ──
+
+export type ApuestaRuleta = 'rojo' | 'negro' | 'par' | 'impar' | 'd1' | 'd2' | 'd3' | 'numero';
+
+export interface GiroRuleta {
+	casilla: number;
+	gana: boolean;
+	/** Lo ganado (positivo) o perdido (negativo) en este giro */
+	neto: number;
+	/** Puntos tras el giro */
+	puntos: number;
+}
+
+const ROJOS_RULETA = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+const PAGO_RULETA: Record<ApuestaRuleta, number> = { rojo: 1, negro: 1, par: 1, impar: 1, d1: 2, d2: 2, d3: 2, numero: 35 };
+
+/** ¿Gana la apuesta si sale `n`? El 67 es la casilla de la banca (el 0 de la ruleta europea). */
+function ganaRuleta(apuesta: ApuestaRuleta, n: number, numero: number | null): boolean {
+	const banca = n === 67;
+	switch (apuesta) {
+		case 'rojo':
+			return ROJOS_RULETA.has(n);
+		case 'negro':
+			return !banca && !ROJOS_RULETA.has(n);
+		case 'par':
+			return !banca && n % 2 === 0;
+		case 'impar':
+			return !banca && n % 2 === 1;
+		case 'd1':
+			return n >= 1 && n <= 12;
+		case 'd2':
+			return n >= 13 && n <= 24;
+		case 'd3':
+			return n >= 25 && n <= 36;
+		case 'numero':
+			return n === numero;
 	}
-	const l = leerLocal();
-	if (!l.equipo) throw new Error('sin-equipo');
-	if (!Number.isInteger(apuesta) || !Number.isInteger(neto) || apuesta < 1 || apuesta > CONFIG.apuestaMaximaCasino * 2) throw new Error('apuesta-invalida');
-	if (neto < -apuesta || neto > apuesta * PAGO_MAXIMO[juego]) throw new Error('apuesta-invalida');
-	if (apuesta > puntosPropios(l)) throw new Error('sin-puntos');
-	const dia = (l.partidas[hoy()] ??= {});
-	dia.casino = (dia.casino ?? 0) + neto;
-	guardarLocal(l);
-	return { puntos: puntosPropios(l) };
+}
+
+/**
+ * RPC `girar_ruleta(clave, apuesta, cantidad, numero)`: gira el SERVIDOR y apunta lo ganado o perdido.
+ * Falla con 'sin-equipo', 'apuesta-invalida', 'sin-puntos' y 'liga-cerrada'.
+ */
+export async function girarRuleta(apuesta: ApuestaRuleta, cantidad: number, numero: number | null): Promise<GiroRuleta> {
+	if (casinoEnBD()) return rpcConClave<GiroRuleta>('girar_ruleta', { apuesta, cantidad, numero });
+	validarLocal(cantidad);
+	if (apuesta === 'numero' && (numero === null || !((numero >= 1 && numero <= 36) || numero === 67))) throw new Error('apuesta-invalida');
+	const azar = crypto.getRandomValues(new Uint32Array(1))[0] % 37;
+	const casilla = azar === 0 ? 67 : azar;
+	const gana = ganaRuleta(apuesta, casilla, numero);
+	const neto = gana ? cantidad * PAGO_RULETA[apuesta] : -cantidad;
+	return { casilla, gana, neto, puntos: moverLocal(neto) };
+}
+
+// ── Blackjack ──
+// Baraja infinita (cada carta al azar). Gana quien se acerque más a 21 sin pasarse; el blackjack paga 3 a 2,
+// el empate devuelve la apuesta y la banca roba hasta 17. Mientras se juega, de la banca solo se ve la primera carta.
+
+export interface Carta {
+	rango: string;
+	palo: string;
+}
+
+export interface ManoBlackjack {
+	id: string;
+	/** Lo que hay en juego (el doble si dobló) */
+	apuesta: number;
+	jugador: Carta[];
+	/** En juego, solo la primera carta; terminada, todas */
+	banca: Carta[];
+	estado: 'en-juego' | 'terminada';
+	/** Lo ganado o perdido, cuando ha terminado */
+	neto: number | null;
+	puedeDoblar: boolean;
+	/** Puntos tras la jugada (lo apostado se descuenta al repartir) */
+	puntos: number;
+}
+
+export type AccionBlackjack = 'pedir' | 'plantarse' | 'doblar';
+
+export function valorMano(mano: Carta[]): number {
+	let total = 0;
+	let ases = 0;
+	for (const { rango } of mano) {
+		if (rango === 'A') {
+			ases++;
+			total += 11;
+		} else {
+			total += 'JQK'.includes(rango) || rango === '10' ? 10 : Number(rango);
+		}
+	}
+	while (total > 21 && ases > 0) {
+		total -= 10;
+		ases--;
+	}
+	return total;
+}
+
+export const esBlackjack = (mano: Carta[]) => mano.length === 2 && valorMano(mano) === 21;
+
+// Mano del blackjack simulado (sin base de datos o en modo prueba). Se pierde al recargar la página.
+interface ManoLocal {
+	id: string;
+	apuesta: number;
+	jugador: Carta[];
+	banca: Carta[];
+	estado: 'en-juego' | 'terminada';
+	neto: number | null;
+	doblada: boolean;
+}
+let manoLocal: ManoLocal | null = null;
+
+const azarCarta = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+const cartaAlAzar = (): Carta => ({
+	rango: ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'][azarCarta(13)],
+	palo: ['♠', '♥', '♦', '♣'][azarCarta(4)],
+});
+
+function verManoLocal(m: ManoLocal, puntos: number): ManoBlackjack {
+	return {
+		id: m.id,
+		apuesta: m.apuesta,
+		jugador: [...m.jugador],
+		banca: m.estado === 'terminada' ? [...m.banca] : m.banca.slice(0, 1),
+		estado: m.estado,
+		neto: m.neto,
+		puedeDoblar: m.estado === 'en-juego' && !m.doblada && m.jugador.length === 2,
+		puntos,
+	};
+}
+
+/** Igual que `privado.resolver_mano`: la banca roba hasta 17 y se devuelve lo apostado más la ganancia */
+function resolverLocal(m: ManoLocal, pasado: boolean): number {
+	if (!pasado && !esBlackjack(m.jugador)) while (valorMano(m.banca) < 17) m.banca.push(cartaAlAzar());
+	const mia = valorMano(m.jugador);
+	const suya = valorMano(m.banca);
+	let neto: number;
+	if (pasado) neto = -m.apuesta;
+	else if (esBlackjack(m.jugador) && esBlackjack(m.banca)) neto = 0;
+	else if (esBlackjack(m.jugador)) neto = Math.floor(m.apuesta * 1.5);
+	else if (esBlackjack(m.banca)) neto = -m.apuesta;
+	else if (suya > 21 || mia > suya) neto = m.apuesta;
+	else if (mia < suya) neto = -m.apuesta;
+	else neto = 0;
+	m.estado = 'terminada';
+	m.neto = neto;
+	manoLocal = null;
+	return moverLocal(m.apuesta + neto);
+}
+
+/**
+ * RPC `blackjack_repartir(clave, cantidad)`: reparte el SERVIDOR y descuenta la apuesta. Si hay blackjack la mano
+ * ya viene terminada. Falla con 'sin-equipo', 'apuesta-invalida', 'sin-puntos', 'mano-abierta' y 'liga-cerrada'.
+ */
+export async function repartirBlackjack(cantidad: number): Promise<ManoBlackjack> {
+	if (casinoEnBD()) return rpcConClave<ManoBlackjack>('blackjack_repartir', { cantidad });
+	if (manoLocal) throw new Error('mano-abierta');
+	validarLocal(cantidad);
+	const m: ManoLocal = {
+		id: String(Date.now()),
+		apuesta: cantidad,
+		jugador: [cartaAlAzar(), cartaAlAzar()],
+		banca: [cartaAlAzar(), cartaAlAzar()],
+		estado: 'en-juego',
+		neto: null,
+		doblada: false,
+	};
+	manoLocal = m;
+	let puntos = moverLocal(-cantidad);
+	if (esBlackjack(m.jugador) || esBlackjack(m.banca)) puntos = resolverLocal(m, false);
+	return verManoLocal(m, puntos);
+}
+
+/** RPC `blackjack_mano(clave)`: la mano que quedó a medias (si se cerró la página), o null. */
+export async function manoBlackjackAbierta(): Promise<ManoBlackjack | null> {
+	if (casinoEnBD()) return rpcConClave<ManoBlackjack | null>('blackjack_mano');
+	return manoLocal ? verManoLocal(manoLocal, puntosLocales()) : null;
+}
+
+/** RPC `blackjack_jugar(clave, accion)`. Falla con 'sin-mano', 'accion-invalida' y 'sin-puntos' (al doblar). */
+export async function jugarBlackjack(accion: AccionBlackjack): Promise<ManoBlackjack> {
+	if (casinoEnBD()) return rpcConClave<ManoBlackjack>('blackjack_jugar', { accion });
+	const m = manoLocal;
+	if (!m) throw new Error('sin-mano');
+	let puntos = puntosLocales();
+	if (accion === 'pedir') {
+		m.jugador.push(cartaAlAzar());
+		const total = valorMano(m.jugador);
+		if (total >= 21) puntos = resolverLocal(m, total > 21);
+	} else if (accion === 'plantarse') {
+		puntos = resolverLocal(m, false);
+	} else if (accion === 'doblar') {
+		if (m.doblada || m.jugador.length !== 2) throw new Error('accion-invalida');
+		if (m.apuesta > puntos) throw new Error('sin-puntos');
+		moverLocal(-m.apuesta);
+		m.apuesta *= 2;
+		m.doblada = true;
+		m.jugador.push(cartaAlAzar());
+		puntos = resolverLocal(m, valorMano(m.jugador) > 21);
+	} else {
+		throw new Error('accion-invalida');
+	}
+	return verManoLocal(m, puntos);
 }
 
 // ───────────────────────── Premios ─────────────────────────
@@ -481,12 +698,13 @@ const PREMIOS: Premio[] = [
 const ordinal = (n: number) => `${n}º`;
 
 /**
- * TODO(DB): RPC `listar_premios(clave)`. El servidor decide el estado y genera el código (único por
+ * RPC `listar_premios(clave)`. El servidor decide el estado y genera el código (único por
  * invitado y premio, no adivinable: si lo calcula el navegador se podría inventar uno válido). Debe poder
  * marcarse como entregado desde el panel de Supabase / el admin, y no repetirse una vez entregado.
  * TODO(admin): la lista de premios y sus textos se editan desde el admin.
  */
 export async function premios(): Promise<PremioEstado[]> {
+	if (usaBD()) return (await rpcConClave<PremioEstado[] | null>('listar_premios')) ?? [];
 	const l = leerLocal();
 	const yo = invitadoActual();
 	const cerrada = ligaCerrada();

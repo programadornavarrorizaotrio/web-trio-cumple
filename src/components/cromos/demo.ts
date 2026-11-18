@@ -59,7 +59,7 @@ function registrosLocales(): Record<string, DatosCromo> {
 }
 
 /** Fotos del trío: Cromos.astro / FotosDemo.astro las dejan optimizadas en la página */
-function fotosDemo(): Record<string, string> {
+export function fotosDemo(): Record<string, string> {
 	const json = document.getElementById('fotos-demo')?.textContent;
 	return json ? JSON.parse(json) : {};
 }
