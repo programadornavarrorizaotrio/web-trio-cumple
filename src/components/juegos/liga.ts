@@ -18,9 +18,27 @@ export interface Equipo {
 	poster: string;
 	/** Color del equipo en marcadores y barras */
 	color: string;
+	/** Su campeón del LoL: sale en la selección de equipo (las imágenes, en lol/imagenes.ts) */
+	campeon: Campeon;
+}
+
+export interface Campeon {
+	nombre: string;
+	/** Título oficial del campeón */
+	titulo: string;
+	/** Nombre de sus archivos en lol/ (`<clave>-splash.jpg`, `<clave>-icono.png`) */
+	clave: string;
+	/** Dónde está el campeón en el splash (object-position), para que no se corte al recortarlo en vertical */
+	foco: string;
 }
 
 const COLORES: Record<EquipoId, string> = { pencho: '#f0bc44', fran: '#6fa43a', juan: '#4a7fc1' };
+
+const CAMPEONES: Record<EquipoId, Campeon> = {
+	pencho: { nombre: 'Ezreal', titulo: 'El Explorador Prodigio', clave: 'ezreal', foco: '70% 25%' },
+	fran: { nombre: "K'Sante", titulo: 'El Orgullo de Nazumah', clave: 'ksante', foco: '38% 20%' },
+	juan: { nombre: 'Gragas', titulo: 'El Alborotador', clave: 'gragas', foco: '84% 30%' },
+};
 
 export const EQUIPOS: Equipo[] = trio.map((t) => ({
 	id: t.slug as EquipoId,
@@ -28,6 +46,7 @@ export const EQUIPOS: Equipo[] = trio.map((t) => ({
 	lema: t.lema,
 	poster: t.poster,
 	color: COLORES[t.slug as EquipoId],
+	campeon: CAMPEONES[t.slug as EquipoId],
 }));
 
 export const equipoPorId = (id: EquipoId) => EQUIPOS.find((e) => e.id === id)!;
@@ -39,26 +58,37 @@ export const CONFIG = {
 	/** Tiradas de dados al día: el número que sale decide a qué juego toca jugar */
 	tiradasEntreSemana: 1,
 	tiradasFinDeSemana: 2,
-	/** Puntos que quita el diablillo (el 7 de los dados o el 67 de la ruleta) */
+	/** Puntos que quita el diablillo (el 7 de los dados; en la ruleta el 67 es la casilla de la banca) */
 	penalizacionDiablo: 10,
+	/** Casino (ruleta y blackjack): las fichas que se pueden apostar y lo máximo por apuesta inicial */
+	fichasCasino: [2, 5, 10],
+	apuestaMaximaCasino: 10,
 };
 
 // ───────────────────────── Rangos ─────────────────────────
-// Umbrales pensados para ~1 juego al día (hasta 30 puntos) y 2 en fin de semana.
+// Los diez del LoL, del Hierro al Challenger. Umbrales pensados para ~1 juego al día (hasta 30 puntos)
+// y 2 en fin de semana; cada salto cuesta un poco más que el anterior. TODO(admin): editables.
+
+export type Emblema = 'iron' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'emerald' | 'diamond' | 'master' | 'grandmaster' | 'challenger';
 
 export interface Rango {
 	nombre: string;
 	desde: number;
+	/** Emblema del rango (lol/emblema-<emblema>.png) */
+	emblema: Emblema;
 }
 
 export const RANGOS: Rango[] = [
-	{ nombre: 'Hierro', desde: 0 },
-	{ nombre: 'Bronce', desde: 30 },
-	{ nombre: 'Plata', desde: 80 },
-	{ nombre: 'Oro', desde: 150 },
-	{ nombre: 'Platino', desde: 230 },
-	{ nombre: 'Diamante', desde: 320 },
-	{ nombre: 'Challenger', desde: 420 },
+	{ nombre: 'Hierro', desde: 0, emblema: 'iron' },
+	{ nombre: 'Bronce', desde: 25, emblema: 'bronze' },
+	{ nombre: 'Plata', desde: 60, emblema: 'silver' },
+	{ nombre: 'Oro', desde: 100, emblema: 'gold' },
+	{ nombre: 'Platino', desde: 145, emblema: 'platinum' },
+	{ nombre: 'Esmeralda', desde: 195, emblema: 'emerald' },
+	{ nombre: 'Diamante', desde: 250, emblema: 'diamond' },
+	{ nombre: 'Maestro', desde: 305, emblema: 'master' },
+	{ nombre: 'Gran Maestro', desde: 360, emblema: 'grandmaster' },
+	{ nombre: 'Challenger', desde: 420, emblema: 'challenger' },
 ];
 
 export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | null } {
@@ -69,18 +99,20 @@ export function rangoDe(puntos: number): { actual: Rango; siguiente: Rango | nul
 
 // ───────────────────────── Minijuegos ─────────────────────────
 
-export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'ruleta-casino' | 'adivina-cromo' | 'conga-catan' | 'wordle-trio';
+export type MinijuegoId = 'memory-cromos' | 'golpea-rana' | 'ruleta-casino' | 'blackjack' | 'adivina-cromo' | 'conga-catan' | 'wordle-trio';
 
 export interface Minijuego {
 	id: MinijuegoId;
 	titulo: string;
 	descripcion: string;
-	/** Máximo de puntos por partida */
+	/** Máximo de puntos por partida (0 en los de casino, donde se apuestan los puntos propios) */
 	maxPuntos: number;
 	/** Recurso de Catan que da el hexágono en el tablero */
 	recurso: string;
-	/** Ficha numerada del hexágono: si la tirada del día saca este número, toca jugar a este juego */
-	numero: number;
+	/** Ficha numerada del hexágono: si la tirada del día saca este número, toca jugar a este juego. Null en los libres */
+	numero: number | null;
+	/** Juego de casino: sin tirada ni ficha, se puede jugar siempre y se apuestan puntos propios (ver `apostarEnCasino`) */
+	libre?: boolean;
 	/** Si ya se puede jugar. Los que no, no producen: si sale su número se vuelve a tirar */
 	disponible: boolean;
 }
@@ -88,7 +120,8 @@ export interface Minijuego {
 export const MINIJUEGOS: Minijuego[] = [
 	{ id: 'memory-cromos', titulo: 'Memory de cromos', descripcion: 'Encuentra las parejas de caras.', maxPuntos: 30, recurso: 'Papel', numero: 8, disponible: true },
 	{ id: 'golpea-rana', titulo: 'Golpea la rana', descripcion: 'La rana asoma por los agujeros: tócala antes de que se esconda.', maxPuntos: 30, recurso: 'Filtros', numero: 6, disponible: true },
-	{ id: 'ruleta-casino', titulo: 'Ruleta de casino', descripcion: 'Apuesta a un color, un par o un número y gira. Cuidado con el 67: es el diablillo.', maxPuntos: 30, recurso: 'Mechero', numero: 4, disponible: true },
+	{ id: 'ruleta-casino', titulo: 'Ruleta de casino', descripcion: 'Apuesta puntos a un color, un par o un número y gira. Si sale el 67, la banca se lo queda todo.', maxPuntos: 0, recurso: 'Casino', numero: null, libre: true, disponible: true },
+	{ id: 'blackjack', titulo: 'Blackjack', descripcion: 'Apuesta puntos y acércate a 21 sin pasarte, más que la banca.', maxPuntos: 0, recurso: 'Casino', numero: null, libre: true, disponible: true },
 	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco', numero: 9, disponible: true },
 	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al diablillo.', maxPuntos: 30, recurso: 'Cebada', numero: 5, disponible: true },
 	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza', numero: 10, disponible: false },
@@ -109,7 +142,7 @@ interface DiaLocal {
 
 interface Local {
 	equipo: EquipoId | null;
-	/** Puntos propios por día (YYYY-MM-DD en Madrid) y minijuego. La clave `diablo` guarda lo que le quitó el 7 */
+	/** Puntos propios por día (YYYY-MM-DD en Madrid) y minijuego. La clave `diablo` guarda lo que le quitó el 7 y `casino` el neto de la ruleta y el blackjack */
 	partidas: Record<string, Record<string, number>>;
 	dias: Record<string, DiaLocal>;
 }
@@ -154,6 +187,19 @@ export function salirModoPrueba() {
 		localStorage.removeItem(CLAVE_PRUEBA);
 	} catch {
 		// sin almacenamiento: nada que borrar
+	}
+}
+
+/**
+ * Para los desarrolladores (botón "Cambiar equipo" del modo prueba): olvida el equipo elegido, sin tocar los
+ * puntos, para volver a pasar por la selección de campeón.
+ * TODO(DB): cuando el equipo esté en la base de datos esto dejará de servir.
+ */
+export function olvidarEquipo() {
+	try {
+		guardarLocal({ ...leerLocal(), equipo: null });
+	} catch {
+		// sin almacenamiento: no había equipo guardado
 	}
 }
 
@@ -338,6 +384,50 @@ export async function registrarPartida(minijuego: MinijuegoId, puntos: number): 
 	guardarLocal(l);
 	const despues = rangoDe(puntosPropios(l)).actual;
 	return { puntos: valor, rango: despues, subeDeRango: despues.nombre !== antes.nombre };
+}
+
+// ───────────────────────── Casino ─────────────────────────
+// La ruleta y el blackjack no tienen tirada ni límite diario: se puede jugar siempre, pero apostando puntos
+// PROPIOS. Como la banca gana de media, no se pueden "fabricar" puntos jugando sin parar.
+
+export type CasinoId = 'ruleta-casino' | 'blackjack';
+
+/** Banca virtual del modo prueba: se juega con ella y no se toca la liga */
+const BANCA_PRUEBA = 100;
+let bancaPrueba = BANCA_PRUEBA;
+
+/** Lo que paga como máximo una apuesta, por cada punto apostado (la ruleta paga 35 a 1 al pleno) */
+const PAGO_MAXIMO: Record<CasinoId, number> = { 'ruleta-casino': 35, blackjack: 1.5 };
+
+/**
+ * TODO(DB): RPC `banca_casino(clave)`: los puntos que se pueden apostar (= los puntos de la liga).
+ */
+export async function bancaCasino(): Promise<{ puntos: number; prueba: boolean }> {
+	if (modoPrueba()) return { puntos: bancaPrueba, prueba: true };
+	return { puntos: puntosPropios(leerLocal()), prueba: false };
+}
+
+/**
+ * TODO(DB): RPC `apostar_casino(clave, juego)`. El SERVIDOR debe repartir las cartas / girar la ruleta y
+ * devolver el resultado: si lo calcula el navegador, alguien podría escribir el que quiera. Debe fallar con
+ * 'sin-equipo', 'sin-puntos' (apuesta mayor que sus puntos) y 'apuesta-invalida'.
+ * Aquí, en modo simulado, el cliente manda lo apostado y el resultado neto (positivo si gana, negativo si pierde).
+ * `apuesta` es lo que estaba en juego (en blackjack, doblado si dobló).
+ */
+export async function apostarEnCasino(juego: CasinoId, apuesta: number, neto: number): Promise<{ puntos: number }> {
+	if (modoPrueba()) {
+		bancaPrueba = Math.max(0, bancaPrueba + neto);
+		return { puntos: bancaPrueba };
+	}
+	const l = leerLocal();
+	if (!l.equipo) throw new Error('sin-equipo');
+	if (!Number.isInteger(apuesta) || !Number.isInteger(neto) || apuesta < 1 || apuesta > CONFIG.apuestaMaximaCasino * 2) throw new Error('apuesta-invalida');
+	if (neto < -apuesta || neto > apuesta * PAGO_MAXIMO[juego]) throw new Error('apuesta-invalida');
+	if (apuesta > puntosPropios(l)) throw new Error('sin-puntos');
+	const dia = (l.partidas[hoy()] ??= {});
+	dia.casino = (dia.casino ?? 0) + neto;
+	guardarLocal(l);
+	return { puntos: puntosPropios(l) };
 }
 
 // ───────────────────────── Premios ─────────────────────────

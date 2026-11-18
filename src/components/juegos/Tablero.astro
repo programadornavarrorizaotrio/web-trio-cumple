@@ -12,6 +12,7 @@ import { MINIJUEGOS } from './liga';
 // Hub de /juegos: una isla de Catan de 19 hexágonos (3-4-5-4-3) rodeada de mar. Los 8 del centro son
 // juegos o zonas; el resto son terreno de relleno, a la espera de que vayan pasando cosas.
 // Los hexágonos con ficha numerada son juegos: si la tirada de dados del día saca ese número, toca jugar a ese.
+// Los desiertos son el casino (ruleta y blackjack): sin ficha ni tirada, siempre abiertos, y se apuestan puntos propios.
 // Arriba, una tarjeta con tu estado (equipo, rango, puntos).
 
 interface Terreno {
@@ -39,18 +40,19 @@ interface Zona {
 	corto: string;
 	titulo: string;
 	texto: string;
-	ficha?: number;
+	ficha?: number | null;
 }
 
 const juego = (id: string, terreno: string, icono: string, corto: string): Zona => {
 	const m = MINIJUEGOS.find((x) => x.id === id)!;
-	return { terreno, icono, corto, titulo: m.titulo, texto: `${m.descripcion} Una partida al día.`, ficha: m.numero };
+	return { terreno, icono, corto, titulo: m.titulo, texto: m.libre ? `${m.descripcion} Sin tirada: juegas cuando quieras, con tus puntos.` : `${m.descripcion} Una partida al día.`, ficha: m.numero };
 };
 
 const zonas: Record<string, Zona> = {
 	'memory-cromos': juego('memory-cromos', 'pasto', '🃏', 'Memory'),
 	'golpea-rana': juego('golpea-rana', 'bosque', '🐸', 'Rana'),
-	'ruleta-casino': juego('ruleta-casino', 'montana', '🎰', 'Ruleta'),
+	'ruleta-casino': juego('ruleta-casino', 'desierto', '🎰', 'Ruleta'),
+	blackjack: juego('blackjack', 'desierto', '♠️', 'Blackjack'),
 	'adivina-cromo': juego('adivina-cromo', 'campos', '🕵️', 'Cromo'),
 	'conga-catan': juego('conga-catan', 'campos', '🐍', 'Conga'),
 	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
@@ -61,11 +63,11 @@ const zonas: Record<string, Zona> = {
 // Cada celda: una zona jugable (`z`) o terreno de relleno (`r`). `ladron` pone la ficha negra del ladrón.
 type Celda = { z: string } | { r: string; ladron?: boolean };
 const mapa: Celda[][] = [
-	[{ r: 'bosque' }, { r: 'pasto' }, { r: 'campos' }],
-	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { r: 'montana' }],
-	[{ r: 'pasto' }, { z: 'ruleta-casino' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
+	[{ z: 'premios' }, { r: 'pasto' }, { r: 'campos' }],
+	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { z: 'ruleta-casino' }],
+	[{ r: 'pasto' }, { r: 'montana' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
 	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'conga-catan' }, { r: 'colinas' }],
-	[{ r: 'montana' }, { z: 'premios' }, { r: 'pasto' }],
+	[{ r: 'montana' }, { r: 'bosque' }, { z: 'blackjack' }],
 ];
 // El ladrón de Catan es la rana en versión diablillo
 const { src: ladronUrl } = await getImage({ src: ladron, width: 180, format: 'webp' });
@@ -109,7 +111,10 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 			class="mx-auto mb-5 max-w-md rounded-lg border-2 border-dashed border-extra bg-white p-3 text-center text-xs font-bold text-tinta"
 		>
 			🧪 Modo prueba: juegas a lo que quieras, las veces que quieras, pero no suma puntos.
-			<button type="button" data-prueba-salir class="ml-1 underline">Salir</button>
+			<span class="mt-1.5 flex justify-center gap-4">
+				<button type="button" data-prueba-equipo class="underline">Cambiar equipo</button>
+				<button type="button" data-prueba-salir class="underline">Salir</button>
+			</span>
 		</p>
 	</div>
 
@@ -151,7 +156,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 	</div>
 
 	<p class="mx-auto mt-4 max-w-sm px-4 text-center text-xs text-tinta-suave">
-		Tira los dados cada día: el número que salga es la ficha del hexágono que produce, y ese es tu juego de hoy. Si sale el 7, el diablillo te quita puntos. El resto de la isla está por descubrir.
+		Tira los dados cada día: el número que salga es la ficha del hexágono que produce, y ese es tu juego de hoy. Si sale el 7, el diablillo te quita puntos. Los desiertos son el casino: ruleta y blackjack, sin tirada, siempre abiertos y apostando tus puntos. El resto de la isla está por descubrir.
 	</p>
 </div>
 
@@ -333,7 +338,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 </style>
 
 <script>
-	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, salirModoPrueba } from './liga';
+	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, olvidarEquipo, salirModoPrueba } from './liga';
 	import { lanzar } from './partida';
 	import { abrirTirada } from './tirada';
 
@@ -376,7 +381,7 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		tablero.querySelectorAll<HTMLElement>('[data-hex]').forEach((hex) => {
 			const m = MINIJUEGOS.find((x) => x.id === hex.dataset.hex);
 			if (!m) return;
-			hex.dataset.estado = !m.disponible ? 'pronto' : modoPrueba() ? 'libre' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
+			hex.dataset.estado = !m.disponible ? 'pronto' : modoPrueba() || m.libre ? 'libre' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
 		});
 		for (const id of estado.jugadosHoy) {
 			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
@@ -406,6 +411,14 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 		location.assign(location.pathname);
 	});
 
+	// Modo prueba: olvidar el equipo y volver a la selección de campeón
+	tablero.querySelector('[data-prueba-equipo]')!.addEventListener('click', async () => {
+		olvidarEquipo();
+		estado = await estadoLiga();
+		pintar();
+		hojaEquipo.showModal();
+	});
+
 	// Tirada diaria
 	tablero.querySelector('[data-tirar]')!.addEventListener('click', () => {
 		if (!estado.equipo) return hojaEquipo.showModal();
@@ -418,9 +431,11 @@ const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${
 			if (boton.dataset.hex === 'ranking' || boton.dataset.hex === 'premios') return; // los abren Ranking.astro y Premios.astro
 			const m = MINIJUEGOS.find((x) => x.id === boton.dataset.hex);
 			if (m) {
-				if (m.disponible && modoPrueba()) return void lanzar(m.id);
 				if (!m.disponible) return abrirHoja(m.titulo, `${m.descripcion} Se abre muy pronto.`);
+				if (modoPrueba()) return void lanzar(m.id);
 				if (!estado.equipo) return hojaEquipo.showModal();
+				// El casino no depende de la tirada: siempre se puede entrar
+				if (m.libre) return void lanzar(m.id);
 				if (estado.jugadosHoy.includes(m.id)) return abrirHoja(m.titulo, 'Ya has jugado hoy a este. Vuelve mañana.');
 				if (estado.asignadosHoy.includes(m.id)) return void lanzar(m.id);
 				const puedeTirar = estado.tiradasHoy < estado.tiradasMax;

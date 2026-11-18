@@ -14,6 +14,8 @@ export interface Contexto {
 	ranaSrc: string;
 	/** Imagen optimizada del diablillo (el ladrón) */
 	ladronSrc: string;
+	/** Imagen del crupier (ruleta y blackjack) */
+	crupierSrc: string;
 }
 
 export interface Minijuego {
@@ -29,6 +31,7 @@ const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	'golpea-rana': () => import('./golpea-rana'),
 	'memory-cromos': () => import('./memory-cromos'),
 	'ruleta-casino': () => import('./ruleta-casino'),
+	blackjack: () => import('./blackjack'),
 	'adivina-cromo': () => import('./adivina-cromo'),
 	'conga-catan': () => import('./conga-catan'),
 };
@@ -46,7 +49,7 @@ export async function lanzar(id: MinijuegoId) {
 
 	q('[data-titulo]').textContent = info.titulo;
 	q('[data-instrucciones]').textContent = juego.instrucciones;
-	q('[data-maximo]').textContent = String(info.maxPuntos);
+	q('[data-limite]').textContent = info.libre ? 'Apuestas tus puntos · juega cuando quieras' : `Hasta ${info.maxPuntos} puntos · un intento al día`;
 	pantalla('intro');
 	dialogo.showModal();
 
@@ -58,22 +61,33 @@ export async function lanzar(id: MinijuegoId) {
 		pantalla('juego');
 		const area = q('[data-area]');
 		area.replaceChildren();
-		const resultado = await juego.jugar(area, control.signal, { ranaSrc: dialogo.dataset.ranaSrc ?? '', ladronSrc: dialogo.dataset.ladronSrc ?? '' });
+		const resultado = await juego.jugar(area, control.signal, { ranaSrc: dialogo.dataset.ranaSrc ?? '', ladronSrc: dialogo.dataset.ladronSrc ?? '', crupierSrc: dialogo.dataset.crupierSrc ?? '' });
 
 		let subida = '';
 		let puntos = resultado.puntos;
-		try {
-			const r = await registrarPartida(id, resultado.puntos);
-			puntos = r.puntos;
-			if (r.subeDeRango) subida = `¡Subes a ${r.rango.nombre}!`;
-		} catch {
-			// 'ya-jugado' o 'sin-equipo': no suma; el tablero ya lo comprueba antes de abrir
+		// Los de casino ya han ido apuntando cada apuesta en la liga: aquí solo se resume la sesión
+		if (!info.libre) {
+			try {
+				const r = await registrarPartida(id, resultado.puntos);
+				puntos = r.puntos;
+				if (r.subeDeRango) subida = `¡Subes a ${r.rango.nombre}!`;
+			} catch {
+				// 'ya-jugado' o 'sin-equipo': no suma; el tablero ya lo comprueba antes de abrir
+			}
 		}
 		document.dispatchEvent(new CustomEvent('liga:cambio'));
 
 		if (!dialogo.open) return;
-		q('[data-final-puntos]').textContent = String(puntos);
-		q('[data-final-etiqueta]').textContent = modoPrueba() ? 'puntos (modo prueba: no suman)' : puntos < 0 ? 'puntos que te quita el diablillo' : 'puntos para tu equipo';
+		q('[data-final-puntos]').textContent = info.libre && puntos > 0 ? `+${puntos}` : String(puntos);
+		q('[data-final-etiqueta]').textContent = info.libre
+			? modoPrueba()
+				? 'puntos en esta sesión (modo prueba: no cuentan)'
+				: 'puntos en esta sesión'
+			: modoPrueba()
+				? 'puntos (modo prueba: no suman)'
+				: puntos < 0
+					? 'puntos que te quita el diablillo'
+					: 'puntos para tu equipo';
 		q('[data-final-detalle]').textContent = resultado.detalle ?? '';
 		q('[data-final-subida]').textContent = subida;
 		pantalla('final');

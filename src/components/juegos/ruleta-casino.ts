@@ -1,64 +1,56 @@
 // Ruleta de casino con apuesta: 37 casillas, del 1 al 36 y el 67 (que ocupa el sitio del 0 de la ruleta europea).
-// Eliges una apuesta y giras una vez.
-// Acertar da puntos (más cuanto más arriesgas). El 67 es el diablillo: te quita puntos.
+// Es un juego libre (sin tirada ni límite diario): se apuestan puntos propios, se gira, y se puede repetir.
+// Si se acierta se cobra según lo que se arriesga (1 a 1, 2 a 1 o 35 a 1). Si sale el 67 gana la banca, salvo a quien
+// haya apostado al 67 (como al 0 en una ruleta real).
 //
-// TODO(DB): el giro debería hacerlo el SERVIDOR (RPC `girar_ruleta(clave, apuesta)` que devuelva el número);
-// si se gira en el navegador, alguien podría elegir el resultado.
-// TODO(admin): los puntos de cada apuesta y la penalización del 67 se editarán desde el admin.
-import { CONFIG, MINIJUEGOS } from './liga';
-import type { Resultado } from './partida';
+// TODO(DB): el giro debería hacerlo el SERVIDOR (RPC `apostar_casino(clave, 'ruleta-casino', apuesta)` que devuelva
+// el número); si se gira en el navegador, alguien podría elegir el resultado.
+// TODO(admin): las fichas y la apuesta máxima se editarán desde el admin (CONFIG en liga.ts).
+import { apostarEnCasino, bancaCasino } from './liga';
+import { conSigno, crearBanca, crearCrupier, crearFichas, crearMesa, el, esperar } from './casino';
+import type { Contexto, Resultado } from './partida';
 
-export const instrucciones = 'Elige una apuesta y gira la ruleta una vez. Acertar da puntos: cuanto más arriesgas, más ganas. Pero si sale el 67, aparece el diablillo y te quita puntos.';
+export const instrucciones =
+	'Elige cuántos puntos apuestas y a qué, y gira. Si aciertas cobras: 1 a 1 en color y par/impar, 2 a 1 en las docenas y 35 a 1 en un número. Si sale el 67, la banca se lo queda todo, salvo que hayas apostado al 67.';
 
-const MAX = MINIJUEGOS.find((m) => m.id === 'ruleta-casino')!.maxPuntos;
-
-// La casilla del diablillo: el 67 ocupa el sitio del 0 de la ruleta europea
-const DIABLO = 67;
+// La casilla de la banca: el 67 ocupa el sitio del 0 de la ruleta europea
+const BANCA = 67;
 
 // Orden de las casillas, en el sentido de las agujas del reloj (como la ruleta europea)
-const ORDEN = [DIABLO, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const ORDEN = [BANCA, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 const ROJOS = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
-const colorDe = (n: number) => (n === DIABLO ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro');
+const colorDe = (n: number) => (n === BANCA ? 'verde' : ROJOS.has(n) ? 'rojo' : 'negro');
 const PINTURA = { verde: '#2e8b3d', rojo: '#c0392b', negro: '#1d1d1f' };
 
 const DURACION_GIRO = 4300;
-const PAUSA_FINAL = 2000;
 const VUELTAS = 5;
 
 interface Apuesta {
 	id: string;
 	texto: string;
-	/** Puntos que da si se acierta */
-	puntos: number;
+	/** Puntos que se cobran por cada punto apostado (además de recuperar lo apostado) */
+	paga: number;
 	gana: (n: number, elegido: number | null) => boolean;
 }
 
 const APUESTAS: Apuesta[] = [
-	{ id: 'rojo', texto: 'Rojo', puntos: 12, gana: (n) => colorDe(n) === 'rojo' },
-	{ id: 'negro', texto: 'Negro', puntos: 12, gana: (n) => colorDe(n) === 'negro' },
-	{ id: 'par', texto: 'Par', puntos: 12, gana: (n) => n > 0 && n % 2 === 0 },
-	{ id: 'impar', texto: 'Impar', puntos: 12, gana: (n) => n !== DIABLO && n % 2 === 1 },
-	{ id: 'd1', texto: '1–12', puntos: 20, gana: (n) => n >= 1 && n <= 12 },
-	{ id: 'd2', texto: '13–24', puntos: 20, gana: (n) => n >= 13 && n <= 24 },
-	{ id: 'd3', texto: '25–36', puntos: 20, gana: (n) => n >= 25 && n <= 36 },
-	{ id: 'numero', texto: 'Un número', puntos: MAX, gana: (n, elegido) => n === elegido },
+	{ id: 'rojo', texto: 'Rojo', paga: 1, gana: (n) => colorDe(n) === 'rojo' },
+	{ id: 'negro', texto: 'Negro', paga: 1, gana: (n) => colorDe(n) === 'negro' },
+	{ id: 'par', texto: 'Par', paga: 1, gana: (n) => n !== BANCA && n % 2 === 0 },
+	{ id: 'impar', texto: 'Impar', paga: 1, gana: (n) => n !== BANCA && n % 2 === 1 },
+	{ id: 'd1', texto: '1–12', paga: 2, gana: (n) => n >= 1 && n <= 12 },
+	{ id: 'd2', texto: '13–24', paga: 2, gana: (n) => n >= 13 && n <= 24 },
+	{ id: 'd3', texto: '25–36', paga: 2, gana: (n) => n >= 25 && n <= 36 },
+	{ id: 'numero', texto: 'Un número', paga: 35, gana: (n, elegido) => n === elegido },
 ];
 
-const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 // Sale una de 37 casillas: la 0 de la ruleta europea es aquí el 67
 const casillaAlAzar = () => {
 	const n = crypto.getRandomValues(new Uint32Array(1))[0] % 37;
-	return n === 0 ? DIABLO : n;
+	return n === 0 ? BANCA : n;
 };
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, clase: string, texto?: string) {
-	const e = document.createElement(tag);
-	e.className = clase;
-	if (texto !== undefined) e.textContent = texto;
-	return e;
-}
-
-/** Dibuja la ruleta con la casilla 0 centrada arriba y el resto en sentido horario */
+/** Dibuja la ruleta con la casilla de la banca centrada arriba y el resto en sentido horario */
 function dibujarRueda(lienzo: HTMLCanvasElement, lado: number) {
 	const dpr = window.devicePixelRatio || 1;
 	lienzo.width = lado * dpr;
@@ -80,14 +72,16 @@ function dibujarRueda(lienzo: HTMLCanvasElement, lado: number) {
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = '#f0c14b';
 		ctx.stroke();
-		// Número, en radial
+		// Número, escrito a lo largo del radio (de dentro hacia fuera) para que quepan los de dos cifras
 		ctx.save();
 		ctx.rotate(i * paso);
+		ctx.translate(0, -R * 0.8);
+		ctx.rotate(-Math.PI / 2);
 		ctx.fillStyle = '#fbf4e4';
-		ctx.font = `900 ${R * 0.12}px sans-serif`;
+		ctx.font = `500 ${R * 0.15}px sans-serif`;
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
-		ctx.fillText(String(n), 0, -R * 0.84);
+		ctx.fillText(String(n), 0, 0);
 		ctx.restore();
 	});
 	// Centro de la rueda
@@ -104,19 +98,28 @@ function dibujarRueda(lienzo: HTMLCanvasElement, lado: number) {
 	ctx.fill();
 }
 
-export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado> {
+export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto): Promise<Resultado> {
+	const inicial = await bancaCasino();
 	return new Promise((resolve) => {
 		let apuesta: Apuesta | null = null;
 		let numero: number | null = null;
 		let girando = false;
 		let terminada = false;
+		let banca = inicial.puntos;
+		let rotacion = 0;
+		let neto = 0;
+		let giros = 0;
+		let aciertos = 0;
 
-		const escena = el('div', 'ruleta-escena');
+		const escena = el('div', 'casino-escena');
+		const marcador = crearBanca();
+		const crupier = crearCrupier(ctx.crupierSrc, '¡Hagan juego, señores!');
 		const rueda = el('div', 'ruleta-rueda');
 		const lienzo = document.createElement('canvas');
 		rueda.append(lienzo, el('span', 'ruleta-marca'));
-		dibujarRueda(lienzo, 264);
+		dibujarRueda(lienzo, 288);
 
+		const fichas = crearFichas();
 		const apuestasEl = el('div', 'ruleta-apuestas');
 		const numerosEl = el('div', 'ruleta-numeros');
 		numerosEl.hidden = true;
@@ -125,26 +128,38 @@ export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado>
 		const girar = el('button', 'tirada-boton', '¡Girar!');
 		girar.type = 'button';
 		girar.disabled = true;
+		const salir = el('button', 'tirada-boton tirada-boton-sec', 'Salir del casino');
+		salir.type = 'button';
+
+		marcador.poner(banca, inicial.prueba);
+		fichas.refrescar(banca);
 
 		function actualizar() {
-			const lista = apuesta?.id === 'numero' ? numero !== null : apuesta !== null;
+			const apostado = fichas.valor();
+			const lista = apostado > 0 && (apuesta?.id === 'numero' ? numero !== null : apuesta !== null);
 			girar.disabled = !lista || girando;
-			if (!girando) {
-				resultado.textContent = !apuesta
-					? 'Elige tu apuesta'
-					: apuesta.id === 'numero'
-						? numero === null
-							? 'Elige un número del 1 al 36'
-							: `Apuestas al ${numero}: ${apuesta.puntos} puntos si sale`
-						: `Apuestas a ${apuesta.texto.toLowerCase()}: ${apuesta.puntos} puntos si sale`;
+			if (girando) return;
+			resultado.className = 'ruleta-resultado';
+			if (apostado === 0) {
+				resultado.textContent = 'No te quedan puntos para apostar';
+				return;
 			}
+			resultado.textContent = !apuesta
+				? 'Elige tu apuesta'
+				: apuesta.id === 'numero'
+					? numero === null
+						? 'Elige un número del 1 al 36 o el 67'
+						: `${apostado} al ${numero}: cobras ${apostado * apuesta.paga} si sale`
+					: `${apostado} a ${apuesta.texto.toLowerCase()}: cobras ${apostado * apuesta.paga} si sale`;
 		}
+
+		fichas.el.addEventListener('click', actualizar);
 
 		APUESTAS.forEach((a) => {
 			const b = el('button', 'ruleta-apuesta');
 			b.type = 'button';
 			b.dataset.color = a.id === 'rojo' || a.id === 'negro' ? a.id : '';
-			b.append(a.texto, el('small', '', `+${a.puntos}`));
+			b.append(a.texto, el('small', '', `${a.paga} a 1`));
 			b.addEventListener('click', () => {
 				if (girando) return;
 				apuesta = a;
@@ -155,7 +170,9 @@ export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado>
 			});
 			apuestasEl.append(b);
 		});
-		for (let n = 1; n <= 36; n++) {
+		// Como en la mesa real: 3 filas de 12 (arriba 3, 6, 9… 36; abajo 1, 4, 7… 34) y el 67 en su propia fila
+		const mesa = [3, 2, 1].flatMap((fila) => Array.from({ length: 12 }, (_, col) => col * 3 + fila));
+		for (const n of [...mesa, BANCA]) {
 			const b = el('button', 'ruleta-numero', String(n));
 			b.type = 'button';
 			b.dataset.color = colorDe(n);
@@ -168,49 +185,93 @@ export function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resultado>
 			numerosEl.append(b);
 		}
 
-		function terminar(puntos: number, detalle: string) {
+		function terminar() {
 			if (terminada) return;
 			terminada = true;
-			resolve({ puntos, detalle });
+			resolve({
+				puntos: neto,
+				detalle: giros ? `${giros} ${giros === 1 ? 'giro' : 'giros'}, ${aciertos} ${aciertos === 1 ? 'acierto' : 'aciertos'}` : 'Sin girar',
+			});
 		}
 
 		girar.addEventListener('click', async () => {
-			if (!apuesta || girando) return;
+			const apostado = fichas.valor();
+			if (!apuesta || girando || apostado === 0) return;
 			girando = true;
 			girar.disabled = true;
+			salir.disabled = true;
+			fichas.bloquear(true);
+			resultado.className = 'ruleta-resultado';
 			resultado.textContent = 'Girando…';
+			crupier.decir('¡No va más!');
+
+			// El resultado se decide y se apunta ANTES de la animación: cerrar la ventana no evita perder
 			const ganador = casillaAlAzar();
+			const acierta = apuesta.gana(ganador, numero);
+			const ganancia = acierta ? apostado * apuesta.paga : -apostado;
+			try {
+				banca = (await apostarEnCasino('ruleta-casino', apostado, ganancia)).puntos;
+			} catch {
+				girando = false;
+				salir.disabled = false;
+				fichas.bloquear(false);
+				actualizar();
+				resultado.textContent = 'No se ha podido apostar. Inténtalo otra vez';
+				return;
+			}
+			neto += ganancia;
+			giros++;
+			if (acierta) aciertos++;
+			document.dispatchEvent(new CustomEvent('liga:cambio'));
+
+			// La rueda gira hasta dejar la casilla ganadora bajo la marca de arriba, siempre hacia delante
 			const paso = 360 / ORDEN.length;
-			// La rueda gira hasta dejar la casilla ganadora bajo la marca de arriba
-			const grados = 360 * VUELTAS - ORDEN.indexOf(ganador) * paso;
+			const destino = (360 - ((ORDEN.indexOf(ganador) * paso) % 360)) % 360;
+			rotacion = Math.floor(rotacion / 360) * 360 + 360 * VUELTAS + destino;
 			void lienzo.offsetWidth;
-			lienzo.style.transform = `rotate(${grados}deg)`;
+			lienzo.style.transform = `rotate(${rotacion}deg)`;
 			await esperar(DURACION_GIRO);
 			if (terminada) return;
 
 			const color = colorDe(ganador);
-			const acierta = ganador !== DIABLO && apuesta.gana(ganador, numero);
-			let puntos = 0;
-			let texto = `Salió el ${ganador} ${color}.`;
-			if (ganador === DIABLO) {
-				puntos = -CONFIG.penalizacionDiablo;
-				texto = '¡Salió el 67! El diablillo te quita puntos';
-				resultado.classList.add('mal');
+			let texto = `Salió el ${ganador} ${color}. `;
+			let clase = 'mal';
+			if (ganador === BANCA && acierta) {
+				texto = `¡Salió el 67 y apostaste al 67! ${conSigno(ganancia)}`;
+				clase = 'bien';
+				crupier.decir('¡Six seven, six seven!');
+			} else if (ganador === BANCA) {
+				texto = `¡Salió el 67! La banca se queda tus ${apostado}`;
+				crupier.decir('¡Six seven, six seven!');
 			} else if (acierta) {
-				puntos = apuesta.puntos;
-				texto += ` ¡Aciertas! +${puntos}`;
-				resultado.classList.add('bien');
+				texto += `¡Aciertas! ${conSigno(ganancia)}`;
+				clase = 'bien';
+				crupier.decir('¡Enhorabuena! Eso se cobra.');
 			} else {
-				texto += ' No has acertado';
+				texto += `Pierdes ${apostado}`;
+				crupier.decir('Suerte para la próxima.');
 			}
-			resultado.textContent = texto;
-			navigator.vibrate?.(ganador === DIABLO ? [80, 40, 80] : acierta ? 30 : 10);
-			await esperar(PAUSA_FINAL);
-			terminar(puntos, ganador === DIABLO ? 'Salió el 67: el diablillo' : `Salió el ${ganador} ${color}${acierta ? ' y acertaste' : ''}`);
+			navigator.vibrate?.(ganador === BANCA && !acierta ? [80, 40, 80] : acierta ? 30 : 10);
+
+			girando = false;
+			salir.disabled = false;
+			marcador.poner(banca, inicial.prueba);
+			fichas.bloquear(false);
+			fichas.refrescar(banca);
+			girar.textContent = 'Girar otra vez';
+			actualizar();
+			// Se deja a la vista lo que acaba de pasar hasta que cambie la apuesta
+			if (fichas.valor() > 0) {
+				resultado.className = `ruleta-resultado ${clase}`;
+				resultado.textContent = texto;
+			}
 		});
 
-		escena.append(rueda, resultado, apuestasEl, numerosEl, girar);
+		salir.addEventListener('click', terminar);
+
+		escena.append(crupier.el, crearMesa(marcador.el, rueda, resultado, fichas.el, apuestasEl, numerosEl, girar, salir));
 		area.replaceChildren(escena);
-		senal.addEventListener('abort', () => terminar(0, 'Sin girar'), { once: true });
+		actualizar();
+		senal.addEventListener('abort', terminar, { once: true });
 	});
 }
