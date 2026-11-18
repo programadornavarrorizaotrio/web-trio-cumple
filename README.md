@@ -78,10 +78,12 @@ Reglas:
 - **Las tablas tienen RLS y ninguna política para `anon`**: el navegador no lee ni escribe tablas directamente. Todo pasa por funciones RPC `security definer`:
   - Públicas (todas con PIN): `comprobar_pin(pin)`, `buscar_invitados(pin, texto)`, `registrar(pin, invitado_id, apodo, frase, asiste, acompanantes, alergias)`.
   - Con clave: `get_invitado`, `confirmar_asistencia`, `estado_estanco`, `reservar` (0 = quitar), `listar_cromos`, `proponer_juego`, `listar_juegos`, `proponer_cancion`.
+  - Liga (con clave): `elegir_equipo`, `estado_liga`, `ranking_liga`, `marcador_equipos`, `tirar_dados`, `registrar_partida`, `banca_casino`, `girar_ruleta`, `blackjack_repartir`, `blackjack_mano`, `blackjack_jugar`, `listar_premios`, `config_liga`.
+  - Errores: la RPC lanza un mensaje corto (`sesion`, `pin`, `ya-registrado`, `sin-equipo`, `sin-tiradas`, `liga-cerrada`…) que el navegador traduce. `sesion` = clave no válida: borrar la sesión y mandar a `/registro`.
 - **Fotos de cromos**: bucket con nombres de archivo aleatorios (uuid). `listar_cromos` solo devuelve las de registrados, y solo a quien tiene clave.
 - **Fotos de la fiesta**: subida con la Edge Function `subir-foto`, que valida la clave y devuelve una URL de subida firmada. La `service_role` solo vive en la función.
 - **Limitación conocida**: el contenido fijo de la web (textos, lugar) va en el HTML; la pantalla de registro lo tapa, pero no es secreto. Los datos de invitados sí lo son: solo llegan por RPC con clave.
-- **Consultar datos**: desde el panel de Supabase, con vistas SQL (`v_asistentes`, `v_alergias`, `v_estanco_totales`, `v_canciones`) exportables a CSV. No hay página de admin.
+- **Consultar datos**: desde el panel de Supabase, con vistas SQL en el esquema `privado` (`v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`; más adelante `v_estanco_totales`, `v_canciones`) exportables a CSV. Habrá un admin para los tres (ver "Pensado para crecer").
 
 ---
 
@@ -96,10 +98,28 @@ Reglas:
 
 ## Modelo de datos
 
+Ya creado (`supabase/migrations/`):
+
 ```
+ajustes               clave PK, valor jsonb, descripcion      ← hash del PIN, sistema de puntos de la liga, cierre
 invitados             id uuid PK, numero (orden en el álbum), nombre, foto_path, especial,
-                      apodo, frase, registrado_en, sesion_hash, visible
-confirmaciones        invitado_id UNIQUE, asiste, acompanantes, alergias, updated_at
+                      rol ('invitado' | 'admin'), visible, apodo, frase, campeon, registrado_en
+sesiones              invitado_id, hash (de la clave), creada_en, usada_en, revocada_en   ← una por móvil
+confirmaciones        invitado_id PK, asiste, acompanantes, alergias, updated_at
+
+minijuegos            id PK, titulo, max_puntos, numero (ficha del hexágono), libre, disponible
+rangos                nombre PK, desde, emblema
+premios               id PK, titulo, descripcion, requisito jsonb, orden, activo
+liga_jugadores        invitado_id PK, equipo ('pencho' | 'fran' | 'juan'), elegido_en
+liga_tiradas          invitado_id, dia, dados jsonb, resultado (minijuego o 'diablo')
+liga_movimientos      invitado_id, dia, tipo ('partida' | 'diablo' | 'casino' | 'ajuste'), minijuego, puntos, detalle
+casino_manos          invitado_id, apuesta, jugador, banca, doblada, estado, neto   ← blackjack en el servidor
+premios_codigos       (invitado_id, premio_id) PK, codigo, entregado_en
+```
+
+Pendiente:
+
+```
 reservas_estanco      invitado_id, producto (slug del JSON, con CHECK), cantidad (1–2), updated_at
                       UNIQUE (invitado_id, producto)
 juegos                id, invitado_id, titulo, reglas, min_jugadores, max_jugadores, created_at
@@ -107,7 +127,19 @@ canciones             id, invitado_id, titulo, artista, created_at
 fotos_fiesta          id, invitado_id, path, visible, created_at
 ```
 
-RLS activado en **todas** las tablas desde la migración que las crea.
+Reglas de la base de datos:
+- RLS activado en **todas** las tablas desde la migración que las crea, sin políticas: el navegador solo llama a RPC.
+- Lo interno (comprobar la clave, el PIN, sumar puntos…) va en el esquema **`privado`**, que la API no expone. Las **vistas del panel** también (`privado.v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`): una vista en `public` saldría por la API saltándose RLS.
+- Supabase da permiso a `anon` en cada tabla y función nueva de `public`: **cada migración termina quitándolos** y dando `execute` solo a sus RPC (ver el final de `…_liga.sql`).
+- Los puntos de la liga son la suma de `liga_movimientos`: para corregir a alguien se mete un movimiento `ajuste`, nunca se edita el histórico. Lo que va al azar (dados, ruleta, cartas) lo calcula el servidor.
+- **PIN**: solo se guarda su hash, a mano desde el SQL editor (`insert into ajustes … privado.hash('<pin>')`). El de `seed.sql` (1234) es solo de desarrollo.
+- **Resetear a un invitado** (cambió de móvil): `update sesiones set revocada_en = now() where invitado_id = …` y `update invitados set registrado_en = null where id = …`.
+
+Pensado para crecer (aún sin hacer):
+- **Admin de los tres**: `invitados.rol = 'admin'` ya está; las RPC de admin comprobarán `privado.es_admin(invitado)` con la misma clave de sesión. Lo editable (minijuegos, rangos, premios, `ajustes`) ya vive en tablas.
+- **Formulario inicial** con preguntas que decidan los admins: tablas `formulario_preguntas` (id, texto, tipo, opciones jsonb, obligatoria, orden) y `formulario_respuestas` (invitado_id, pregunta_id, valor jsonb). Así se añaden preguntas sin migraciones.
+- **Personaje del LoL de cada invitado**: columna `invitados.campeon` (clave de Data Dragon), ya creada.
+- **Más datos por invitado**: tabla 1:1 con `invitado_id` como clave (como `confirmaciones`), no columnas sueltas en `invitados`.
 
 ---
 
