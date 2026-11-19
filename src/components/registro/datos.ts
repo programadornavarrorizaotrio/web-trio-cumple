@@ -11,13 +11,14 @@ export interface Coincidencia {
 	registrado: boolean;
 }
 
-/** Parámetros de la RPC `registrar(invitado_id, ...)` */
+/** Parámetros de la RPC `registrar(invitado_id, ...)`. La asistencia ya no se pide al registrarse (se confirma
+ *  después en la portada), pero `registrar` la sigue aceptando. */
 export interface DatosRegistro {
 	apodo: string;
 	frase: string | null;
-	asiste: boolean;
-	acompanantes: number;
-	alergias: string | null;
+	asiste?: boolean;
+	acompanantes?: number;
+	alergias?: string | null;
 }
 
 /** Respuesta de `registrar`: la clave de sesión y el cromo ya activado */
@@ -53,9 +54,8 @@ export async function registrar(pin: string, id: string, datos: DatosRegistro): 
 			invitado_id: id,
 			apodo: datos.apodo,
 			frase: datos.frase,
-			asiste: datos.asiste,
-			acompanantes: datos.acompanantes,
-			alergias: datos.alergias,
+			// Solo si se ha preguntado: sin ella, `registrar` no toca la asistencia
+			...(datos.asiste === undefined ? {} : { asiste: datos.asiste, acompanantes: datos.acompanantes ?? 0, alergias: datos.alergias ?? null }),
 		});
 	}
 	if (!(await comprobarPin(pin))) throw new Error('pin');
