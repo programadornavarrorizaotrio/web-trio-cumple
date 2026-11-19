@@ -1,141 +1,173 @@
 ---
-import Rotulo from '../common/Rotulo.astro';
-import Campo from '../common/Campo.astro';
-import Button from '../common/Button.astro';
-import Emblema from '../common/Emblema.astro';
+// Registro como una oficina del SEPE: coges número (siempre el A-067), esperas tu turno y en la ventanilla 3 la
+// rana funcionaria te pide la cita previa (el PIN de la fiesta), te busca en el sistema y te hace rellenar el
+// Modelo 067 (apodo y frase del cromo). Sello de APROBADO, te entrega tu cromo y abres el sobre del álbum.
+// Quien ya se registró en otro dispositivo pide un "duplicado" con el código que saca desde allí.
+// La asistencia NO se pregunta aquí: se confirma después en la portada.
+import { getImage } from 'astro:assets';
+import Cromo from '../cromos/Cromo.astro';
 import Sobre from '../cromos/Sobre.astro';
 import FotosDemo from '../cromos/FotosDemo.astro';
 import { EXIGIR_REGISTRO } from './sesion';
 import { PIN_DEMO } from './datos';
-import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
+import aburrida from '../../assets/mascota/estanco.png';
+import papeles from '../../assets/mascota/rsvp.png';
+import reloj from '../../assets/mascota/reloj.png';
+import denegado from '../../assets/mascota/no_rsvp.png';
+import aprobado from '../../assets/mascota/si_rsvp.png';
+import saluda from '../../assets/mascota/saluda.png';
 
-// Registro en tres pasos: buscar tu nombre → tus datos → abrir el sobre con tu cromo.
+const poses = { aburrida, papeles, reloj, denegado, aprobado, saluda };
+const ranas = Object.fromEntries(
+	await Promise.all(Object.entries(poses).map(async ([k, img]) => [k, (await getImage({ src: img, width: 320, format: 'webp' })).src])),
+);
+const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new Date());
 ---
 
 <FotosDemo />
 <Sobre />
 
-<div data-registro class="mx-auto w-full max-w-md">
+<div data-registro data-ranas={JSON.stringify(ranas)} class="sepe mx-auto w-full max-w-md">
 	{
 		!EXIGIR_REGISTRO && (
-			<div class="mb-6 flex items-center justify-between gap-3 rounded border-2 border-dashed border-amarillo/60 px-4 py-3 text-sm">
+			<p class="pruebas">
 				<span>
-					<strong class="text-amarillo">Modo pruebas:</strong> el registro no es obligatorio. PIN: {PIN_DEMO}
+					<strong>Modo pruebas:</strong> registro no obligatorio · PIN {PIN_DEMO}
 				</span>
-				<a href="/" class="shrink-0 rounded bg-amarillo px-3 py-2 font-bold text-granate-oscuro">Ir a la web →</a>
-			</div>
+				<a href="/">Ir a la web →</a>
+			</p>
 		)
 	}
-	<div class="flex justify-center">
-		<Rotulo tamano="md" />
+
+	<!-- Cabecera institucional -->
+	<header class="membrete">
+		<span class="escudo" aria-hidden="true">🐸</span>
+		<span>
+			<strong>SEPE</strong>
+			<small>Servicio Público de Empleo del Trío</small>
+		</span>
+	</header>
+
+	<!-- Pantalla de turnos: siempre a la vista -->
+	<div class="turnos" aria-live="polite">
+		<p class="turnos-titulo">Turno</p>
+		<p class="turnos-led"><span data-turno>A-063</span><span class="flecha">▶</span><span data-ventanilla>V-1</span></p>
 	</div>
 
-	<!-- Progreso -->
-	<ol class="mx-auto mt-6 flex max-w-60 items-center gap-2" aria-label="Pasos del registro">
-		{
-			['Búscate', 'Tus datos', 'Tu cromo'].map((texto, i) => (
-				<li data-marca={i} class="flex-1" aria-label={`Paso ${i + 1}: ${texto}`}>
-					<span class:list={['block h-1.5 rounded-full transition-colors', i === 0 ? 'bg-amarillo' : 'bg-crema/25']} />
-				</li>
-			))
-		}
-	</ol>
-
-	<!-- Paso 1: buscar -->
-	<section data-paso="buscar" class="mt-6 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
-		<h1 class="text-2xl text-granate">Antes de pasar…</h1>
-
-		<!-- PIN de la fiesta -->
-		<form data-bloque-pin class="mt-4">
-			<label for="pin" class="text-xs font-black uppercase tracking-[0.2em] text-granate">Código de la fiesta</label>
-			<div class="mt-1.5 flex gap-2">
-				<input
-					id="pin"
-					data-pin
-					inputmode="numeric"
-					autocomplete="one-time-code"
-					maxlength="8"
-					required
-					placeholder="••••"
-					class="rotulo block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-4 py-3 text-center text-2xl tracking-[0.4em] text-granate placeholder:text-tinta-suave/40 focus:border-granate focus:outline-none"
-				/>
-				<Button type="submit" class="shrink-0">Entrar</Button>
+	<!-- ───── Sala de espera ───── -->
+	<section data-escena="sala" class="escena">
+		<div class="maquina">
+			<p class="maquina-cartel">Coja su número</p>
+			<p class="maquina-tramite">Trámite: <strong>ALTA EN EL TRÍO FELIZ</strong></p>
+			<button type="button" data-coger-numero class="maquina-boton">Pulse aquí</button>
+			<div class="ranura">
+				<div data-ticket class="ticket" hidden>
+					<p class="ticket-cab">SEPE · Oficina de Trioland</p>
+					<p class="ticket-numero">A-067</p>
+					<p class="ticket-linea">Alta en el Trío Feliz</p>
+					<p class="ticket-linea">{hoy} · Personas delante: <span data-delante>3</span></p>
+					<p class="ticket-pie">Conserve este resguardo. Será llamado por pantalla.</p>
+				</div>
 			</div>
-			<p class="mt-1 text-xs text-tinta-suave">Viene en el mensaje de invitación.</p>
-			<p data-pin-error hidden role="alert" class="mt-2 text-sm font-bold text-granate">Ese código no es. Míralo otra vez en el mensaje.</p>
-		</form>
-
-		<div data-bloque-buscar hidden>
-			<p class="mt-2 text-tinta-suave">Búscate en la lista de invitados. Cada nombre solo se puede registrar una vez.</p>
-
-			<label class="mt-5 block">
-				<span class="sr-only">Tu nombre</span>
-				<input
-					data-buscador
-					type="search"
-					autocomplete="off"
-					autocapitalize="words"
-					enterkeyhint="search"
-					placeholder="Escribe tu nombre…"
-					class="block w-full rounded border-2 border-granate/25 bg-white px-4 py-3.5 text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none"
-				/>
-			</label>
-
-			<ul data-resultados class="mt-3 space-y-2"></ul>
-			<p data-sin-resultados hidden class="mt-4 text-sm text-tinta-suave">
-				No te encontramos. Prueba con tu apellido o escribe a los organizadores.
-			</p>
 		</div>
+
+		<div class="sillas" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+		<p data-aviso-sala class="aviso-sala">Saque su número y espere a ser llamado.</p>
+		<button type="button" data-saltar hidden class="saltar">Colarse (no se lo diga a nadie) →</button>
 	</section>
 
-	<template data-plantilla-resultado>
-		<li>
-			<button
-				type="button"
-				class="flex w-full items-center justify-between gap-3 rounded border-2 border-granate/15 bg-white px-4 py-3.5 text-left font-bold active:bg-amarillo disabled:bg-crema-oscuro disabled:text-tinta-suave"
-			>
-				<span data-nombre class="min-w-0 truncate"></span>
-				<span data-accion class="shrink-0 text-xs font-black uppercase tracking-wider text-granate">Soy yo →</span>
-			</button>
-		</li>
-	</template>
+	<!-- ───── Ventanilla 3 ───── -->
+	<section data-escena="ventanilla" hidden class="escena">
+		<div class="ventanilla">
+			<p class="ventanilla-cartel">Ventanilla 3</p>
+			<div class="cristal">
+				<img data-rana src={ranas.aburrida} alt="La funcionaria, una rana con corbata" width="320" height="378" class="rana" />
+				<span class="reflejo" aria-hidden="true"></span>
+			</div>
+			<div class="mostrador"></div>
+			<p data-bocadillo class="bocadillo" aria-live="polite"></p>
+		</div>
 
-	<!-- Paso 2: datos -->
-	<form data-paso="datos" hidden class="mt-6 space-y-5 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
-		<button type="button" data-atras class="text-sm font-bold text-granate underline underline-offset-4">← No soy yo</button>
-
-		<h2 class="text-2xl text-granate">¡Hola, <span data-nombre-elegido></span>!</h2>
-
-		<Campo etiqueta="Apodo para tu cromo" name="apodo" required maxlength={20} placeholder="El Gamba" autocomplete="off" />
-		<Campo
-			etiqueta="Frase"
-			name="frase"
-			maxlength={60}
-			placeholder="Vengo por el estanco"
-			autocomplete="off"
-			ayuda="Opcional. Saldrá en tu cromo."
-		/>
-
-		<CamposAsistencia />
-
-		<p data-error hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
-
-		<Button type="submit" tamano="lg" class="w-full">Activar mi cromo</Button>
-	</form>
-
-	<!-- Ya registrado en otro dispositivo: entra con el código que saca desde allí -->
-	<form data-paso="codigo" hidden class="mt-6 space-y-5 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
-		<button type="button" data-atras-codigo class="text-sm font-bold text-granate underline underline-offset-4">← No soy yo</button>
-
-		<h2 class="text-2xl text-granate">¡Hola otra vez, <span data-nombre-codigo></span>!</h2>
-		<p class="text-sm text-tinta-suave">
-			Ya te registraste en otro dispositivo. Para entrar también aquí, abre la web donde ya estás dentro, baja del todo y pulsa
-			<strong class="text-granate">Entrar en otro dispositivo</strong>: te dará un código.
-		</p>
-
-		<label class="block">
-			<span class="text-xs font-black uppercase tracking-[0.2em] text-granate">Código</span>
+		<!-- Cita previa (PIN) -->
+		<form data-tramite="cita" class="papel">
+			<p class="papel-cab">Cita previa</p>
+			<label for="pin" class="etiqueta">Código de cita previa</label>
 			<input
+				id="pin"
+				data-pin
+				inputmode="numeric"
+				autocomplete="one-time-code"
+				maxlength="8"
+				required
+				placeholder="••••"
+				class="campo campo-pin"
+			/>
+			<p class="nota">Viene en el mensaje de invitación.</p>
+			<button type="submit" class="boton">Presentar</button>
+			<span data-sello class="sello" hidden></span>
+		</form>
+
+		<!-- Buscar en el sistema -->
+		<div data-tramite="buscar" hidden class="terminal">
+			<p class="terminal-cab">SIGET v2.3 · Gestión de expedientes</p>
+			<label class="terminal-linea">
+				<span aria-hidden="true">NOMBRE&gt;</span>
+				<span class="sr-only">Nombre del solicitante</span>
+				<input data-buscador type="search" autocomplete="off" autocapitalize="words" enterkeyhint="search" spellcheck="false" class="terminal-campo" />
+			</label>
+			<ul data-resultados class="terminal-lista"></ul>
+			<p data-sin-resultados hidden class="terminal-nada">** SIN COINCIDENCIAS ** Pruebe con el apellido o escriba a los organizadores.</p>
+		</div>
+
+		<template data-plantilla-resultado>
+			<li>
+				<button type="button" class="terminal-fila">
+					<span data-nombre class="min-w-0 truncate"></span>
+					<span data-accion class="terminal-accion">[SELECCIONAR]</span>
+				</button>
+			</li>
+		</template>
+
+		<!-- Modelo 067 -->
+		<form data-tramite="impreso" hidden class="papel impreso">
+			<button type="button" data-atras class="volver">← No soy yo</button>
+			<p class="papel-cab">Modelo 067</p>
+			<p class="papel-titulo">Solicitud de alta en el Trío Feliz</p>
+
+			<p class="seccion">1. Datos del solicitante</p>
+			<p class="dato">Nombre: <strong data-nombre-impreso></strong></p>
+
+			<p class="seccion">2. Alias <small>(saldrá en su cromo)</small></p>
+			<input name="apodo" required maxlength="20" placeholder="El Gamba" autocomplete="off" class="campo" />
+
+			<p class="seccion">3. Motivo de la solicitud <small>(opcional)</small></p>
+			<input name="frase" maxlength="60" placeholder="Vengo por el estanco" autocomplete="off" class="campo" />
+
+			<label class="jura">
+				<input type="checkbox" required />
+				<span>Declaro bajo juramento que vengo a pasarlo bien y que no me llevaré hielo a casa.</span>
+			</label>
+
+			<p class="seccion">Vista previa del carnet</p>
+			<div class="previa"><Cromo /></div>
+
+			<p data-error hidden role="alert" class="error"></p>
+			<button type="submit" class="boton">Presentar solicitud</button>
+			<span data-sello class="sello" hidden></span>
+		</form>
+
+		<!-- Duplicado (ya registrado en otro dispositivo) -->
+		<form data-tramite="duplicado" hidden class="papel">
+			<button type="button" data-atras-codigo class="volver">← No soy yo</button>
+			<p class="papel-cab">Modelo 067-D</p>
+			<p class="papel-titulo">Solicitud de duplicado</p>
+			<p class="nota">
+				<strong data-nombre-codigo></strong> ya tiene expediente abierto. Donde ya está dentro, baje del todo y pulse{' '}
+				<strong>Entrar en otro dispositivo</strong>: le darán un código.
+			</p>
+			<label class="etiqueta" for="codigo-duplicado">Código</label>
+			<input
+				id="codigo-duplicado"
 				data-codigo
 				required
 				autocomplete="one-time-code"
@@ -143,187 +175,961 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 				spellcheck="false"
 				maxlength="9"
 				placeholder="K7P-4QX"
-				class="rotulo mt-1.5 block w-full rounded border-2 border-granate/25 bg-white px-4 py-3 text-center text-2xl uppercase tracking-[0.3em] text-granate placeholder:text-tinta-suave/40 focus:border-granate focus:outline-none"
+				class="campo campo-pin"
 			/>
-		</label>
+			<p data-error-codigo hidden role="alert" class="error"></p>
+			<button type="submit" class="boton">Pedir duplicado</button>
+			<p class="nota">¿Perdió el otro móvil? Escriba a los organizadores y le dejan registrarse de nuevo.</p>
+			<span data-sello class="sello" hidden></span>
+		</form>
 
-		<p data-error-codigo hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
-
-		<Button type="submit" tamano="lg" class="w-full">Entrar</Button>
-		<p class="text-xs text-tinta-suave">¿Perdiste el otro móvil? Escribe a los organizadores y te dejan registrarte de nuevo.</p>
-	</form>
-
-	<!-- Paso 3: abrir el sobre (con todos los cromos de quienes ya confirmaron) -->
-	<section data-paso="revelar" hidden class="mt-6 text-center">
-		<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Registrado!</p>
-
-		<!-- Viene: sobre con las cartas de los confirmados -->
-		<div data-viene hidden>
-			<p class="mt-3 text-crema/85">Tienes un sobre con los cromos de todos los que ya vienen.</p>
-			<button
-				type="button"
-				data-abrir-sobre
-				class="mx-auto mt-6 block aspect-[11/18] w-44 rounded-lg border-2 border-amarillo bg-granate-oscuro text-amarillo shadow-chapa-amarillo transition-transform active:scale-95"
-			>
-				<span class="flex size-full flex-col items-center justify-center gap-3">
-					<Emblema class="size-16" hueco="var(--color-granate-oscuro)" />
-					<span class="rotulo text-xl">Sobre de cromos</span>
-					<span class="animate-pulse text-xs font-bold uppercase tracking-[0.2em] text-crema/80">Toca para abrir</span>
-				</span>
-			</button>
-		</div>
-
-		<!-- No viene: su cromo queda esperando -->
-		<div data-no-viene hidden>
-			<p class="mt-3 text-crema/85">
-				Tu cromo ya está guardado, pero el sobre es solo para quien viene. Si cambias de idea, confirma desde la web y se abre.
-			</p>
-		</div>
-
-		<div data-entrar hidden class="mt-8">
-			<Button href="/" tamano="lg" class="w-full">Entrar a la fiesta</Button>
+		<!-- Entrega del carnet -->
+		<div data-tramite="entrega" hidden class="entrega">
+			<p class="papel-cab">Resolución favorable</p>
+			<div data-carnet class="carnet"><Cromo /></div>
+			<button type="button" data-abrir-sobre class="boton boton-sobre">Abrir el sobre del álbum</button>
+			<a data-entrar href="/" hidden class="boton">Entrar a la fiesta</a>
+			<p class="nota centrada">Y no olvide confirmar si viene en la portada: hay plazo.</p>
 		</div>
 	</section>
 </div>
 
+<style>
+	.sepe {
+		--pared: #e9e4d6;
+		--azul: #1d4a7a;
+		--azul-osc: #12325a;
+		--rojo-led: #ff4b2b;
+		--papel: #fbfaf4;
+		--tinta-sepe: #23262b;
+		--verde-term: #4dff8b;
+		font-family: 'Space Mono', ui-monospace, monospace;
+		color: var(--tinta-sepe);
+	}
+	.sepe.temblor {
+		animation: sepe-temblor 0.35s linear;
+	}
+
+	.pruebas {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		border: 2px dashed #ffffff55;
+		border-radius: 0.25rem;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.7rem;
+		color: #e9e4d6;
+	}
+	.pruebas a {
+		flex-shrink: 0;
+		border-radius: 0.25rem;
+		background: var(--azul);
+		padding: 0.35rem 0.6rem;
+		font-weight: 700;
+		color: white;
+	}
+
+	/* Membrete y pantalla de turnos */
+	.membrete {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		border-bottom: 4px solid #c8102e;
+		background: var(--azul);
+		padding: 0.6rem 0.9rem;
+		color: white;
+		border-radius: 0.4rem 0.4rem 0 0;
+	}
+	.membrete strong {
+		display: block;
+		font-size: 1.25rem;
+		letter-spacing: 0.2em;
+		line-height: 1;
+	}
+	.membrete small {
+		font-size: 0.65rem;
+		opacity: 0.85;
+	}
+	.escudo {
+		display: grid;
+		place-items: center;
+		width: 2.3rem;
+		height: 2.3rem;
+		border: 2px solid #ffffffaa;
+		border-radius: 50%;
+		font-size: 1.2rem;
+	}
+	.turnos {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		background: #111;
+		padding: 0.5rem 0.9rem;
+		box-shadow: inset 0 0 0 3px #2b2b2b;
+	}
+	.turnos-titulo {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.25em;
+		text-transform: uppercase;
+		color: #888;
+	}
+	.turnos-led {
+		display: flex;
+		gap: 0.6rem;
+		font-size: 1.6rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: var(--rojo-led);
+		text-shadow:
+			0 0 6px #ff4b2baa,
+			0 0 14px #ff4b2b55;
+	}
+	.turnos-led .flecha {
+		font-size: 0.9rem;
+		align-self: center;
+	}
+	.turnos.llama .turnos-led {
+		animation: sepe-parpadeo 0.25s steps(1) 6;
+	}
+
+	.escena {
+		border-radius: 0 0 0.4rem 0.4rem;
+		background:
+			linear-gradient(transparent 70%, #00000010 70%) 0 0 / 100% 2.4rem,
+			var(--pared);
+		padding: 1.25rem 1rem 1.5rem;
+		box-shadow: 0 10px 30px #0003;
+		animation: sepe-entra 0.45s ease-out;
+	}
+
+	/* Máquina de tickets */
+	.maquina {
+		position: relative;
+		margin: 0 auto;
+		width: min(100%, 15rem);
+		border-radius: 0.8rem 0.8rem 0.3rem 0.3rem;
+		background: linear-gradient(#d92b2b, #a51616);
+		padding: 0.9rem 0.9rem 0;
+		text-align: center;
+		color: white;
+		box-shadow:
+			inset 0 -6px 0 #7d0f0f,
+			0 8px 0 #0002;
+	}
+	.maquina-cartel {
+		font-size: 1.05rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+	.maquina-tramite {
+		margin-top: 0.25rem;
+		font-size: 0.6rem;
+		opacity: 0.9;
+	}
+	.maquina-boton {
+		margin: 0.8rem auto 0.9rem;
+		display: block;
+		width: 5.5rem;
+		height: 5.5rem;
+		border-radius: 50%;
+		background: radial-gradient(circle at 35% 30%, #fff6b0, #f0bc44 55%, #c98d14);
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: #5a3a00;
+		box-shadow:
+			0 6px 0 #8a5f0b,
+			0 10px 18px #0005;
+		transition: transform 0.08s;
+		animation: sepe-latido 1.6s ease-in-out infinite;
+	}
+	.maquina-boton:active,
+	.maquina-boton:disabled {
+		transform: translateY(5px);
+		box-shadow:
+			0 1px 0 #8a5f0b,
+			0 3px 6px #0005;
+		animation: none;
+	}
+	.ranura {
+		position: relative;
+		height: 0.5rem;
+		margin: 0 1.6rem;
+		border-radius: 0.2rem;
+		background: #2a0606;
+		overflow: visible;
+	}
+	.ticket {
+		position: absolute;
+		top: 0.2rem;
+		left: 50%;
+		z-index: 2;
+		width: 10.5rem;
+		translate: -50% 0;
+		background: repeating-linear-gradient(#fff, #fff 1.3rem, #f6f6f6 1.3rem, #f6f6f6 1.32rem);
+		padding: 0.6rem 0.7rem 0.9rem;
+		color: #222;
+		text-align: center;
+		box-shadow: 0 6px 14px #0004;
+		animation: sepe-imprime 1.4s steps(14) both;
+	}
+	.ticket-cab {
+		font-size: 0.55rem;
+		text-transform: uppercase;
+	}
+	.ticket-numero {
+		margin: 0.15rem 0;
+		font-size: 2.4rem;
+		font-weight: 700;
+		line-height: 1;
+	}
+	.ticket-linea {
+		font-size: 0.6rem;
+	}
+	.ticket-pie {
+		margin-top: 0.4rem;
+		border-top: 1px dashed #999;
+		padding-top: 0.3rem;
+		font-size: 0.5rem;
+	}
+	.sillas {
+		display: flex;
+		justify-content: center;
+		gap: 0.4rem;
+		margin-top: 10.5rem;
+	}
+	.sillas span {
+		width: 2.6rem;
+		height: 2.2rem;
+		border-radius: 0.6rem 0.6rem 0.2rem 0.2rem;
+		background: linear-gradient(#f2892b, #c96512);
+		box-shadow: 0 0.9rem 0 -0.5rem #555;
+	}
+	.aviso-sala {
+		margin-top: 1.4rem;
+		text-align: center;
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+	.saltar {
+		margin: 0.8rem auto 0;
+		display: block;
+		font-size: 0.7rem;
+		text-decoration: underline;
+		text-underline-offset: 4px;
+		color: var(--azul);
+	}
+
+	/* Ventanilla */
+	.ventanilla {
+		position: relative;
+		margin-bottom: 1.25rem;
+	}
+	.ventanilla-cartel {
+		margin: 0 auto;
+		width: fit-content;
+		border-radius: 0.2rem;
+		background: var(--azul);
+		padding: 0.2rem 0.8rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: white;
+	}
+	.cristal {
+		position: relative;
+		margin: 0.4rem auto 0;
+		height: 12rem;
+		width: 78%;
+		overflow: hidden;
+		border: 6px solid #9aa3ad;
+		border-bottom: 0;
+		border-radius: 0.6rem 0.6rem 0 0;
+		background: linear-gradient(#cfe0ea, #b3c8d6);
+	}
+	.rana {
+		position: absolute;
+		bottom: -2.6rem;
+		left: 50%;
+		height: 14.5rem;
+		width: auto;
+		translate: -50% 0;
+	}
+	.rana.cambia {
+		animation: sepe-rebote 0.35s ease-out;
+	}
+	.reflejo {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(115deg, transparent 30%, #ffffff55 38%, transparent 46%, transparent 60%, #ffffff33 64%, transparent 68%);
+		pointer-events: none;
+	}
+	.mostrador {
+		height: 1.1rem;
+		border-radius: 0.2rem;
+		background: linear-gradient(#a3794f, #7a5534);
+		box-shadow: 0 6px 0 #0002;
+	}
+	.bocadillo {
+		position: relative;
+		margin-top: 1rem;
+		min-height: 2.8rem;
+		border: 2px solid var(--tinta-sepe);
+		border-radius: 0.6rem;
+		background: white;
+		padding: 0.6rem 0.8rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+	.bocadillo::before {
+		content: '';
+		position: absolute;
+		top: -0.65rem;
+		left: 50%;
+		border: 0.6rem solid transparent;
+		border-top: 0;
+		border-bottom-color: var(--tinta-sepe);
+		translate: -50% 0;
+	}
+	.bocadillo:empty {
+		visibility: hidden;
+	}
+
+	/* Papeles e impresos */
+	.papel {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		overflow: hidden;
+		border: 1px solid #d4d0c2;
+		background: var(--papel);
+		padding: 1rem;
+		box-shadow:
+			0 1px 0 #fff inset,
+			0 8px 18px #0002;
+		animation: sepe-entra 0.35s ease-out;
+	}
+	.papel.tiembla {
+		animation: sepe-tiembla 0.4s linear;
+	}
+	.papel-cab {
+		align-self: flex-start;
+		border: 2px solid var(--azul);
+		padding: 0.05rem 0.5rem;
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: var(--azul);
+	}
+	.papel-titulo {
+		font-size: 1rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		line-height: 1.2;
+	}
+	.seccion {
+		margin-top: 0.4rem;
+		border-bottom: 1px solid #ccc;
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--azul);
+	}
+	.seccion small {
+		text-transform: none;
+		font-weight: 400;
+		color: #666;
+	}
+	.dato {
+		font-size: 0.85rem;
+	}
+	.etiqueta {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--azul);
+	}
+	.campo {
+		width: 100%;
+		min-width: 0;
+		border: 0;
+		border-bottom: 2px solid var(--tinta-sepe);
+		background: repeating-linear-gradient(90deg, transparent 0 1.1rem, #0000000d 1.1rem 1.2rem);
+		padding: 0.45rem 0.3rem;
+		font: inherit;
+		font-size: 1rem;
+	}
+	.campo:focus {
+		outline: none;
+		background-color: #fff7d1;
+	}
+	.campo-pin {
+		text-align: center;
+		font-size: 1.6rem;
+		letter-spacing: 0.4em;
+		text-transform: uppercase;
+	}
+	.nota {
+		font-size: 0.72rem;
+		color: #555;
+	}
+	.nota.centrada {
+		text-align: center;
+	}
+	.jura {
+		display: flex;
+		gap: 0.5rem;
+		font-size: 0.72rem;
+	}
+	.jura input {
+		margin-top: 0.15rem;
+		width: 1.1rem;
+		height: 1.1rem;
+		flex-shrink: 0;
+		accent-color: var(--azul);
+	}
+	.previa {
+		margin: 0 auto;
+		width: 62%;
+		rotate: -2deg;
+	}
+	.error {
+		border-left: 4px solid #c8102e;
+		background: #c8102e14;
+		padding: 0.4rem 0.6rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: #a00d25;
+	}
+	.boton {
+		display: block;
+		width: 100%;
+		margin-top: 0.4rem;
+		border-radius: 0.3rem;
+		background: var(--azul);
+		padding: 0.8rem 1rem;
+		text-align: center;
+		font: inherit;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: white;
+		box-shadow: 0 4px 0 var(--azul-osc);
+	}
+	.boton:active {
+		translate: 0 3px;
+		box-shadow: 0 1px 0 var(--azul-osc);
+	}
+	.boton:disabled {
+		opacity: 0.6;
+	}
+	.volver {
+		align-self: flex-start;
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-decoration: underline;
+		text-underline-offset: 4px;
+		color: var(--azul);
+	}
+
+	/* Sello */
+	.sello {
+		position: absolute;
+		top: 38%;
+		left: 50%;
+		z-index: 5;
+		translate: -50% -50%;
+		rotate: -14deg;
+		border: 5px double currentColor;
+		border-radius: 0.5rem;
+		padding: 0.2rem 0.9rem;
+		font-size: 2.2rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		pointer-events: none;
+		mix-blend-mode: multiply;
+		animation: sepe-estampa 0.4s cubic-bezier(0.2, 1.6, 0.5, 1) both;
+	}
+	.sello.si {
+		color: #1f7a32;
+	}
+	.sello.no {
+		color: #c8102e;
+	}
+
+	/* Terminal del sistema */
+	.terminal {
+		border: 10px solid #d8d3c4;
+		border-radius: 0.6rem;
+		background: #0c140f;
+		padding: 0.8rem;
+		color: var(--verde-term);
+		box-shadow:
+			inset 0 0 30px #4dff8b22,
+			0 8px 18px #0003;
+		text-shadow: 0 0 6px #4dff8b88;
+		animation: sepe-entra 0.35s ease-out;
+	}
+	.terminal-cab {
+		border-bottom: 1px dashed #4dff8b66;
+		padding-bottom: 0.4rem;
+		font-size: 0.65rem;
+	}
+	.terminal-linea {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.6rem;
+		font-size: 0.9rem;
+	}
+	.terminal-campo {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		color: inherit;
+		caret-color: var(--verde-term);
+		text-transform: uppercase;
+	}
+	.terminal-campo:focus {
+		outline: none;
+	}
+	.terminal-lista {
+		margin-top: 0.6rem;
+	}
+	.terminal-fila {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.55rem 0.3rem;
+		text-align: left;
+		font-size: 0.85rem;
+		text-transform: uppercase;
+		color: inherit;
+	}
+	.terminal-fila:active,
+	.terminal-fila:focus-visible {
+		background: var(--verde-term);
+		color: #0c140f;
+		text-shadow: none;
+		outline: none;
+	}
+	.terminal-accion {
+		flex-shrink: 0;
+		font-size: 0.7rem;
+	}
+	.terminal-nada {
+		margin-top: 0.6rem;
+		font-size: 0.75rem;
+	}
+
+	/* Entrega */
+	.entrega {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.7rem;
+	}
+	.entrega .papel-cab {
+		align-self: center;
+	}
+	.carnet {
+		margin: 0 auto;
+		width: 78%;
+		animation: sepe-sale 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+	}
+
+	@keyframes sepe-entra {
+		from {
+			opacity: 0;
+			transform: translateY(0.8rem);
+		}
+	}
+	@keyframes sepe-imprime {
+		from {
+			clip-path: inset(0 0 100% 0);
+		}
+		to {
+			clip-path: inset(0 0 0 0);
+		}
+	}
+	@keyframes sepe-latido {
+		50% {
+			scale: 1.05;
+		}
+	}
+	@keyframes sepe-parpadeo {
+		50% {
+			opacity: 0.2;
+		}
+	}
+	@keyframes sepe-rebote {
+		40% {
+			transform: translateY(-0.6rem);
+		}
+	}
+	@keyframes sepe-tiembla {
+		20%,
+		60% {
+			transform: translateX(-8px);
+		}
+		40%,
+		80% {
+			transform: translateX(8px);
+		}
+	}
+	@keyframes sepe-temblor {
+		25% {
+			transform: translate(2px, -3px);
+		}
+		50% {
+			transform: translate(-3px, 2px);
+		}
+		75% {
+			transform: translate(2px, 2px);
+		}
+	}
+	@keyframes sepe-estampa {
+		from {
+			opacity: 0;
+			scale: 3;
+		}
+		to {
+			opacity: 0.9;
+			scale: 1;
+		}
+	}
+	@keyframes sepe-sale {
+		from {
+			opacity: 0;
+			transform: translateY(-4rem) scale(0.6) rotate(-8deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sepe *,
+		.sepe {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+		}
+	}
+</style>
+
 <script>
 	import { buscarInvitados, comprobarPin, entrarConCodigo, registrar, type Coincidencia } from './datos';
 	import { guardarSesion, leerSesion } from './sesion';
-	import { hayBD } from '../../lib/rpc';
-	import { guardarAsistencia, leerCampos } from '../rsvp/datos';
-	import { obtenerAlbum } from '../cromos/datos';
+	import { obtenerAlbum, conFoto } from '../cromos/datos';
 	import { abrirSobre } from '../cromos/sobre';
+	import { pintarCromo } from '../cromos/pintar';
 	import type { Cromo } from '../cromos/tipos';
 
-	// Ya registrado en este móvil: directo a la fiesta
+	// Ya registrado en este dispositivo: directo a la fiesta
 	if (leerSesion()) location.replace('/');
 
 	const raiz = document.querySelector<HTMLElement>('[data-registro]')!;
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => raiz.querySelector<T>(sel)!;
-	const pasos = ['buscar', 'datos', 'revelar'] as const;
+	type Pose = 'aburrida' | 'papeles' | 'reloj' | 'denegado' | 'aprobado' | 'saluda';
+	const ranas = JSON.parse(raiz.dataset.ranas!) as Record<Pose, string>;
+	const reducido = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, reducido() ? Math.min(ms, 150) : ms));
+	const vibrar = (patron: number | number[]) => navigator.vibrate?.(patron);
 
-	/** `codigo` no cuenta en la barra de progreso: es la entrada de quien ya se registró en otro dispositivo */
-	function irA(paso: (typeof pasos)[number] | 'codigo') {
-		raiz.querySelectorAll<HTMLElement>('[data-paso]').forEach((el) => (el.hidden = el.dataset.paso !== paso));
-		const n = paso === 'codigo' ? 0 : pasos.indexOf(paso);
-		raiz.querySelectorAll('[data-marca] span').forEach((barra, i) => {
-			barra.classList.toggle('bg-amarillo', i <= n);
-			barra.classList.toggle('bg-crema/25', i > n);
-		});
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+	// "¡Ding!" de la pantalla de turnos (sin archivos: dos notas con un oscilador)
+	let audio: AudioContext | null = null;
+	function ding(veces = 1) {
+		try {
+			audio ??= new AudioContext();
+			for (let i = 0; i < veces; i++) {
+				const t = audio.currentTime + i * 0.28;
+				for (const [freq, retraso] of [
+					[880, 0],
+					[660, 0.12],
+				]) {
+					const osc = audio.createOscillator();
+					const vol = audio.createGain();
+					osc.frequency.value = freq;
+					vol.gain.setValueAtTime(0.0001, t + retraso);
+					vol.gain.exponentialRampToValueAtTime(0.15, t + retraso + 0.01);
+					vol.gain.exponentialRampToValueAtTime(0.0001, t + retraso + 0.35);
+					osc.connect(vol).connect(audio.destination);
+					osc.start(t + retraso);
+					osc.stop(t + retraso + 0.4);
+				}
+			}
+		} catch {
+			// sin audio: no pasa nada
+		}
 	}
 
-	// --- Paso 1a: PIN de la fiesta (se puede traer en el enlace: /registro?pin=…) ---
-	const formPin = $<HTMLFormElement>('[data-bloque-pin]');
+	// ── Rana y bocadillo ──
+	const rana = $<HTMLImageElement>('[data-rana]');
+	const bocadillo = $('[data-bocadillo]');
+	let pose: Pose = 'aburrida';
+	let escribiendo = 0;
+	async function habla(nueva: Pose, texto: string) {
+		if (nueva !== pose) {
+			pose = nueva;
+			rana.src = ranas[nueva];
+			rana.classList.remove('cambia');
+			void rana.offsetWidth;
+			rana.classList.add('cambia');
+		}
+		const turno = ++escribiendo;
+		if (reducido()) {
+			bocadillo.textContent = texto;
+			return;
+		}
+		bocadillo.textContent = '';
+		for (const letra of texto) {
+			if (turno !== escribiendo) return;
+			bocadillo.textContent += letra;
+			await new Promise((r) => setTimeout(r, 18));
+		}
+	}
+
+	// ── Pantalla de turnos ──
+	const turnos = $('.turnos');
+	function llamar(numero: number, ventanilla: number) {
+		$('[data-turno]').textContent = `A-${String(numero).padStart(3, '0')}`;
+		$('[data-ventanilla]').textContent = `V-${ventanilla}`;
+		turnos.classList.remove('llama');
+		void turnos.offsetWidth;
+		turnos.classList.add('llama');
+	}
+
+	// ── Sello (APROBADO / DENEGADO) ──
+	async function sellar(papel: HTMLElement, si: boolean) {
+		const sello = papel.querySelector<HTMLElement>('[data-sello]')!;
+		sello.textContent = si ? 'APROBADO' : 'DENEGADO';
+		sello.className = `sello ${si ? 'si' : 'no'}`;
+		sello.hidden = false;
+		raiz.classList.remove('temblor');
+		void raiz.offsetWidth;
+		raiz.classList.add('temblor');
+		if (!si) {
+			papel.classList.remove('tiembla');
+			void papel.offsetWidth;
+			papel.classList.add('tiembla');
+		}
+		vibrar(si ? [40, 30, 90] : [90, 50, 90]);
+		await esperar(si ? 1100 : 1300);
+		if (!si) sello.hidden = true;
+	}
+
+	// ── Escenas y trámites ──
+	function escena(nombre: 'sala' | 'ventanilla') {
+		raiz.querySelectorAll<HTMLElement>('[data-escena]').forEach((e) => (e.hidden = e.dataset.escena !== nombre));
+		window.scrollTo({ top: 0, behavior: reducido() ? 'auto' : 'smooth' });
+	}
+	type Tramite = 'cita' | 'buscar' | 'impreso' | 'duplicado' | 'entrega';
+	function tramite(nombre: Tramite) {
+		raiz.querySelectorAll<HTMLElement>('[data-tramite]').forEach((e) => {
+			e.hidden = e.dataset.tramite !== nombre;
+			const sello = e.querySelector<HTMLElement>('[data-sello]');
+			if (sello) sello.hidden = true;
+		});
+		// Los papeles largos quedan bajo la ventanilla: en el móvil se baja hasta el bocadillo para verlos
+		if (nombre !== 'cita' && nombre !== 'buscar') bocadillo.scrollIntoView({ behavior: reducido() ? 'auto' : 'smooth', block: 'start' });
+	}
+
+	// ───── Sala de espera ─────
+	const botonNumero = $<HTMLButtonElement>('[data-coger-numero]');
+	const saltar = $<HTMLButtonElement>('[data-saltar]');
+	let enVentanilla = false;
+
+	async function aVentanilla() {
+		if (enVentanilla) return;
+		enVentanilla = true;
+		llamar(67, 3);
+		ding(2);
+		vibrar([50, 40, 50]);
+		escena('ventanilla');
+		tramite('cita');
+		const pinEnlace = new URLSearchParams(location.search).get('pin');
+		await habla('aburrida', 'Siguiente… ¿Tiene cita previa? Dígame el código.');
+		if (pinEnlace) {
+			campoPin.value = pinEnlace;
+			void validarPin(pinEnlace);
+		} else if (matchMedia('(pointer: fine)').matches) campoPin.focus();
+	}
+
+	botonNumero.addEventListener('click', async () => {
+		botonNumero.disabled = true;
+		$('[data-ticket]').hidden = false;
+		vibrar(30);
+		$('[data-aviso-sala]').textContent = 'Imprimiendo su resguardo…';
+		await esperar(1500);
+		saltar.hidden = false;
+		$('[data-aviso-sala]').textContent = 'Espere a ser llamado. Hay 3 personas delante.';
+		for (const [n, v] of [
+			[64, 1],
+			[65, 2],
+			[66, 1],
+		]) {
+			await esperar(1300);
+			if (enVentanilla) return;
+			llamar(n, v);
+			ding();
+			$('[data-delante]').textContent = String(66 - n);
+			$('[data-aviso-sala]').textContent = n === 66 ? '¡El siguiente es usted!' : `Personas delante: ${66 - n}`;
+		}
+		await esperar(1300);
+		void aVentanilla();
+	});
+	saltar.addEventListener('click', () => void aVentanilla());
+
+	// ───── Cita previa (PIN) ─────
+	const formCita = $<HTMLFormElement>('[data-tramite="cita"]');
 	const campoPin = $<HTMLInputElement>('[data-pin]');
 	let pin = '';
 
 	async function validarPin(valor: string) {
-		const ok = await comprobarPin(valor);
-		$('[data-pin-error]').hidden = ok;
-		if (!ok) return;
+		const boton = formCita.querySelector<HTMLButtonElement>('button[type=submit]')!;
+		boton.disabled = true;
+		const ok = await comprobarPin(valor).catch(() => false);
+		boton.disabled = false;
+		if (!ok) {
+			void habla('denegado', 'Le falta un papel. Vuelva usted mañana… o mire bien el código del mensaje.');
+			await sellar(formCita, false);
+			campoPin.select();
+			return;
+		}
 		pin = valor.trim();
-		formPin.hidden = true;
-		$('[data-bloque-buscar]').hidden = false;
+		await sellar(formCita, true);
+		tramite('buscar');
+		void habla('papeles', 'Muy bien. A ver… nombre del solicitante.');
 		buscador.focus();
 	}
-
-	formPin.addEventListener('submit', (ev) => {
+	formCita.addEventListener('submit', (ev) => {
 		ev.preventDefault();
-		validarPin(campoPin.value);
+		void validarPin(campoPin.value);
 	});
 
-	// --- Paso 1b: buscar ---
+	// ───── Buscar en el sistema ─────
 	const buscador = $<HTMLInputElement>('[data-buscador]');
 	const resultados = $<HTMLUListElement>('[data-resultados]');
-	const plantilla = document.querySelector<HTMLTemplateElement>('[data-plantilla-resultado]')!.content.firstElementChild!;
+	const plantilla = raiz.querySelector<HTMLTemplateElement>('[data-plantilla-resultado]')!.content.firstElementChild!;
 	let elegido: Coincidencia | null = null;
 	let espera: number | undefined;
+	let busqueda = 0;
 
 	function pintarResultados(lista: Coincidencia[]) {
 		resultados.replaceChildren(
 			...lista.map((inv) => {
 				const li = plantilla.cloneNode(true) as HTMLLIElement;
-				const boton = li.querySelector('button')!;
 				li.querySelector('[data-nombre]')!.textContent = inv.nombre;
-				if (inv.registrado) {
-					// Con BD, quien ya se registró puede entrar aquí también con un código; sin BD no hay códigos
-					if (hayBD) li.querySelector('[data-accion]')!.textContent = 'Ya registrado · Entrar →';
-					else {
-						boton.disabled = true;
-						li.querySelector('[data-accion]')!.textContent = 'Ya registrado';
-					}
-				}
-				boton.addEventListener('click', () => {
-					elegido = inv;
-					if (inv.registrado) {
-						$('[data-nombre-codigo]').textContent = inv.nombre.split(' ')[0];
-						$('[data-error-codigo]').hidden = true;
-						irA('codigo');
-						$<HTMLInputElement>('[data-codigo]').focus();
-						return;
-					}
-					$('[data-nombre-elegido]').textContent = inv.nombre.split(' ')[0];
-					irA('datos');
-				});
+				li.querySelector('[data-accion]')!.textContent = inv.registrado ? '[DUPLICADO]' : '[SELECCIONAR]';
+				li.querySelector('button')!.addEventListener('click', () => elegir(inv));
 				return li;
 			}),
 		);
 		$('[data-sin-resultados]').hidden = lista.length > 0 || buscador.value.trim().length < 2;
 	}
-
 	buscador.addEventListener('input', () => {
 		clearTimeout(espera);
-		espera = window.setTimeout(async () => pintarResultados(await buscarInvitados(pin, buscador.value)), 200);
+		const n = ++busqueda;
+		espera = window.setTimeout(async () => {
+			const lista = await buscarInvitados(pin, buscador.value).catch(() => []);
+			if (n === busqueda) pintarResultados(lista);
+		}, 220);
 	});
 
-	const pinEnlace = new URLSearchParams(location.search).get('pin');
-	if (pinEnlace) {
-		campoPin.value = pinEnlace;
-		validarPin(pinEnlace);
+	function elegir(inv: Coincidencia) {
+		elegido = inv;
+		const nombre = inv.nombre.split(' ')[0];
+		if (inv.registrado) {
+			$('[data-nombre-codigo]').textContent = inv.nombre;
+			$('[data-error-codigo]').hidden = true;
+			tramite('duplicado');
+			void habla('reloj', `¿${nombre} otra vez? Ya tiene expediente. Para un duplicado necesito el código de su otro dispositivo.`);
+			return;
+		}
+		$('[data-nombre-impreso]').textContent = inv.nombre;
+		formImpreso.reset();
+		tramite('impreso');
+		pintarPrevia();
+		void habla('papeles', `${nombre}… Rellene el Modelo 067. Con letra clara, por favor.`);
 	}
 
-	// --- Paso 2: datos ---
-	const form = $<HTMLFormElement>('[data-paso="datos"]');
-	$('[data-atras]').addEventListener('click', () => irA('buscar'));
+	// ───── Modelo 067 ─────
+	const formImpreso = $<HTMLFormElement>('[data-tramite="impreso"]');
+	const previa = formImpreso.querySelector<HTMLElement>('[data-cromo]')!;
+	const campoImpreso = (n: string) => formImpreso.elements.namedItem(n) as HTMLInputElement;
 
-	form.addEventListener('submit', async (ev) => {
+	function pintarPrevia() {
+		if (!elegido) return;
+		pintarCromo(previa, {
+			id: elegido.id,
+			numero: 67,
+			nombre: elegido.nombre,
+			apodo: campoImpreso('apodo').value.trim() || 'Tu alias',
+			frase: campoImpreso('frase').value.trim() || null,
+			foto: null,
+		});
+	}
+	let pintando: number | undefined;
+	formImpreso.addEventListener('input', () => {
+		clearTimeout(pintando);
+		pintando = window.setTimeout(pintarPrevia, 150);
+	});
+	$('[data-atras]').addEventListener('click', () => {
+		tramite('buscar');
+		void habla('papeles', 'Ande, búsquese bien.');
+	});
+
+	formImpreso.addEventListener('submit', async (ev) => {
 		ev.preventDefault();
 		if (!elegido) return;
-		const datos = new FormData(form);
-		const asistencia = leerCampos(form);
-		const texto = (nombre: string) => String(datos.get(nombre) ?? '').trim() || null;
+		const boton = (ev as SubmitEvent).submitter as HTMLButtonElement | null;
 		const error = $('[data-error]');
 		error.hidden = true;
-
+		if (boton) boton.disabled = true;
+		void habla('aburrida', 'Un momento, que esto va al sistema…');
 		try {
 			const { clave, cromo } = await registrar(pin, elegido.id, {
-				apodo: texto('apodo')!,
-				frase: texto('frase'),
-				...asistencia,
+				apodo: campoImpreso('apodo').value.trim(),
+				frase: campoImpreso('frase').value.trim() || null,
 			});
 			guardarSesion({ clave, id: elegido.id, nombre: elegido.nombre });
-			if (!hayBD) await guardarAsistencia(asistencia); // con BD ya la guarda `registrar`
-			prepararSobre(cromo, asistencia.asiste);
-			irA('revelar');
+			void habla('aprobado', '¡Tramitado! Ha quedado usted dado de alta en el Trío Feliz.');
+			await sellar(formImpreso, true);
+			await entregar(cromo);
 		} catch (e) {
 			const codigo = e instanceof Error ? e.message : '';
 			error.textContent =
 				codigo === 'ya-registrado'
-					? 'Este nombre ya está registrado. Si no has sido tú, habla con los organizadores.'
+					? 'Este expediente ya está dado de alta. Si no ha sido usted, hable con los organizadores.'
 					: codigo === 'pin'
-						? 'El código de la fiesta no es correcto. Vuelve a empezar y míralo en el mensaje.'
+						? 'Su cita previa ha caducado. Vuelva a empezar.'
 						: codigo === 'datos'
-							? 'Revisa los datos: el apodo es obligatorio y los textos no pueden ser tan largos.'
-							: 'No se ha podido registrar. Comprueba la conexión e inténtalo otra vez.';
+							? 'Impreso mal cumplimentado: el alias es obligatorio y los textos no pueden ser tan largos.'
+							: 'Se ha caído el sistema. Compruebe la conexión e inténtelo otra vez.';
 			error.hidden = false;
+			void habla('denegado', 'Pues así no se lo puedo tramitar.');
+			await sellar(formImpreso, false);
+		} finally {
+			if (boton) boton.disabled = false;
 		}
 	});
 
-	// --- Ya registrado: entrar con código ---
-	const formCodigo = $<HTMLFormElement>('[data-paso="codigo"]');
-	$('[data-atras-codigo]').addEventListener('click', () => irA('buscar'));
-	formCodigo.addEventListener('submit', async (ev) => {
+	// ───── Duplicado (otro dispositivo) ─────
+	const formDuplicado = $<HTMLFormElement>('[data-tramite="duplicado"]');
+	$('[data-atras-codigo]').addEventListener('click', () => {
+		tramite('buscar');
+		void habla('papeles', 'Ande, búsquese bien.');
+	});
+	formDuplicado.addEventListener('submit', async (ev) => {
 		ev.preventDefault();
 		const error = $('[data-error-codigo]');
 		const boton = (ev as SubmitEvent).submitter as HTMLButtonElement | null;
@@ -332,35 +1138,41 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 		try {
 			const entrada = await entrarConCodigo(pin, $<HTMLInputElement>('[data-codigo]').value);
 			guardarSesion({ clave: entrada.clave, id: entrada.id, nombre: entrada.nombre });
+			void habla('aprobado', 'Duplicado expedido. Pase, pase.');
+			await sellar(formDuplicado, true);
 			location.replace('/');
 		} catch (e) {
 			const codigo = e instanceof Error ? e.message : '';
 			error.textContent =
 				codigo === 'codigo'
-					? 'Ese código no vale: puede que haya caducado (duran 10 minutos) o que ya se usara. Pide otro.'
+					? 'Código no válido: caduca a los 10 minutos y solo sirve una vez. Pida otro.'
 					: codigo === 'pin'
-						? 'El código de la fiesta no es correcto. Vuelve a empezar.'
-						: 'No se ha podido entrar. Comprueba la conexión e inténtalo otra vez.';
+						? 'Su cita previa ha caducado. Vuelva a empezar.'
+						: 'Se ha caído el sistema. Compruebe la conexión e inténtelo otra vez.';
 			error.hidden = false;
+			void habla('denegado', 'Ese código no me consta.');
+			await sellar(formDuplicado, false);
 			if (boton) boton.disabled = false;
 		}
 	});
 
-	// --- Paso 3: abrir el sobre ---
-	async function prepararSobre(cromo: Cromo, viene: boolean) {
-		$('[data-viene]').hidden = !viene;
-		$('[data-no-viene]').hidden = viene;
-		$('[data-entrar]').hidden = viene; // quien viene entra después de abrir el sobre
-		if (!viene) return;
+	// ───── Entrega del carnet y sobre ─────
+	async function entregar(cromo: Cromo) {
+		const propio = conFoto(cromo);
+		tramite('entrega');
+		pintarCromo($('[data-carnet] [data-cromo]'), propio);
+		void habla('saluda', 'Aquí tiene su carnet. Y un sobre de cromos, que hoy estamos generosos.');
+		vibrar(30);
 
-		const { cromos } = await obtenerAlbum();
+		const { cromos } = await obtenerAlbum().catch(() => ({ cromos: [] as Cromo[] }));
 		// El suyo siempre va dentro, aunque la lista aún no lo traiga
-		const todos = cromos.some((c) => c.id === cromo.id) ? cromos : [...cromos, cromo];
-		$('[data-abrir-sobre]').addEventListener(
+		const todos = cromos.some((c) => c.id === propio.id) ? cromos : [...cromos, propio];
+		const abrir = $<HTMLButtonElement>('[data-abrir-sobre]');
+		abrir.addEventListener(
 			'click',
 			async () => {
-				await abrirSobre(todos, { propio: cromo.id });
-				$('[data-viene]').hidden = true;
+				await abrirSobre(todos, { propio: propio.id });
+				abrir.hidden = true;
 				$('[data-entrar]').hidden = false;
 			},
 			{ once: true },
