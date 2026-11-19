@@ -1,7 +1,7 @@
 // Cada página tiene su estética. Los colores y tipografías de cada tema están en
 // src/styles/global.css (:root[data-tema='…']); aquí, qué tema va en cada ruta y sus textos.
 
-export type Tema = 'estanco' | 'cartas' | 'riverland' | 'charca' | 'catan';
+export type Tema = 'estanco' | 'cartas' | 'riverland' | 'charca' | 'catan' | 'tuenti';
 
 export const TEMAS: Record<Tema, { colorNavegador: string; pie: string }> = {
 	estanco: { colorNavegador: '#742434', pie: 'Trio Feliz · 4ª edición · Hecho a mano, sin gluten y con poca vergüenza' },
@@ -9,16 +9,17 @@ export const TEMAS: Record<Tema, { colorNavegador: string; pie: string }> = {
 	charca: { colorNavegador: '#12402c', pie: 'Trioland · Trio Feliz 4ª edición · No se admiten ranas en la piscina' },
 	catan: { colorNavegador: '#6b4423', pie: 'Trio Feliz · Isla de Trioland · Se admiten trueques, no se admiten ladrones' },
 	riverland: { colorNavegador: '#f53fc9', pie: 'Trio Feliz Fest · 4ª edición · Pulsera obligatoria · Prohibido entrar con nevera' },
+	tuenti: { colorNavegador: '#3b6ea5', pie: 'triofeliz © 2008 · Acerca de · Privacidad · Condiciones de uso · Te has quedado sin invitaciones' },
 };
 
-// Inicio: la charca (Trioland). Juegos: la isla de Catan. Rutas sin tema propio (registro, fotos, guía de estilo…) se quedan con el del estanco.
-// Fotos: pendiente de decidir.
+// Inicio: la charca (Trioland). Juegos: la isla de Catan. Fotos: Tuenti. Rutas sin tema propio (registro, guía de estilo…) se quedan con el del estanco.
 const PORRUTA: Record<string, Tema> = {
 	'/': 'charca',
 	'/participantes': 'cartas',
 	'/estanco': 'estanco',
 	'/canciones': 'riverland',
 	'/juegos': 'catan',
+	'/fotos': 'tuenti',
 };
 
 export const temaDeRuta = (ruta: string): Tema => PORRUTA[ruta.replace(/\/$/, '') || '/'] ?? 'estanco';
