@@ -1,44 +1,64 @@
 ---
+import { Image } from 'astro:assets';
 import productos from '../../data/estanco.json';
 import fiesta from '../../data/fiesta.json';
 import Advertencia from '../common/Advertencia.astro';
-import { MAX_POR_PRODUCTO, euros } from './datos';
+import { euros } from './datos';
 
-// Estanco: productos reales con precio. Cada invitado reserva hasta MAX_POR_PRODUCTO de cada uno
-// y el estanquero lo lleva a la fiesta. No hay pago online: se paga allí.
+// Estanco de Purias: productos reales con precio de estanco. Cada invitado llena su carrito (hasta
+// MAX_POR_PRODUCTO de cada producto) y confirma la reserva; el estanquero lo lleva a la fiesta y allí se paga.
 const categorias = [
 	['todo', 'Todo'],
 	['cigarrillos', 'Cigarrillos'],
 	['liar', 'Liar'],
 	['puros', 'Puros'],
+	['calentado', 'Calentado'],
 	['accesorios', 'Accesorios'],
 ];
 
-const cierre = new Intl.DateTimeFormat('es-ES', {
-	weekday: 'long',
-	day: 'numeric',
-	month: 'long',
-	hour: '2-digit',
-	minute: '2-digit',
-	timeZone: fiesta.zonaHoraria,
-}).format(new Date(fiesta.estanco.cierreReservas));
+// Foto de catálogo del producto en src/assets/estanco/<slug>.(jpg|png|webp). Solo se venden los que tienen foto.
+const fotos = import.meta.glob<{ default: ImageMetadata }>('/src/assets/estanco/*.{jpg,jpeg,png,webp}', { eager: true });
+const fotoDe = (slug: string) => {
+	const clave = Object.keys(fotos).find((ruta) => ruta.startsWith(`/src/assets/estanco/${slug}.`));
+	return clave ? fotos[clave].default : undefined;
+};
+const catalogo = productos.flatMap((p) => {
+	const foto = fotoDe(p.slug);
+	return foto ? [{ ...p, foto }] : [];
+});
+
+// Estanco real de Purias (expendeduría 300311 en la lista de Hacienda)
+const MAPA = 'Estanco, Purias, Lorca, Murcia';
+const mapaEmbed = `https://maps.google.com/maps?q=${encodeURIComponent(MAPA)}&z=15&output=embed`;
+const mapaEnlace = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAPA)}`;
+
+const precio = (n: number) => (n === 0 ? 'Gratis' : euros(n));
+
 ---
 
 <div data-estanco data-cierre={fiesta.estanco.cierreReservas}>
-	<p data-aviso-abierto class="mb-4 text-sm font-bold text-amarillo-claro">⏳ Reservas abiertas hasta el {cierre}</p>
+	<!-- Rótulo -->
+	<div class="relative mb-5 rounded-lg border-4 border-amarillo bg-granate-oscuro px-4 py-3 text-center shadow-chapa">
+		<p class="rotulo text-3xl text-amarillo">Tabacos Purias</p>
+		<p class="mt-1 text-xs font-bold text-crema/80">Purias · Lorca (Murcia) · Envío gratis a la fiesta</p>
+	</div>
+
 	<p data-aviso-cerrado hidden class="mb-4 rounded border-2 border-amarillo px-4 py-3 text-center text-sm font-bold">
-		🔒 Reservas cerradas: el estanquero ya ha hecho el pedido. Lo que tengas reservado te lo lleva a la fiesta.
+		🔒 Reservas cerradas: el estanquero ya ha hecho el pedido en Purias. Lo que tengas reservado te lo lleva a la fiesta.
 	</p>
 
 	<!-- Filtros -->
-	<div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar productos">
+	<div
+		data-filtros
+		class="-mx-4 flex snap-x scroll-px-4 gap-1.5 overflow-x-auto py-1 pl-4 pr-8 [mask-image:linear-gradient(to_right,transparent,#000_1rem,#000_calc(100%-2rem),transparent)] [scrollbar-width:none] sm:mx-0 sm:px-0 sm:[mask-image:none] [&::-webkit-scrollbar]:hidden"
+		role="group" aria-label="Filtrar productos">
 		{
 			categorias.map(([valor, texto], i) => (
 				<button
 					type="button"
 					data-filtro={valor}
 					aria-pressed={i === 0 ? 'true' : 'false'}
-					class="shrink-0 rounded-full border-2 border-amarillo/50 px-4 py-2 text-sm font-bold aria-pressed:border-amarillo aria-pressed:bg-amarillo aria-pressed:text-granate-oscuro"
+					class="shrink-0 snap-start rounded-full border-2 border-amarillo/50 px-3 py-1.5 text-[0.8rem] font-bold transition-colors aria-pressed:border-amarillo aria-pressed:bg-amarillo aria-pressed:text-granate-oscuro"
 				>
 					{texto}
 				</button>
@@ -49,135 +69,300 @@ const cierre = new Intl.DateTimeFormat('es-ES', {
 	<!-- Productos -->
 	<ul class="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
 		{
-			productos.map((p) => (
-				<li data-producto={p.slug} data-categoria={p.categoria} data-precio={p.precio} data-nombre={`${p.marca} ${p.nombre}`}>
-					<article class="rounded-lg border-2 border-amarillo bg-granate-oscuro p-1.5 shadow-chapa">
-						<div
-							class="relative flex aspect-[4/5] flex-col items-center justify-center rounded-sm px-2 text-center"
-							style={`background:${p.fondo};color:${p.texto}`}
-						>
-							<p class:list={['rotulo leading-none', p.marca.replace(' ', '').length > 9 && !p.marca.includes(' ') ? 'text-sm' : 'text-lg']}>{p.marca}</p>
-							<p class="mt-1.5 text-[0.7rem] font-bold leading-tight opacity-90">{p.nombre}</p>
-							<p class="rotulo mt-4 text-2xl">{euros(p.precio)}</p>
-							<span
-								data-mis-unidades
-								hidden
-								class="absolute -right-2 -top-2 grid size-8 rotate-12 place-items-center rounded-full bg-amarillo text-sm font-black text-granate-oscuro shadow-chapa-amarillo"
-							/>
-						</div>
-						<Advertencia class="mt-1.5 grid min-h-9 place-items-center !px-1.5 !py-1 !text-[0.55rem]">{p.advertencia}</Advertencia>
-					</article>
+			catalogo.map((p) => {
+				const nombre = `${p.marca} ${p.nombre}`;
+				return (
+					<li data-producto={p.slug} data-categoria={p.categoria} data-precio={p.precio} data-nombre={nombre} class="flex flex-col">
+						<article class="rounded-lg border-2 border-amarillo bg-granate-oscuro p-1.5 shadow-chapa">
+							<div class="relative aspect-[4/5] overflow-hidden rounded-sm bg-white">
+								<Image src={p.foto} alt={nombre} widths={[240, 480]} sizes="(min-width: 1024px) 18vw, (min-width: 640px) 30vw, 45vw" class="size-full object-contain p-3" />
+								<span
+									data-en-carrito
+									hidden
+									class="absolute right-1 top-1 grid size-8 rotate-12 place-items-center rounded-full bg-amarillo text-sm font-black text-granate-oscuro shadow-chapa-amarillo"
+								/>
+							</div>
+							<Advertencia class="mt-1.5 grid min-h-9 place-items-center !px-1.5 !py-1 !text-[0.55rem]">{p.advertencia}</Advertencia>
+						</article>
 
-					<div class="mt-2 flex items-center justify-between gap-1">
-						<button type="button" data-menos class="size-11 rounded bg-crema/15 text-xl font-black active:bg-amarillo active:text-granate-oscuro disabled:opacity-30" aria-label={`Quitar ${p.marca}`}>
-							−
-						</button>
-						<span data-cantidad class="rotulo text-2xl text-amarillo" aria-live="polite">0</span>
-						<button
-							type="button"
-							data-mas
-							class="size-11 rounded bg-amarillo text-xl font-black text-granate-oscuro active:translate-y-0.5 disabled:bg-crema/15 disabled:text-crema/40"
-							aria-label={`Añadir ${p.marca}`}
-						>
-							+
-						</button>
-					</div>
-					<p class="mt-1 text-center text-xs text-crema/75">
-						🔥 <span data-total>0</span> reservadas
-					</p>
-				</li>
-			))
+						<p class="mt-2 text-sm font-bold leading-tight">{nombre}</p>
+						<p class="rotulo mt-2 text-2xl text-amarillo">
+							{precio(p.precio)}
+							{p.aprox && p.precio > 0 && <span class="ml-1 align-middle font-sans text-[0.6rem] font-bold normal-case tracking-normal text-crema/60">aprox.</span>}
+						</p>
+
+						<div class="mt-auto pt-2">
+							<button
+								type="button"
+								data-anadir
+								class="h-11 w-full rounded bg-amarillo text-sm font-black text-granate-oscuro shadow-chapa-amarillo active:translate-y-0.5 active:shadow-none disabled:bg-crema/15 disabled:text-crema/40 disabled:shadow-none"
+							>
+								Añadir 🛒
+							</button>
+							<div data-paso hidden class="flex items-center justify-between gap-1">
+								<button type="button" data-menos class="size-11 rounded bg-crema/15 text-xl font-black active:bg-amarillo active:text-granate-oscuro disabled:opacity-30" aria-label={`Quitar ${nombre}`}>
+									−
+								</button>
+								<span data-cantidad class="rotulo text-2xl text-amarillo" aria-live="polite">0</span>
+								<button
+									type="button"
+									data-mas
+									class="size-11 rounded bg-amarillo text-xl font-black text-granate-oscuro active:translate-y-0.5 disabled:bg-crema/15 disabled:text-crema/40"
+									aria-label={`Añadir otro ${nombre}`}
+								>
+									+
+								</button>
+							</div>
+							<p class="mt-1 text-center text-xs text-crema/75">
+								🔥 <span data-total>0</span> reservadas
+							</p>
+						</div>
+					</li>
+				);
+			})
 		}
 	</ul>
 
-	<p class="mt-6 text-center text-xs text-crema/70">
-		Máximo {MAX_POR_PRODUCTO} de cada producto por persona. Precios orientativos: se paga en la fiesta.
-	</p>
+	<!-- Mapa del estanco -->
+	<section class="mx-auto mt-8 max-w-md rounded-lg border-2 border-amarillo bg-granate-oscuro p-2 shadow-chapa" aria-labelledby="estanco-mapa">
+		<div class="flex items-center justify-between gap-2 px-1 pb-2">
+			<p id="estanco-mapa" class="truncate text-sm font-black text-amarillo">📍 El estanco, en Purias</p>
+			<a href={mapaEnlace} target="_blank" rel="noopener" class="shrink-0 rounded bg-amarillo px-3 py-1.5 text-xs font-black text-granate-oscuro active:translate-y-0.5">Abrir en Maps ↗</a>
+		</div>
+		<iframe
+			src={mapaEmbed}
+			title="Mapa del estanco de Purias en Google Maps"
+			loading="lazy"
+			referrerpolicy="no-referrer-when-downgrade"
+			class="block h-48 w-full rounded-sm border-0"
+		></iframe>
+	</section>
 
-	<!-- Resumen fijo abajo -->
-	<details data-reserva hidden class="group sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] mt-6 rounded-lg bg-amarillo text-granate-oscuro shadow-chapa">
-		<summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+	<!-- Barra del carrito, fija abajo -->
+	<button
+		type="button"
+		data-abrir-carrito
+		hidden
+		class="sticky bottom-[calc(0.75rem+env(safe-area-inset-bottom))] mt-6 flex w-full items-center justify-between gap-3 rounded-lg bg-amarillo px-4 py-3 text-left text-granate-oscuro shadow-chapa"
+	>
+		<span class="flex items-center gap-3">
+			<span class="relative text-2xl" aria-hidden="true">
+				🛒<span data-b-unidades class="absolute -right-2 -top-1 grid size-5 place-items-center rounded-full bg-granate text-[0.65rem] font-black text-amarillo"></span>
+			</span>
 			<span>
-				<span class="block text-[0.65rem] font-black uppercase tracking-[0.2em]">Tu reserva</span>
-				<span data-r-unidades class="font-bold"></span>
+				<span data-b-estado class="block text-[0.65rem] font-black uppercase tracking-[0.2em]"></span>
+				<span class="font-bold">Ver carrito</span>
 			</span>
-			<span class="flex items-center gap-2">
-				<span data-r-total class="rotulo text-2xl"></span>
-				<span class="text-sm transition-transform group-open:rotate-180" aria-hidden="true">▲</span>
-			</span>
-		</summary>
-		<ul data-r-lista class="divide-y-2 divide-dashed divide-granate/20 border-t-2 border-granate/20 px-4 pb-2 text-sm"></ul>
-	</details>
+		</span>
+		<span data-b-total class="rotulo text-2xl"></span>
+	</button>
+
+	<!-- Carrito -->
+	<dialog
+		data-carrito
+		aria-labelledby="carrito-titulo"
+		class="m-0 mt-auto max-h-[85dvh] w-full max-w-none rounded-t-2xl bg-crema p-0 text-tinta backdrop:bg-black/60 sm:m-auto sm:max-w-md sm:rounded-2xl"
+	>
+		<div class="flex items-center justify-between border-b-2 border-dashed border-granate/20 px-4 py-3">
+			<h2 id="carrito-titulo" class="rotulo text-2xl text-granate">Tu carrito</h2>
+			<button type="button" data-cerrar class="grid size-10 place-items-center rounded-full text-xl font-black text-granate active:bg-granate/10" aria-label="Cerrar carrito">✕</button>
+		</div>
+
+		<div class="overflow-y-auto px-4">
+			<p data-c-vacio hidden class="py-8 text-center text-sm text-tinta-suave">El carrito está vacío. Añade algo del estanco.</p>
+			<ul data-c-lista class="divide-y-2 divide-dashed divide-granate/15"></ul>
+
+			<dl class="space-y-1 border-t-2 border-granate/20 py-3 text-sm">
+				<div class="flex justify-between gap-3"><dt>Subtotal</dt><dd data-c-subtotal class="font-bold"></dd></div>
+				<div class="flex justify-between gap-3">
+					<dt>Envío desde Purias <span class="block text-xs text-tinta-suave">Lo trae el estanquero en el coche</span></dt>
+					<dd class="font-bold text-green-700">Gratis</dd>
+				</div>
+				<div class="flex items-baseline justify-between gap-3 pt-1 text-granate">
+					<dt class="font-black uppercase">A pagar en la fiesta</dt>
+					<dd data-c-total class="rotulo text-3xl"></dd>
+				</div>
+			</dl>
+		</div>
+
+		<div class="border-t-2 border-granate/20 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+			<p data-c-mensaje role="status" class="mb-2 min-h-5 text-center text-sm font-bold"></p>
+			<button
+				type="button"
+				data-confirmar
+				class="h-12 w-full rounded-lg bg-granate font-black uppercase tracking-wide text-amarillo shadow-chapa active:translate-y-0.5 active:shadow-none disabled:bg-granate/30 disabled:text-crema disabled:shadow-none"
+			>
+				Confirmar reserva
+			</button>
+		</div>
+	</dialog>
 </div>
 
+<template data-plantilla-linea>
+	<li class="flex items-center gap-3 py-3">
+		<span class="min-w-0 flex-1">
+			<span data-l-nombre class="block font-bold leading-tight"></span>
+			<span data-l-precio class="text-xs text-tinta-suave"></span>
+		</span>
+		<span class="flex items-center gap-1">
+			<button type="button" data-l-menos class="size-9 rounded bg-granate/10 font-black text-granate disabled:opacity-30">−</button>
+			<span data-l-cantidad class="w-6 text-center font-black"></span>
+			<button type="button" data-l-mas class="size-9 rounded bg-granate font-black text-amarillo disabled:opacity-30">+</button>
+		</span>
+		<span data-l-importe class="w-16 text-right font-bold"></span>
+	</li>
+</template>
+
 <script>
-	import { estadoEstanco, reservar, euros, MAX_POR_PRODUCTO, type EstadoEstanco } from './datos';
+	import { estadoEstanco, confirmarReserva, euros, MAX_POR_PRODUCTO, type Cantidades, type EstadoEstanco } from './datos';
 	import { EXIGIR_REGISTRO } from '../registro/sesion';
 
 	const raiz = document.querySelector<HTMLElement>('[data-estanco]')!;
 	const productos = [...raiz.querySelectorAll<HTMLElement>('[data-producto]')];
-	const resumen = raiz.querySelector<HTMLDetailsElement>('[data-reserva]')!;
+	const porSlug = new Map(productos.map((li) => [li.dataset.producto!, li]));
+	const barra = raiz.querySelector<HTMLButtonElement>('[data-abrir-carrito]')!;
+	const dialogo = raiz.querySelector<HTMLDialogElement>('[data-carrito]')!;
+	const confirmar = dialogo.querySelector<HTMLButtonElement>('[data-confirmar]')!;
+	const mensaje = dialogo.querySelector<HTMLElement>('[data-c-mensaje]')!;
+	const plantilla = document.querySelector<HTMLTemplateElement>('[data-plantilla-linea]')!.content.firstElementChild!;
 
-	function pintar({ mias, totales }: EstadoEstanco) {
-		let unidades = 0;
-		let total = 0;
-		const lineas: HTMLLIElement[] = [];
+	const precio = (n: number) => (n === 0 ? 'Gratis' : euros(n));
 
-		for (const li of productos) {
-			const slug = li.dataset.producto!;
-			const n = mias[slug] ?? 0;
-			li.querySelector('[data-cantidad]')!.textContent = String(n);
-			li.querySelector('[data-total]')!.textContent = String(totales[slug] ?? 0);
-			li.querySelector<HTMLButtonElement>('[data-menos]')!.disabled = cerrado || n === 0;
-			li.querySelector<HTMLButtonElement>('[data-mas]')!.disabled = cerrado || n >= MAX_POR_PRODUCTO;
-			const insignia = li.querySelector<HTMLElement>('[data-mis-unidades]')!;
-			insignia.hidden = n === 0;
-			insignia.textContent = `×${n}`;
-
-			if (n) {
-				const precio = Number(li.dataset.precio);
-				unidades += n;
-				total += n * precio;
-				const linea = document.createElement('li');
-				linea.className = 'flex justify-between gap-3 py-2';
-				linea.append(
-					Object.assign(document.createElement('span'), { textContent: `${n} × ${li.dataset.nombre}` }),
-					Object.assign(document.createElement('span'), { textContent: euros(n * precio), className: 'font-bold' }),
-				);
-				lineas.push(linea);
-			}
+	// El carrito es un borrador en el móvil; la reserva solo cuenta al confirmar
+	const CLAVE_CARRITO = 'trio-estanco-carrito';
+	const leerCarrito = (): Cantidades | null => {
+		try {
+			return JSON.parse(localStorage.getItem(CLAVE_CARRITO) ?? 'null');
+		} catch {
+			return null;
 		}
-
-		resumen.hidden = unidades === 0;
-		if (!unidades) resumen.open = false;
-		resumen.querySelector('[data-r-unidades]')!.textContent = `${unidades} producto${unidades === 1 ? '' : 's'}`;
-		resumen.querySelector('[data-r-total]')!.textContent = euros(total);
-		resumen.querySelector('[data-r-lista]')!.replaceChildren(...lineas);
-	}
+	};
+	const guardarCarrito = () => {
+		try {
+			localStorage.setItem(CLAVE_CARRITO, JSON.stringify(carrito));
+		} catch {}
+	};
 
 	// Cierre de reservas (en pruebas se puede forzar con ?estanco=cerrado)
 	const forzado = new URLSearchParams(location.search).get('estanco') === 'cerrado' && (import.meta.env.DEV || !EXIGIR_REGISTRO);
 	const cerrado = forzado || Date.now() > new Date(raiz.dataset.cierre!).getTime();
-	raiz.querySelector<HTMLElement>('[data-aviso-abierto]')!.hidden = cerrado;
 	raiz.querySelector<HTMLElement>('[data-aviso-cerrado]')!.hidden = !cerrado;
 
-	let estado = await estadoEstanco();
-	pintar(estado);
+	let estado: EstadoEstanco = await estadoEstanco();
+	let carrito: Cantidades = (!cerrado && leerCarrito()) || { ...estado.mias };
 
-	for (const li of productos) {
-		const slug = li.dataset.producto!;
-		const cambiar = async (d: number) => {
-			estado = await reservar(slug, (estado.mias[slug] ?? 0) + d);
-			pintar(estado);
-		};
-		li.querySelector('[data-menos]')!.addEventListener('click', () => cambiar(-1));
-		li.querySelector('[data-mas]')!.addEventListener('click', () => cambiar(1));
+	const limpio = (c: Cantidades) => Object.fromEntries(Object.entries(c).filter(([s, n]) => n > 0 && porSlug.has(s)));
+	const iguales = (a: Cantidades, b: Cantidades) => {
+		const [x, y] = [limpio(a), limpio(b)];
+		return Object.keys(x).length === Object.keys(y).length && Object.entries(x).every(([s, n]) => y[s] === n);
+	};
+
+	function cambiar(slug: string, d: number) {
+		if (cerrado) return;
+		const n = Math.min(MAX_POR_PRODUCTO, Math.max(0, (carrito[slug] ?? 0) + d));
+		carrito = { ...carrito, [slug]: n };
+		if (!n) delete carrito[slug];
+		mensaje.textContent = '';
+		guardarCarrito();
+		pintar();
 	}
+
+	function pintar() {
+		let unidades = 0;
+		let total = 0;
+		const lineas: Element[] = [];
+
+		for (const li of productos) {
+			const slug = li.dataset.producto!;
+			const n = carrito[slug] ?? 0;
+			const p = Number(li.dataset.precio);
+			// Total entre todos = lo de los demás + lo que tengo en el carrito
+			const demas = (estado.totales[slug] ?? 0) - (estado.mias[slug] ?? 0);
+			li.querySelector('[data-total]')!.textContent = String(demas + n);
+			li.querySelector('[data-cantidad]')!.textContent = String(n);
+			li.querySelector<HTMLButtonElement>('[data-anadir]')!.hidden = n > 0;
+			li.querySelector<HTMLButtonElement>('[data-anadir]')!.disabled = cerrado;
+			li.querySelector<HTMLElement>('[data-paso]')!.hidden = n === 0;
+			li.querySelector<HTMLButtonElement>('[data-menos]')!.disabled = cerrado;
+			li.querySelector<HTMLButtonElement>('[data-mas]')!.disabled = cerrado || n >= MAX_POR_PRODUCTO;
+			const insignia = li.querySelector<HTMLElement>('[data-en-carrito]')!;
+			insignia.hidden = n === 0;
+			insignia.textContent = `×${n}`;
+
+			if (!n) continue;
+			unidades += n;
+			total += n * p;
+			const linea = plantilla.cloneNode(true) as HTMLLIElement;
+			linea.querySelector('[data-l-nombre]')!.textContent = li.dataset.nombre!;
+			linea.querySelector('[data-l-precio]')!.textContent = `${precio(p)} / ud`;
+			linea.querySelector('[data-l-cantidad]')!.textContent = String(n);
+			linea.querySelector('[data-l-importe]')!.textContent = precio(n * p);
+			const menos = linea.querySelector<HTMLButtonElement>('[data-l-menos]')!;
+			const mas = linea.querySelector<HTMLButtonElement>('[data-l-mas]')!;
+			menos.setAttribute('aria-label', `Quitar ${li.dataset.nombre}`);
+			mas.setAttribute('aria-label', `Añadir otro ${li.dataset.nombre}`);
+			menos.disabled = cerrado;
+			mas.disabled = cerrado || n >= MAX_POR_PRODUCTO;
+			menos.addEventListener('click', () => cambiar(slug, -1));
+			mas.addEventListener('click', () => cambiar(slug, 1));
+			lineas.push(linea);
+		}
+
+		const confirmado = iguales(carrito, estado.mias);
+		const hayReserva = Object.keys(limpio(estado.mias)).length > 0;
+
+		// Barra
+		barra.hidden = unidades === 0 && !hayReserva;
+		barra.querySelector('[data-b-unidades]')!.textContent = String(unidades);
+		barra.querySelector('[data-b-total]')!.textContent = euros(total);
+		barra.querySelector('[data-b-estado]')!.textContent = cerrado ? 'Tu reserva' : confirmado ? 'Reserva confirmada ✓' : 'Sin confirmar';
+
+		// Carrito
+		dialogo.querySelector('[data-c-lista]')!.replaceChildren(...lineas);
+		dialogo.querySelector<HTMLElement>('[data-c-vacio]')!.hidden = unidades > 0;
+		dialogo.querySelector('[data-c-subtotal]')!.textContent = euros(total);
+		dialogo.querySelector('[data-c-total]')!.textContent = euros(total);
+		confirmar.hidden = cerrado;
+		confirmar.disabled = confirmado;
+		confirmar.textContent = confirmado ? (hayReserva ? 'Reserva confirmada ✓' : 'Confirmar reserva') : unidades === 0 ? 'Anular mi reserva' : 'Confirmar reserva';
+	}
+
+	pintar();
+
+	for (const [slug, li] of porSlug) {
+		li.querySelector('[data-anadir]')!.addEventListener('click', () => cambiar(slug, 1));
+		li.querySelector('[data-menos]')!.addEventListener('click', () => cambiar(slug, -1));
+		li.querySelector('[data-mas]')!.addEventListener('click', () => cambiar(slug, 1));
+	}
+
+	barra.addEventListener('click', () => dialogo.showModal());
+	dialogo.querySelector('[data-cerrar]')!.addEventListener('click', () => dialogo.close());
+	// Tocar fuera del panel lo cierra
+	dialogo.addEventListener('click', (ev) => ev.target === dialogo && dialogo.close());
+
+	confirmar.addEventListener('click', async () => {
+		confirmar.disabled = true;
+		try {
+			const vacio = Object.keys(limpio(carrito)).length === 0;
+			estado = await confirmarReserva(limpio(carrito));
+			carrito = { ...estado.mias };
+			guardarCarrito();
+			mensaje.className = 'mb-2 min-h-5 text-center text-sm font-bold text-green-700';
+			mensaje.textContent = vacio ? 'Reserva anulada.' : '¡Hecho! El estanquero ya lo tiene apuntado.';
+		} catch {
+			mensaje.className = 'mb-2 min-h-5 text-center text-sm font-bold text-granate';
+			mensaje.textContent = 'No se ha podido confirmar. Inténtalo otra vez.';
+		}
+		pintar();
+	});
 
 	// Filtros por categoría
 	raiz.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((boton, _, todos) =>
 		boton.addEventListener('click', () => {
 			todos.forEach((b) => b.setAttribute('aria-pressed', String(b === boton)));
+			// Centra el filtro elegido en la fila sin mover la página
+			const fila = boton.parentElement!;
+			fila.scrollTo({ left: boton.offsetLeft - (fila.clientWidth - boton.offsetWidth) / 2, behavior: 'smooth' });
 			const filtro = boton.dataset.filtro;
 			productos.forEach((li) => (li.hidden = filtro !== 'todo' && li.dataset.categoria !== filtro));
 		}),

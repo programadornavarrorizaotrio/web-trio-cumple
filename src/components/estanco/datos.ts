@@ -16,17 +16,13 @@ export interface EstadoEstanco {
 const TOTALES_DEMO: Cantidades = {
 	'marlboro-red': 9,
 	'marlboro-gold': 4,
-	winston: 6,
-	camel: 3,
+	'camel-blue': 3,
 	'lucky-strike': 2,
-	ducados: 5,
-	fortuna: 7,
-	pueblo: 3,
 	smoking: 8,
 	montecristo: 4,
 	clipper: 11,
 };
-const CLAVE_DEMO = 'trio-demo-estanco-v2';
+const CLAVE_DEMO = 'trio-demo-estanco-v3';
 
 function misDemo(): Cantidades {
 	try {
@@ -47,12 +43,15 @@ export async function estadoEstanco(): Promise<EstadoEstanco> {
 	return estadoDemo(misDemo());
 }
 
-// TODO(B5): RPC `reservar(clave, producto, cantidad)`; 0 borra la reserva. Debe rechazar > MAX_POR_PRODUCTO
+// TODO(B5): RPC `confirmar_reserva(clave, cantidades jsonb)`: sustituye TODA la reserva del invitado por el
+// carrito que manda (vacío = anularla). Debe rechazar cantidades > MAX_POR_PRODUCTO, slugs que no existan
 // y cualquier cambio después de `estanco.cierreReservas` (fiesta.json).
-export async function reservar(slug: string, cantidad: number): Promise<EstadoEstanco> {
-	if (cantidad < 0 || cantidad > MAX_POR_PRODUCTO) throw new Error('cantidad');
-	const mias = { ...misDemo(), [slug]: cantidad };
-	if (cantidad === 0) delete mias[slug];
+export async function confirmarReserva(carrito: Cantidades): Promise<EstadoEstanco> {
+	const mias: Cantidades = {};
+	for (const [slug, n] of Object.entries(carrito)) {
+		if (!Number.isInteger(n) || n < 0 || n > MAX_POR_PRODUCTO) throw new Error('cantidad');
+		if (n) mias[slug] = n;
+	}
 	localStorage.setItem(CLAVE_DEMO, JSON.stringify(mias));
 	return estadoDemo(mias);
 }
