@@ -1,0 +1,590 @@
+---
+// Admin de los organizadores. Todo se pinta en el navegador con las RPC `admin_*` (ver datos.ts): la página
+// en sí no tiene datos, y sin sesión de admin el servidor no devuelve nada.
+import Button from '../common/Button.astro';
+
+const pestanas = [
+	{ id: 'resumen', texto: 'Resumen' },
+	{ id: 'invitados', texto: 'Invitados' },
+	{ id: 'premios', texto: 'Premios' },
+	{ id: 'liga', texto: 'Liga' },
+	{ id: 'wordle', texto: 'Wordle' },
+];
+const campo =
+	'mt-1 block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-3 py-2.5 text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none';
+---
+
+<div data-admin class="text-tinta">
+	<p data-admin-estado class="rounded-lg bg-crema-oscuro p-5 text-center font-bold text-tinta-suave">Cargando…</p>
+
+	<div data-admin-panel hidden>
+		<nav class="sticky top-0 z-10 -mx-4 mb-5 flex gap-1 overflow-x-auto bg-crema px-4 py-2 [scrollbar-width:none]" aria-label="Secciones del admin">
+			{
+				pestanas.map((p, i) => (
+					<button
+						type="button"
+						data-pestana={p.id}
+						aria-pressed={i === 0 ? 'true' : 'false'}
+						class="shrink-0 rounded-full border-2 border-granate/20 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-granate aria-pressed:border-granate aria-pressed:bg-granate aria-pressed:text-amarillo"
+					>
+						{p.texto}
+					</button>
+				))
+			}
+		</nav>
+
+		<p data-aviso hidden role="status" class="mb-4 rounded border-2 px-3 py-2 text-sm font-bold"></p>
+
+		<!-- Resumen -->
+		<section data-vista="resumen" class="space-y-5">
+			<div data-cifras class="grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+			<div>
+				<h3 class="text-lg text-granate">Equipos</h3>
+				<ul data-equipos class="mt-2 space-y-1.5"></ul>
+			</div>
+			<div>
+				<h3 class="text-lg text-granate">Alergias e intolerancias</h3>
+				<ul data-alergias class="mt-2 space-y-1.5 text-sm"></ul>
+			</div>
+		</section>
+
+		<!-- Invitados -->
+		<section data-vista="invitados" hidden class="space-y-3">
+			<div class="flex gap-2">
+				<input data-filtro type="search" placeholder="Buscar invitado…" autocomplete="off" class={campo + ' mt-0'} />
+				<Button type="button" data-nuevo-invitado class="shrink-0">Añadir</Button>
+			</div>
+			<p data-cuenta-invitados class="text-xs text-tinta-suave"></p>
+			<ul data-lista-invitados class="space-y-2"></ul>
+		</section>
+
+		<!-- Premios -->
+		<section data-vista="premios" hidden class="space-y-6">
+			<form data-form-codigo class="rounded-lg bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">Canjear un premio</h3>
+				<p class="mt-1 text-sm text-tinta-suave">Escribe el código que te enseña el invitado en su móvil.</p>
+				<div class="mt-3 flex gap-2">
+					<input name="codigo" required placeholder="A1B2C3-D4E5F6" autocomplete="off" autocapitalize="characters" class={campo + ' mt-0 font-mono uppercase'} />
+					<Button type="submit" class="shrink-0">Buscar</Button>
+				</div>
+				<div data-resultado-codigo hidden class="mt-4 rounded border-2 border-granate/20 p-3"></div>
+			</form>
+			<div>
+				<h3 class="text-lg text-granate">Premios</h3>
+				<p class="mt-1 text-sm text-tinta-suave">El requisito no se cambia aquí; el texto sí (lo ven los invitados en Premios).</p>
+				<ul data-lista-premios class="mt-3 space-y-3"></ul>
+			</div>
+		</section>
+
+		<!-- Liga -->
+		<section data-vista="liga" hidden class="space-y-6">
+			<form data-form-ajustes class="space-y-4 rounded-lg bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">Ajustes de la liga</h3>
+				<div class="grid grid-cols-2 gap-3">
+					<label class="text-sm font-bold">Tiradas entre semana<input name="tiradasEntreSemana" type="number" min="0" max="10" required class={campo} /></label>
+					<label class="text-sm font-bold">Tiradas en finde<input name="tiradasFinDeSemana" type="number" min="0" max="10" required class={campo} /></label>
+				</div>
+				<label class="block text-sm font-bold"
+					>Puntos que quita el diablillo<input name="penalizacionDiablo" type="number" min="0" max="100" required class={campo} /></label
+				>
+				<label class="block text-sm font-bold"
+					>Cierre de la liga<input name="cierreLiga" type="datetime-local" required class={campo} />
+					<span class="mt-1 block text-xs font-normal text-tinta-suave">Desde ese momento no se puede tirar ni apostar y se deciden podio y equipo ganador.</span>
+				</label>
+				<Button type="submit" class="w-full">Guardar ajustes</Button>
+			</form>
+
+			<form data-form-pin class="space-y-3 rounded-lg bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">PIN de la fiesta</h3>
+				<p class="text-sm text-tinta-suave">El código que va en el mensaje de WhatsApp para registrarse. Al cambiarlo, el anterior deja de valer (quien ya está registrado sigue dentro).</p>
+				<input name="pin" required minlength="4" maxlength="20" autocomplete="off" placeholder="Nuevo PIN" class={campo} />
+				<Button type="submit" variante="granate" class="w-full">Cambiar PIN</Button>
+			</form>
+		</section>
+
+		<!-- Wordle -->
+		<section data-vista="wordle" hidden class="space-y-5">
+			<form data-form-wordle class="space-y-3 rounded-lg bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">Añadir palabras</h3>
+				<p class="text-sm text-tinta-suave">Una por línea (o separadas por comas), de 4 a 8 letras. Las tildes se quitan; la Ñ vale. Sale una al día, en orden.</p>
+				<textarea name="palabras" rows="4" required placeholder={'RANA\nCAÑAS\nTRIO'} class={campo + ' font-mono uppercase'}></textarea>
+				<Button type="submit" class="w-full">Añadir</Button>
+			</form>
+			<div>
+				<h3 class="text-lg text-granate">Lista <span data-cuenta-wordle class="text-sm text-tinta-suave"></span></h3>
+				<ul data-lista-wordle class="mt-2 flex flex-wrap gap-2"></ul>
+			</div>
+		</section>
+	</div>
+
+	<!-- Ficha de un invitado -->
+	<dialog data-ficha class="m-auto w-[min(100%-2rem,28rem)] rounded-lg bg-crema p-0 text-tinta backdrop:bg-tinta/60">
+		<form data-form-invitado method="dialog" class="space-y-4 p-5">
+			<div class="flex items-start justify-between gap-3">
+				<h3 data-ficha-titulo class="text-xl text-granate"></h3>
+				<button type="button" data-cerrar-ficha class="text-2xl leading-none text-tinta-suave" aria-label="Cerrar">×</button>
+			</div>
+			<p data-ficha-info class="text-sm text-tinta-suave"></p>
+			<label class="block text-sm font-bold">Nombre<input name="nombre" required maxlength="80" class={campo} /></label>
+			<label class="block text-sm font-bold"
+				>Número de cromo<input name="numero" type="number" min="1" placeholder="Al final" class={campo} /></label
+			>
+			<label class="flex items-center gap-2 text-sm font-bold"><input name="especial" type="checkbox" class="size-5 accent-granate" /> Cromo especial (el trío)</label>
+			<label class="flex items-center gap-2 text-sm font-bold"><input name="visible" type="checkbox" class="size-5 accent-granate" /> Visible (si no, no sale al buscar ni en el álbum)</label>
+			<Button type="submit" class="w-full">Guardar</Button>
+
+			<div data-ficha-puntos class="space-y-2 border-t-2 border-granate/15 pt-4">
+				<h4 class="font-bold text-granate">Ajustar puntos de la liga</h4>
+				<div class="flex gap-2">
+					<input name="puntos" type="number" min="-500" max="500" placeholder="+10 / −5" class={campo + ' mt-0 w-28'} />
+					<input name="motivo" maxlength="140" placeholder="Motivo (ganó el karaoke…)" class={campo + ' mt-0'} />
+				</div>
+				<Button type="button" data-ajustar variante="borde" class="w-full text-granate">Aplicar puntos</Button>
+			</div>
+
+			<div data-ficha-movil class="space-y-2 border-t-2 border-granate/15 pt-4">
+				<h4 class="font-bold text-granate">Nuevo móvil</h4>
+				<p class="text-xs text-tinta-suave">Cierra su sesión para que se vuelva a registrar (cambió de móvil o se registró otro por él). Conserva asistencia, equipo y puntos.</p>
+				<Button type="button" data-nuevo-movil variante="borde" class="w-full text-granate">Dejar que se registre otra vez</Button>
+			</div>
+			<p data-ficha-error hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
+		</form>
+	</dialog>
+</div>
+
+<script>
+	import * as admin from './datos';
+	import { usaBD } from '../../lib/rpc';
+	import { equipoPorId } from '../juegos/liga';
+	import type { InvitadoAdmin } from './datos';
+
+	const raiz = document.querySelector<HTMLElement>('[data-admin]')!;
+	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => raiz.querySelector<T>(sel)!;
+	const estado = $('[data-admin-estado]');
+	const aviso = $('[data-aviso]');
+
+	function el<K extends keyof HTMLElementTagNameMap>(tag: K, clase = '', texto?: string) {
+		const e = document.createElement(tag);
+		if (clase) e.className = clase;
+		if (texto !== undefined) e.textContent = texto;
+		return e;
+	}
+
+	let temporizador: number | undefined;
+	function avisar(texto: string, bien = true) {
+		aviso.textContent = texto;
+		aviso.className = `mb-4 rounded border-2 px-3 py-2 text-sm font-bold ${bien ? 'border-green-700 bg-green-50 text-green-800' : 'border-granate bg-granate/10 text-granate'}`;
+		aviso.hidden = false;
+		clearTimeout(temporizador);
+		temporizador = window.setTimeout(() => (aviso.hidden = true), 4000);
+	}
+
+	/** Ejecuta una acción con el botón bloqueado y avisa del resultado */
+	async function accion(boton: HTMLButtonElement | null, hacer: () => Promise<string | void>) {
+		if (boton) boton.disabled = true;
+		try {
+			const texto = await hacer();
+			if (texto) avisar(texto);
+		} catch (e) {
+			avisar(admin.mensajeError(e), false);
+		} finally {
+			if (boton) boton.disabled = false;
+		}
+	}
+
+	// ── Pestañas ──
+	const cargadas = new Set<string>();
+	const cargar: Record<string, () => Promise<void>> = {
+		resumen: pintarResumen,
+		invitados: pintarInvitados,
+		premios: pintarPremios,
+		liga: pintarAjustes,
+		wordle: pintarWordle,
+	};
+	async function abrir(id: string) {
+		raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pestana === id)));
+		raiz.querySelectorAll<HTMLElement>('[data-vista]').forEach((v) => (v.hidden = v.dataset.vista !== id));
+		if (!cargadas.has(id)) {
+			cargadas.add(id);
+			await cargar[id]().catch((e) => avisar(admin.mensajeError(e), false));
+		}
+	}
+	raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.addEventListener('click', () => void abrir(b.dataset.pestana!)));
+	/** Tras un cambio, lo que dependa de él se vuelve a cargar al abrir su pestaña */
+	const caducar = (...ids: string[]) => ids.forEach((id) => cargadas.delete(id));
+
+	// ── Resumen ──
+	async function pintarResumen() {
+		const r = await admin.resumen();
+		const cifra = (valor: string | number, texto: string) => {
+			const d = el('div', 'min-w-0 rounded-lg bg-white p-3 text-center shadow-chapa');
+			const grande = typeof valor === 'number' || valor.length <= 5;
+			d.append(
+				el('p', `rotulo ${grande ? 'text-3xl' : 'py-1 text-xl'} truncate text-granate`, String(valor)),
+				el('p', 'text-xs font-bold uppercase tracking-wider text-tinta-suave', texto),
+			);
+			return d;
+		};
+		$('[data-cifras]').replaceChildren(
+			cifra(`${r.registrados}/${r.invitados}`, 'registrados'),
+			cifra(r.vienen, 'vienen'),
+			cifra(r.personas, 'personas en total'),
+			cifra(r.noVienen, 'no vienen'),
+			cifra(r.invitados - r.vienen - r.noVienen, 'sin responder'),
+			cifra(r.jugadores, 'en la liga'),
+			cifra(r.premiosPorEntregar, 'premios por entregar'),
+			cifra(r.ligaCerrada ? 'Cerrada' : 'Abierta', 'liga'),
+		);
+		$('[data-equipos]').replaceChildren(
+			...[...r.equipos]
+				.sort((a, b) => b.puntos - a.puntos)
+				.map((e) => {
+					const li = el('li', 'flex items-center justify-between rounded bg-white px-3 py-2');
+					const nombre = el('span', 'font-bold');
+					const punto = el('span', 'mr-2 inline-block rounded-full');
+					Object.assign(punto.style, { background: equipoPorId(e.equipo).color, width: '0.75rem', height: '0.75rem' });
+					nombre.append(punto, equipoPorId(e.equipo).nombre);
+					li.append(nombre, el('span', 'text-sm text-tinta-suave', `${e.puntos} pts · ${e.miembros} ${e.miembros === 1 ? 'jugador' : 'jugadores'}`));
+					return li;
+				}),
+		);
+		$('[data-alergias]').replaceChildren(
+			...(r.alergias.length
+				? r.alergias.map((a) => {
+						const li = el('li', 'rounded bg-white px-3 py-2');
+						li.append(el('b', '', a.nombre + ': '), a.alergias);
+						return li;
+					})
+				: [el('li', 'text-tinta-suave', 'Nadie ha dicho nada todavía.')]),
+		);
+	}
+
+	// ── Invitados ──
+	let lista: InvitadoAdmin[] = [];
+	const filtro = $<HTMLInputElement>('[data-filtro]');
+	const normalizar = (t: string) => t.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+	async function pintarInvitados() {
+		lista = await admin.invitados();
+		filtrar();
+	}
+
+	function etiqueta(texto: string, clase: string) {
+		return el('span', `rounded-full px-2 py-0.5 text-[0.7rem] font-black uppercase tracking-wider ${clase}`, texto);
+	}
+
+	function filtrar() {
+		const q = normalizar(filtro.value.trim());
+		const visibles = lista.filter((i) => !q || normalizar(`${i.nombre} ${i.apodo ?? ''}`).includes(q));
+		const vienen = lista.filter((i) => i.asiste).length;
+		$('[data-cuenta-invitados]').textContent = `${lista.length} invitados · ${lista.filter((i) => i.registrado).length} registrados · ${vienen} vienen`;
+		$('[data-lista-invitados]').replaceChildren(
+			...visibles.map((i) => {
+				const li = el('li');
+				const b = el('button', 'block w-full rounded-lg bg-white px-3 py-2.5 text-left shadow-chapa active:bg-amarillo-claro');
+				b.type = 'button';
+				const linea = el('p', 'flex items-baseline gap-2');
+				linea.append(el('span', 'w-7 shrink-0 text-right font-mono text-xs text-tinta-suave', `#${i.numero}`), el('span', 'min-w-0 truncate font-bold', i.nombre));
+				if (i.apodo) linea.append(el('span', 'min-w-0 truncate text-sm text-tinta-suave', `«${i.apodo}»`));
+				const etiquetas = el('p', 'mt-1.5 flex flex-wrap gap-1 pl-9');
+				etiquetas.append(
+					i.registrado ? etiqueta('Registrado', 'bg-green-100 text-green-800') : etiqueta('Sin registrar', 'bg-crema-oscuro text-tinta-suave'),
+					i.asiste === true
+						? etiqueta(i.acompanantes ? `Viene +${i.acompanantes}` : 'Viene', 'bg-amarillo-claro text-granate-oscuro')
+						: i.asiste === false
+							? etiqueta('No viene', 'bg-granate/10 text-granate')
+							: etiqueta('Sin responder', 'bg-crema-oscuro text-tinta-suave'),
+				);
+				if (i.equipo) etiquetas.append(etiqueta(`${equipoPorId(i.equipo).nombre} · ${i.puntos} pts`, 'bg-tinta/10 text-tinta'));
+				if (i.alergias) etiquetas.append(etiqueta('Alergias', 'bg-granate text-amarillo'));
+				if (i.rol === 'admin') etiquetas.append(etiqueta('Admin', 'bg-granate-oscuro text-amarillo'));
+				if (!i.visible) etiquetas.append(etiqueta('Oculto', 'bg-tinta text-crema'));
+				b.append(linea, etiquetas);
+				b.addEventListener('click', () => abrirFicha(i));
+				li.append(b);
+				return li;
+			}),
+		);
+	}
+	filtro.addEventListener('input', filtrar);
+
+	// Ficha
+	const ficha = $<HTMLDialogElement>('[data-ficha]');
+	const formFicha = $<HTMLFormElement>('[data-form-invitado]');
+	const errorFicha = $('[data-ficha-error]');
+	let actual: InvitadoAdmin | null = null;
+	const campoFicha = (n: string) => formFicha.elements.namedItem(n) as HTMLInputElement;
+
+	function abrirFicha(i: InvitadoAdmin | null) {
+		actual = i;
+		errorFicha.hidden = true;
+		formFicha.reset();
+		$('[data-ficha-titulo]').textContent = i ? i.nombre : 'Nuevo invitado';
+		const info: string[] = [];
+		if (i?.apodo) info.push(`Cromo: «${i.apodo}»${i.frase ? ` — ${i.frase}` : ''}`);
+		if (i?.alergias) info.push(`Alergias: ${i.alergias}`);
+		$('[data-ficha-info]').textContent = info.join(' · ');
+		campoFicha('nombre').value = i?.nombre ?? '';
+		campoFicha('numero').value = i ? String(i.numero) : '';
+		campoFicha('especial').checked = i?.especial ?? false;
+		campoFicha('visible').checked = i?.visible ?? true;
+		$('[data-ficha-puntos]').hidden = !i?.equipo;
+		$('[data-ficha-movil]').hidden = !i?.registrado;
+		ficha.showModal();
+	}
+
+	function errorEnFicha(e: unknown) {
+		errorFicha.textContent = admin.mensajeError(e);
+		errorFicha.hidden = false;
+	}
+
+	$('[data-nuevo-invitado]').addEventListener('click', () => abrirFicha(null));
+	$('[data-cerrar-ficha]').addEventListener('click', () => ficha.close());
+
+	formFicha.addEventListener('submit', async (ev) => {
+		ev.preventDefault();
+		const boton = (ev as SubmitEvent).submitter as HTMLButtonElement | null;
+		if (boton) boton.disabled = true;
+		try {
+			const numero = campoFicha('numero').value;
+			await admin.guardarInvitado({
+				id: actual?.id ?? null,
+				nombre: campoFicha('nombre').value,
+				numero: numero ? Number(numero) : null,
+				especial: campoFicha('especial').checked,
+				visible: campoFicha('visible').checked,
+			});
+			ficha.close();
+			avisar(actual ? 'Invitado guardado' : 'Invitado añadido');
+			caducar('resumen');
+			await pintarInvitados();
+		} catch (e) {
+			errorEnFicha(e);
+		} finally {
+			if (boton) boton.disabled = false;
+		}
+	});
+
+	$('[data-ajustar]').addEventListener('click', async (ev) => {
+		const boton = ev.currentTarget as HTMLButtonElement;
+		if (!actual) return;
+		const puntos = Number(campoFicha('puntos').value);
+		const motivo = campoFicha('motivo').value.trim();
+		if (!puntos || !motivo) return errorEnFicha(new Error('datos'));
+		if (!confirm(`¿${puntos > 0 ? 'Sumar' : 'Quitar'} ${Math.abs(puntos)} puntos a ${actual.nombre}?`)) return;
+		boton.disabled = true;
+		try {
+			const r = await admin.ajustarPuntos(actual.id, puntos, motivo);
+			ficha.close();
+			avisar(`${actual.nombre} tiene ahora ${r.puntos} puntos`);
+			caducar('resumen');
+			await pintarInvitados();
+		} catch (e) {
+			errorEnFicha(e);
+		} finally {
+			boton.disabled = false;
+		}
+	});
+
+	$('[data-nuevo-movil]').addEventListener('click', async (ev) => {
+		const boton = ev.currentTarget as HTMLButtonElement;
+		if (!actual || !confirm(`${actual.nombre} tendrá que volver a registrarse. ¿Seguro?`)) return;
+		boton.disabled = true;
+		try {
+			await admin.nuevoMovil(actual.id);
+			ficha.close();
+			avisar(`${actual.nombre} ya se puede registrar otra vez`);
+			caducar('resumen');
+			await pintarInvitados();
+		} catch (e) {
+			errorEnFicha(e);
+		} finally {
+			boton.disabled = false;
+		}
+	});
+
+	// ── Premios ──
+	const resultadoCodigo = $('[data-resultado-codigo]');
+	$<HTMLFormElement>('[data-form-codigo]').addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		const form = ev.currentTarget as HTMLFormElement;
+		const codigo = String(new FormData(form).get('codigo') ?? '');
+		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
+			resultadoCodigo.hidden = true;
+			const c = await admin.buscarCodigo(codigo);
+			const titulo = el('p', 'font-bold text-granate', c.premio);
+			const quien = el('p', 'text-sm', `${c.nombre}${c.apodo ? ` («${c.apodo}»)` : ''} · ${c.codigo}`);
+			const pie = c.entregado
+				? el('p', 'mt-2 text-sm font-bold text-tinta-suave', `Ya entregado${c.entregadoEn ? ` el ${new Date(c.entregadoEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`)
+				: el('button', 'mt-3 w-full rounded-sm bg-granate px-4 py-2.5 text-sm font-black uppercase tracking-wider text-amarillo', 'Marcar como entregado');
+			if (pie instanceof HTMLButtonElement) {
+				pie.type = 'button';
+				pie.addEventListener('click', () =>
+					accion(pie, async () => {
+						await admin.entregarPremio(c.codigo);
+						resultadoCodigo.hidden = true;
+						form.reset();
+						caducar('resumen', 'premios');
+						await pintarPremios();
+						cargadas.add('premios');
+						return `Entregado: ${c.premio} a ${c.nombre}`;
+					}),
+				);
+			}
+			resultadoCodigo.replaceChildren(titulo, quien, pie);
+			resultadoCodigo.hidden = false;
+		});
+	});
+
+	const requisito = (r: admin.PremioAdmin['requisito']) =>
+		r.tipo === 'rango' ? `Llegar a ${r.rango}` : r.tipo === 'podio' ? (r.hasta === 1 ? 'Ganar la liga' : `Top ${r.hasta} al cierre`) : 'Equipo ganador';
+
+	async function pintarPremios() {
+		const premios = await admin.premios();
+		$('[data-lista-premios]').replaceChildren(
+			...premios.map((p) => {
+				const li = el('li', 'rounded-lg bg-white p-3 shadow-chapa');
+				const form = el('form', 'space-y-2');
+				const cabecera = el('p', 'flex flex-wrap items-baseline justify-between gap-2 text-xs font-bold uppercase tracking-wider text-tinta-suave');
+				cabecera.append(el('span', '', requisito(p.requisito)), el('span', '', `${p.conseguidos} conseguidos · ${p.entregados} entregados`));
+				const titulo = el('input', 'block w-full rounded border-2 border-granate/25 px-3 py-2 font-bold');
+				titulo.value = p.titulo;
+				titulo.maxLength = 60;
+				titulo.required = true;
+				titulo.setAttribute('aria-label', 'Título del premio');
+				const desc = el('textarea', 'block w-full rounded border-2 border-granate/25 px-3 py-2 text-sm');
+				desc.value = p.descripcion;
+				desc.maxLength = 300;
+				desc.rows = 2;
+				desc.setAttribute('aria-label', 'Descripción del premio');
+				const pie = el('div', 'flex items-center justify-between gap-3');
+				const activo = el('label', 'flex items-center gap-2 text-sm font-bold');
+				const check = el('input', 'size-5 accent-granate');
+				check.type = 'checkbox';
+				check.checked = p.activo;
+				activo.append(check, 'Activo');
+				const guardar = el('button', 'rounded-sm bg-amarillo px-4 py-2 text-xs font-black uppercase tracking-wider text-granate-oscuro', 'Guardar');
+				guardar.type = 'submit';
+				pie.append(activo, guardar);
+				form.append(cabecera, titulo, desc, pie);
+				form.addEventListener('submit', (ev) => {
+					ev.preventDefault();
+					void accion(guardar, async () => {
+						await admin.guardarPremio(p.id, titulo.value, desc.value, check.checked);
+						return 'Premio guardado';
+					});
+				});
+				li.append(form);
+				return li;
+			}),
+		);
+	}
+
+	// ── Liga ──
+	const formAjustes = $<HTMLFormElement>('[data-form-ajustes]');
+	const campoAjuste = (n: string) => formAjustes.elements.namedItem(n) as HTMLInputElement;
+	/** ISO → valor de <input type="datetime-local"> en la hora del móvil */
+	const aLocal = (iso: string) => {
+		const d = new Date(iso);
+		const dos = (n: number) => String(n).padStart(2, '0');
+		return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}T${dos(d.getHours())}:${dos(d.getMinutes())}`;
+	};
+
+	async function pintarAjustes() {
+		const a = await admin.ajustes();
+		campoAjuste('tiradasEntreSemana').value = String(a.tiradasEntreSemana);
+		campoAjuste('tiradasFinDeSemana').value = String(a.tiradasFinDeSemana);
+		campoAjuste('penalizacionDiablo').value = String(a.penalizacionDiablo);
+		campoAjuste('cierreLiga').value = aLocal(a.cierreLiga);
+	}
+
+	formAjustes.addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
+			await admin.guardarAjustes({
+				tiradasEntreSemana: Number(campoAjuste('tiradasEntreSemana').value),
+				tiradasFinDeSemana: Number(campoAjuste('tiradasFinDeSemana').value),
+				penalizacionDiablo: Number(campoAjuste('penalizacionDiablo').value),
+				cierreLiga: new Date(campoAjuste('cierreLiga').value).toISOString(),
+			});
+			caducar('resumen');
+			return 'Ajustes guardados';
+		});
+	});
+
+	$<HTMLFormElement>('[data-form-pin]').addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		const form = ev.currentTarget as HTMLFormElement;
+		const pin = String(new FormData(form).get('pin') ?? '').trim();
+		if (!confirm(`El PIN pasará a ser «${pin}». El anterior dejará de valer. ¿Seguro?`)) return;
+		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
+			await admin.cambiarPin(pin);
+			form.reset();
+			return 'PIN cambiado. Acuérdate de ponerlo en el mensaje de invitación.';
+		});
+	});
+
+	// ── Wordle ──
+	async function pintarWordle() {
+		const palabras = await admin.palabrasWordle();
+		$('[data-cuenta-wordle]').textContent = `(${palabras.length})`;
+		$('[data-lista-wordle]').replaceChildren(
+			...(palabras.length
+				? palabras.map((w) => {
+						const li = el('li', 'flex items-center gap-1 rounded bg-white py-1 pl-3 pr-1 font-mono font-bold shadow-chapa');
+						li.append(w.palabra);
+						if (w.dia) li.append(el('span', 'ml-1 text-xs font-normal text-tinta-suave', w.dia.slice(5).split('-').reverse().join('/')));
+						const borrar = el('button', 'ml-1 size-7 rounded text-lg leading-none text-granate disabled:opacity-30', '×');
+						borrar.type = 'button';
+						borrar.setAttribute('aria-label', `Borrar ${w.palabra}`);
+						borrar.addEventListener('click', () =>
+							accion(borrar, async () => {
+								await admin.borrarWordle(w.id);
+								await pintarWordle();
+								return `${w.palabra} borrada`;
+							}),
+						);
+						li.append(borrar);
+						return li;
+					})
+				: [el('li', 'text-sm text-tinta-suave', 'Aún no hay palabras.')]),
+		);
+	}
+
+	$<HTMLFormElement>('[data-form-wordle]').addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		const form = ev.currentTarget as HTMLFormElement;
+		const palabras = String(new FormData(form).get('palabras') ?? '')
+			.split(/[\s,;]+/)
+			.filter(Boolean);
+		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
+			const n = await admin.anadirWordle(palabras);
+			form.reset();
+			await pintarWordle();
+			return n === palabras.length ? `${n} añadidas` : `${n} añadidas (las repetidas no se añaden)`;
+		});
+	});
+
+	// ── Arranque: solo con sesión de admin ──
+	async function arrancar() {
+		if (!usaBD()) {
+			estado.innerHTML = 'Para entrar al admin, <a class="text-granate underline" href="/registro">regístrate</a> con tu nombre: los organizadores tenéis permiso.';
+			return;
+		}
+		try {
+			await pintarResumen();
+			cargadas.add('resumen');
+			estado.hidden = true;
+			$('[data-admin-panel]').hidden = false;
+		} catch (e) {
+			const codigo = e instanceof Error ? e.message : '';
+			estado.textContent =
+				codigo === 'no-admin'
+					? 'Esta página es solo para los organizadores.'
+					: codigo === 'sesion'
+						? 'Tu sesión ya no vale. Vuelve a registrarte.'
+						: admin.mensajeError(e);
+		}
+	}
+	void arrancar();
+</script>
