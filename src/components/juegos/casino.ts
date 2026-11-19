@@ -1,5 +1,5 @@
 // Piezas comunes de los juegos de casino (ruleta y blackjack): el marcador de puntos y las fichas de apuesta.
-// Se apuestan puntos PROPIOS (ver `apostarEnCasino` en liga.ts), así que lo máximo que se puede jugar es lo que se tiene.
+// Se apuestan puntos PROPIOS (ver el casino en liga.ts), así que lo máximo que se puede jugar es lo que se tiene.
 import { CONFIG } from './liga';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, clase: string, texto?: string) {

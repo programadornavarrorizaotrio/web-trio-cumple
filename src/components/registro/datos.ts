@@ -1,5 +1,6 @@
 import type { Cromo } from '../cromos/tipos';
 import { demoBuscar, demoRegistrar } from '../cromos/demo';
+import { hayBD, rpc } from '../../lib/rpc';
 
 // Contrato con la base de datos (tareas de B). Si cambia algo aquí, avisar a quien lleve `supabase/`.
 
@@ -25,23 +26,38 @@ export interface Registro {
 	cromo: Cromo;
 }
 
-// PIN común de la fiesta (va en el mensaje de WhatsApp). Lo valida la base de datos: no puede
-// estar en el código de la web. Todas las RPC públicas lo reciben.
+// PIN común de la fiesta (va en el mensaje de WhatsApp). Con base de datos lo valida el servidor (su hash está
+// en `ajustes`); este solo vale para los datos de ejemplo, sin Supabase configurado.
 export const PIN_DEMO = '1234';
 
-// TODO(B): RPC `comprobar_pin(pin)`; el PIN real vive como secreto en Supabase, no en el repo.
+// RPC `comprobar_pin(pin)`
 export async function comprobarPin(pin: string): Promise<boolean> {
+	if (hayBD) return rpc<boolean>('comprobar_pin', { pin: pin.trim() });
 	return pin.trim() === PIN_DEMO;
 }
 
-// TODO(B): RPC `buscar_invitados(pin, texto)`. Sin PIN válido no devuelve nada.
+// RPC `buscar_invitados(pin, texto)`. Sin PIN válido o con menos de 2 letras no devuelve nada.
 export async function buscarInvitados(pin: string, texto: string): Promise<Coincidencia[]> {
-	if (texto.trim().length < 2 || !(await comprobarPin(pin))) return [];
+	if (texto.trim().length < 2) return [];
+	if (hayBD) return rpc<Coincidencia[]>('buscar_invitados', { pin: pin.trim(), texto: texto.trim() });
+	if (!(await comprobarPin(pin))) return [];
 	return demoBuscar(texto);
 }
 
-// TODO(B): RPC `registrar(pin, invitado_id, ...)`. Debe fallar con PIN incorrecto o si ya estaba registrado.
+// RPC `registrar(pin, invitado_id, ...)`: guarda el cromo y la asistencia y devuelve la clave de sesión.
+// Errores: 'pin', 'no-existe', 'ya-registrado', 'datos'.
 export async function registrar(pin: string, id: string, datos: DatosRegistro): Promise<Registro> {
+	if (hayBD) {
+		return rpc<Registro>('registrar', {
+			pin: pin.trim(),
+			invitado_id: id,
+			apodo: datos.apodo,
+			frase: datos.frase,
+			asiste: datos.asiste,
+			acompanantes: datos.acompanantes,
+			alergias: datos.alergias,
+		});
+	}
 	if (!(await comprobarPin(pin))) throw new Error('pin');
 	return demoRegistrar(id, { apodo: datos.apodo, frase: datos.frase, asiste: datos.asiste });
 }

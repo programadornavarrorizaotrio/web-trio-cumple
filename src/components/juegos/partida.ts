@@ -64,6 +64,7 @@ export async function lanzar(id: MinijuegoId) {
 		const resultado = await juego.jugar(area, control.signal, { ranaSrc: dialogo.dataset.ranaSrc ?? '', ladronSrc: dialogo.dataset.ladronSrc ?? '', crupierSrc: dialogo.dataset.crupierSrc ?? '' });
 
 		let subida = '';
+		let aviso = '';
 		let puntos = resultado.puntos;
 		// Los de casino ya han ido apuntando cada apuesta en la liga: aquí solo se resume la sesión
 		if (!info.libre) {
@@ -71,8 +72,16 @@ export async function lanzar(id: MinijuegoId) {
 				const r = await registrarPartida(id, resultado.puntos);
 				puntos = r.puntos;
 				if (r.subeDeRango) subida = `¡Subes a ${r.rango.nombre}!`;
-			} catch {
-				// 'ya-jugado' o 'sin-equipo': no suma; el tablero ya lo comprueba antes de abrir
+			} catch (e) {
+				// El tablero ya comprueba antes de abrir si toca; si aun así falla, no suma y se avisa
+				const codigo = e instanceof Error ? e.message : '';
+				puntos = 0;
+				aviso =
+					codigo === 'ya-jugado'
+						? 'Ya habías jugado hoy a este juego: esta partida no suma.'
+						: codigo === 'liga-cerrada'
+							? 'La liga ya ha terminado: esta partida no suma.'
+							: 'No se ha podido guardar la partida. Comprueba la conexión.';
 			}
 		}
 		document.dispatchEvent(new CustomEvent('liga:cambio'));
@@ -88,7 +97,7 @@ export async function lanzar(id: MinijuegoId) {
 				: puntos < 0
 					? 'puntos que te quita el diablillo'
 					: 'puntos para tu equipo';
-		q('[data-final-detalle]').textContent = resultado.detalle ?? '';
+		q('[data-final-detalle]').textContent = aviso || (resultado.detalle ?? '');
 		q('[data-final-subida]').textContent = subida;
 		pantalla('final');
 	};

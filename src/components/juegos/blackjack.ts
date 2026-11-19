@@ -3,51 +3,26 @@
 // lo demás 1 a 1 y el empate devuelve la apuesta. Se puede pedir, plantarse o doblar (una sola carta más y el doble
 // de apuesta). No hay separar ni seguro. La banca se planta con 17 o más, también con un 17 "blando".
 //
-// TODO(DB): las cartas debería repartirlas el SERVIDOR (RPC `apostar_casino(clave, 'blackjack', ...)` por jugada),
-// con la segunda carta de la banca oculta hasta el final; si se reparten en el navegador, se podrían elegir.
-// Hoy cerrar la ventana a media mano cuenta como perderla, pero recargar la página no: el servidor debe
-// guardar la mano en curso.
+// Las cartas las reparte el SERVIDOR (`repartirBlackjack` / `jugarBlackjack` en liga.ts → RPC `blackjack_*`), con la
+// segunda carta de la banca oculta hasta el final. Aquí solo se pintan y se animan. La mano en curso queda guardada:
+// si se cierra la ventana a mitad, al volver se sigue donde estaba.
 // TODO(admin): las fichas y la apuesta máxima se editarán desde el admin (CONFIG en liga.ts).
-import { apostarEnCasino, bancaCasino } from './liga';
+import { bancaCasino, esBlackjack, jugarBlackjack, manoBlackjackAbierta, repartirBlackjack, valorMano, type AccionBlackjack, type Carta, type ManoBlackjack } from './liga';
 import { conSigno, crearBanca, crearCrupier, crearFichas, crearMesa, el, esperar } from './casino';
 import type { Contexto, Resultado } from './partida';
 
 export const instrucciones =
 	'Elige cuántos puntos apuestas y reparte. Acércate a 21 sin pasarte y por encima de la banca. Puedes pedir carta, plantarte o doblar. El blackjack paga 3 a 2 y la banca se planta con 17.';
 
-const PALOS = ['♠', '♥', '♦', '♣'];
 const ROJOS = new Set(['♥', '♦']);
-const RANGOS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 const PAUSA_CARTA = 650;
 
-interface Carta {
-	rango: string;
-	palo: string;
-}
-
-const azar = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
-const sacar = (): Carta => ({ rango: RANGOS[azar(13)], palo: PALOS[azar(4)] });
-
-function valor(mano: Carta[]) {
-	let total = 0;
-	let ases = 0;
-	for (const { rango } of mano) {
-		if (rango === 'A') {
-			ases++;
-			total += 11;
-		} else {
-			total += 'JQK'.includes(rango) || rango === '10' ? 10 : Number(rango);
-		}
-	}
-	while (total > 21 && ases > 0) {
-		total -= 10;
-		ases--;
-	}
-	return total;
-}
-
-const esBlackjack = (mano: Carta[]) => mano.length === 2 && valor(mano) === 21;
+const MENSAJES_ERROR: Record<string, string> = {
+	'sin-puntos': 'No tienes tantos puntos para apostar',
+	'liga-cerrada': 'La liga ya ha terminado: el casino está cerrado',
+	'sin-equipo': 'Elige equipo antes de apostar',
+};
 
 function carta(c: Carta | null) {
 	const e = el('span', c ? 'bj-carta' : 'bj-carta bj-oculta');
@@ -61,23 +36,34 @@ function carta(c: Carta | null) {
 	return e;
 }
 
+/** Texto del final de una mano a partir de las cartas y lo ganado */
+function desenlace(m: ManoBlackjack): string {
+	const mia = valorMano(m.jugador);
+	const suya = valorMano(m.banca);
+	const neto = m.neto ?? 0;
+	if (mia > 21) return `Te pasas de 21. Pierdes ${m.apuesta}`;
+	if (esBlackjack(m.jugador) && esBlackjack(m.banca)) return 'Blackjack para los dos: empate';
+	if (esBlackjack(m.jugador)) return `¡Blackjack! ${conSigno(neto)}`;
+	if (esBlackjack(m.banca)) return `Blackjack de la banca. Pierdes ${m.apuesta}`;
+	if (suya > 21) return `La banca se pasa (${suya}). ¡Ganas! ${conSigno(neto)}`;
+	if (neto > 0) return `${mia} contra ${suya}. ¡Ganas! ${conSigno(neto)}`;
+	if (neto < 0) return `${mia} contra ${suya}. Pierdes ${m.apuesta}`;
+	return `Empate a ${mia}: recuperas lo apostado`;
+}
+
 export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto): Promise<Resultado> {
 	const inicial = await bancaCasino();
+	const abierta = await manoBlackjackAbierta().catch(() => null);
 	return new Promise((resolve) => {
-		let banca = inicial.puntos;
+		let banca = abierta?.puntos ?? inicial.puntos;
 		let terminada = false;
 		let neto = 0;
 		let manos = 0;
 		let ganadas = 0;
-		// Mano en curso: lo que hay en juego y si aún no se ha resuelto
-		let enMano = false;
-		let apostado = 0;
-		let jugador: Carta[] = [];
-		let casa: Carta[] = [];
 
 		const escena = el('div', 'casino-escena');
 		const marcador = crearBanca();
-		const crupier = crearCrupier(ctx.crupierSrc, 'Siéntate, que reparto.');
+		const crupier = crearCrupier(ctx.crupierSrc, abierta ? 'Te guardé la mano. ¿Seguimos?' : 'Siéntate, que reparto.');
 		const casaEl = el('div', 'bj-mano');
 		const casaTotal = el('p', 'bj-total');
 		const jugadorEl = el('div', 'bj-mano');
@@ -100,24 +86,23 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			return b;
 		}
 
-		function pintar(ocultarCasa: boolean) {
-			casaEl.replaceChildren(...casa.map((c, i) => carta(ocultarCasa && i === 1 ? null : c)));
+		/** Pinta las cartas. `casa` son las que se ven de la banca; `oculta` añade la que está boca abajo */
+		function pintar(jugador: Carta[], casa: Carta[], oculta: boolean) {
+			casaEl.replaceChildren(...casa.map((c) => carta(c)), ...(oculta ? [carta(null)] : []));
 			jugadorEl.replaceChildren(...jugador.map((c) => carta(c)));
-			casaTotal.textContent = casa.length ? (ocultarCasa ? `${valor(casa.slice(0, 1))}` : String(valor(casa))) : '';
-			jugadorTotal.textContent = jugador.length ? String(valor(jugador)) : '';
+			casaTotal.textContent = casa.length ? String(valorMano(casa)) : '';
+			jugadorTotal.textContent = jugador.length ? String(valorMano(jugador)) : '';
+		}
+
+		function fallo(e: unknown) {
+			mensaje.className = 'ruleta-resultado mal';
+			mensaje.textContent = MENSAJES_ERROR[e instanceof Error ? e.message : ''] ?? 'No se ha podido jugar la mano. Inténtalo otra vez';
 		}
 
 		function terminar() {
 			if (terminada) return;
 			terminada = true;
-			// Cerrar la ventana a media mano es perderla
-			if (enMano) {
-				enMano = false;
-				neto -= apostado;
-				void apostarEnCasino('blackjack', apostado, -apostado)
-					.catch(() => undefined)
-					.then(() => document.dispatchEvent(new CustomEvent('liga:cambio')));
-			}
+			// Una mano a medias se queda guardada: al volver al blackjack se sigue
 			resolve({
 				puntos: neto,
 				detalle: manos ? `${manos} ${manos === 1 ? 'mano' : 'manos'}, ${ganadas} ${ganadas === 1 ? 'ganada' : 'ganadas'}` : 'Sin jugar',
@@ -134,129 +119,91 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 				mensaje.className = 'ruleta-resultado';
 				mensaje.textContent = 'No te quedan puntos para apostar';
 			}
-			acciones.replaceChildren(...(sinPuntos ? [] : [boton(manos ? 'Repartir otra vez' : 'Repartir', repartir)]), boton('Salir del casino', terminar, true));
+			acciones.replaceChildren(...(sinPuntos ? [] : [boton(manos ? 'Repartir otra vez' : 'Repartir', () => void repartir())]), boton('Salir del casino', terminar, true));
 		}
 
-		async function resolver(motivo: 'blackjack' | 'pierde-pasado' | 'compara') {
-			enMano = false;
+		/** Mano terminada: se destapa la banca carta a carta y se cuenta el resultado */
+		async function cerrar(m: ManoBlackjack) {
 			acciones.replaceChildren();
-			const mia = valor(jugador);
-			const suya = valor(casa);
-			let ganancia = 0;
-			let texto = '';
-			if (motivo === 'pierde-pasado') {
-				ganancia = -apostado;
-				texto = `Te pasas de 21. Pierdes ${apostado}`;
-			} else if (esBlackjack(jugador) && esBlackjack(casa)) {
-				texto = 'Blackjack para los dos: empate';
-			} else if (esBlackjack(jugador)) {
-				ganancia = Math.floor(apostado * 1.5);
-				texto = `¡Blackjack! ${conSigno(ganancia)}`;
-			} else if (esBlackjack(casa)) {
-				ganancia = -apostado;
-				texto = `Blackjack de la banca. Pierdes ${apostado}`;
-			} else if (suya > 21) {
-				ganancia = apostado;
-				texto = `La banca se pasa (${suya}). ¡Ganas! ${conSigno(ganancia)}`;
-			} else if (mia > suya) {
-				ganancia = apostado;
-				texto = `${mia} contra ${suya}. ¡Ganas! ${conSigno(ganancia)}`;
-			} else if (mia < suya) {
-				ganancia = -apostado;
-				texto = `${mia} contra ${suya}. Pierdes ${apostado}`;
-			} else {
-				texto = `Empate a ${mia}: recuperas lo apostado`;
+			const cuentaBanca = m.banca.length > 2 || !esBlackjack(m.jugador);
+			if (valorMano(m.jugador) <= 21 && cuentaBanca) {
+				mensaje.className = 'ruleta-resultado';
+				mensaje.textContent = 'Juega la banca…';
+				crupier.decir('Me toca a mí…');
 			}
-
-			pintar(false);
-			try {
-				banca = (await apostarEnCasino('blackjack', apostado, ganancia)).puntos;
-			} catch {
-				mensaje.className = 'ruleta-resultado mal';
-				mensaje.textContent = 'No se ha podido anotar la mano';
-				entreManos();
-				return;
+			for (let i = 2; i <= m.banca.length; i++) {
+				pintar(m.jugador, m.banca.slice(0, i), false);
+				await esperar(PAUSA_CARTA);
+				if (terminada) return;
 			}
+			const ganancia = m.neto ?? 0;
+			banca = m.puntos;
 			neto += ganancia;
 			manos++;
 			if (ganancia > 0) ganadas++;
-			if (terminada) return;
 			document.dispatchEvent(new CustomEvent('liga:cambio'));
 			navigator.vibrate?.(ganancia > 0 ? 30 : 10);
 			entreManos();
 			mensaje.className = `ruleta-resultado ${ganancia > 0 ? 'bien' : ganancia < 0 ? 'mal' : ''}`;
-			mensaje.textContent = texto;
+			mensaje.textContent = desenlace(m);
 			crupier.decir(ganancia > 0 ? '¡Bien jugado!' : ganancia < 0 ? 'La banca gana esta mano.' : 'Tablas. Otra vuelta.');
 		}
 
-		/** Le toca a la banca: enseña la carta oculta y roba hasta 17 */
-		async function turnoBanca() {
-			acciones.replaceChildren();
-			mensaje.className = 'ruleta-resultado';
-			mensaje.textContent = 'Juega la banca…';
-			crupier.decir('Me toca a mí…');
-			pintar(false);
-			await esperar(PAUSA_CARTA);
-			while (!terminada && valor(casa) < 17) {
-				casa.push(sacar());
-				pintar(false);
+		/** Pinta lo que devuelve el servidor y sigue: turno del jugador o fin de la mano */
+		async function mostrar(m: ManoBlackjack) {
+			banca = m.puntos;
+			marcador.poner(banca, inicial.prueba);
+			if (m.estado === 'terminada') {
+				pintar(m.jugador, m.banca.slice(0, 1), true);
 				await esperar(PAUSA_CARTA);
+				if (!terminada) await cerrar(m);
+				return;
 			}
-			if (terminada) return;
-			await resolver('compara');
-		}
-
-		function turnoJugador() {
-			const puedeDoblar = jugador.length === 2 && banca >= apostado * 2;
+			pintar(m.jugador, m.banca, true);
+			const puedeDoblar = m.puedeDoblar && banca >= m.apuesta;
 			mensaje.className = 'ruleta-resultado';
 			mensaje.textContent = 'Tu turno';
 			crupier.decir('¿Carta o te plantas?');
 			acciones.replaceChildren(
-				boton('Pedir carta', pedir),
-				boton('Plantarme', () => void turnoBanca()),
-				...(puedeDoblar ? [boton(`Doblar (${apostado * 2})`, doblar, true)] : []),
+				boton('Pedir carta', () => void jugada('pedir')),
+				boton('Plantarme', () => void jugada('plantarse')),
+				...(puedeDoblar ? [boton(`Doblar (${m.apuesta * 2})`, () => void jugada('doblar'), true)] : []),
 			);
 		}
 
-		async function pedir() {
-			jugador.push(sacar());
-			pintar(true);
-			const total = valor(jugador);
-			if (total > 21) return void (await resolver('pierde-pasado'));
-			if (total === 21) return void (await turnoBanca());
-			turnoJugador();
-		}
-
-		async function doblar() {
-			apostado *= 2;
-			jugador.push(sacar());
-			pintar(true);
-			if (valor(jugador) > 21) return void (await resolver('pierde-pasado'));
-			await turnoBanca();
+		async function jugada(accion: AccionBlackjack) {
+			acciones.querySelectorAll('button').forEach((b) => (b.disabled = true));
+			try {
+				await mostrar(await jugarBlackjack(accion));
+			} catch (e) {
+				fallo(e);
+				const m = await manoBlackjackAbierta().catch(() => null);
+				if (m) await mostrar(m);
+				else entreManos();
+			}
 		}
 
 		async function repartir() {
 			const puntos = fichas.valor();
-			if (enMano || puntos === 0 || terminada) return;
-			enMano = true;
-			apostado = puntos;
+			if (puntos === 0 || terminada) return;
 			fichas.bloquear(true);
-			jugador = [sacar(), sacar()];
-			casa = [sacar(), sacar()];
 			acciones.replaceChildren();
-			pintar(true);
-			// Con blackjack de alguien (la banca lo mira antes de seguir) se acaba la mano al momento
-			if (esBlackjack(jugador) || esBlackjack(casa)) {
-				await esperar(PAUSA_CARTA);
-				if (terminada) return;
-				return void (await resolver('blackjack'));
+			try {
+				await mostrar(await repartirBlackjack(puntos));
+			} catch (e) {
+				fallo(e);
+				entreManos();
 			}
-			turnoJugador();
 		}
 
 		escena.append(crupier.el, crearMesa(marcador.el, mesa, mensaje, fichas.el, acciones));
 		area.replaceChildren(escena);
-		entreManos();
+		if (abierta) {
+			fichas.bloquear(true);
+			void mostrar(abierta);
+		} else {
+			entreManos();
+		}
 		senal.addEventListener('abort', terminar, { once: true });
 	});
 }

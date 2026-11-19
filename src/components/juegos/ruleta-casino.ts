@@ -3,10 +3,10 @@
 // Si se acierta se cobra según lo que se arriesga (1 a 1, 2 a 1 o 35 a 1). Si sale el 67 gana la banca, salvo a quien
 // haya apostado al 67 (como al 0 en una ruleta real).
 //
-// TODO(DB): el giro debería hacerlo el SERVIDOR (RPC `apostar_casino(clave, 'ruleta-casino', apuesta)` que devuelva
-// el número); si se gira en el navegador, alguien podría elegir el resultado.
+// El giro lo hace el SERVIDOR (`girarRuleta` en liga.ts → RPC `girar_ruleta`): aquí solo se anima la rueda hasta
+// la casilla que ha salido.
 // TODO(admin): las fichas y la apuesta máxima se editarán desde el admin (CONFIG en liga.ts).
-import { apostarEnCasino, bancaCasino } from './liga';
+import { bancaCasino, girarRuleta, type ApuestaRuleta } from './liga';
 import { conSigno, crearBanca, crearCrupier, crearFichas, crearMesa, el, esperar } from './casino';
 import type { Contexto, Resultado } from './partida';
 
@@ -26,28 +26,27 @@ const DURACION_GIRO = 4300;
 const VUELTAS = 5;
 
 interface Apuesta {
-	id: string;
+	id: ApuestaRuleta;
 	texto: string;
 	/** Puntos que se cobran por cada punto apostado (además de recuperar lo apostado) */
 	paga: number;
-	gana: (n: number, elegido: number | null) => boolean;
 }
 
 const APUESTAS: Apuesta[] = [
-	{ id: 'rojo', texto: 'Rojo', paga: 1, gana: (n) => colorDe(n) === 'rojo' },
-	{ id: 'negro', texto: 'Negro', paga: 1, gana: (n) => colorDe(n) === 'negro' },
-	{ id: 'par', texto: 'Par', paga: 1, gana: (n) => n !== BANCA && n % 2 === 0 },
-	{ id: 'impar', texto: 'Impar', paga: 1, gana: (n) => n !== BANCA && n % 2 === 1 },
-	{ id: 'd1', texto: '1–12', paga: 2, gana: (n) => n >= 1 && n <= 12 },
-	{ id: 'd2', texto: '13–24', paga: 2, gana: (n) => n >= 13 && n <= 24 },
-	{ id: 'd3', texto: '25–36', paga: 2, gana: (n) => n >= 25 && n <= 36 },
-	{ id: 'numero', texto: 'Un número', paga: 35, gana: (n, elegido) => n === elegido },
+	{ id: 'rojo', texto: 'Rojo', paga: 1 },
+	{ id: 'negro', texto: 'Negro', paga: 1 },
+	{ id: 'par', texto: 'Par', paga: 1 },
+	{ id: 'impar', texto: 'Impar', paga: 1 },
+	{ id: 'd1', texto: '1–12', paga: 2 },
+	{ id: 'd2', texto: '13–24', paga: 2 },
+	{ id: 'd3', texto: '25–36', paga: 2 },
+	{ id: 'numero', texto: 'Un número', paga: 35 },
 ];
 
-// Sale una de 37 casillas: la 0 de la ruleta europea es aquí el 67
-const casillaAlAzar = () => {
-	const n = crypto.getRandomValues(new Uint32Array(1))[0] % 37;
-	return n === 0 ? BANCA : n;
+const MENSAJES_ERROR: Record<string, string> = {
+	'sin-puntos': 'No tienes tantos puntos para apostar',
+	'liga-cerrada': 'La liga ya ha terminado: el casino está cerrado',
+	'sin-equipo': 'Elige equipo antes de apostar',
 };
 
 /** Dibuja la ruleta con la casilla de la banca centrada arriba y el resto en sentido horario */
@@ -205,18 +204,20 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			resultado.textContent = 'Girando…';
 			crupier.decir('¡No va más!');
 
-			// El resultado se decide y se apunta ANTES de la animación: cerrar la ventana no evita perder
-			const ganador = casillaAlAzar();
-			const acierta = apuesta.gana(ganador, numero);
-			const ganancia = acierta ? apostado * apuesta.paga : -apostado;
+			// El servidor gira y apunta el resultado ANTES de la animación: cerrar la ventana no evita perder
+			let ganador: number;
+			let acierta: boolean;
+			let ganancia: number;
 			try {
-				banca = (await apostarEnCasino('ruleta-casino', apostado, ganancia)).puntos;
-			} catch {
+				const giro = await girarRuleta(apuesta.id, apostado, apuesta.id === 'numero' ? numero : null);
+				({ casilla: ganador, gana: acierta, neto: ganancia, puntos: banca } = giro);
+			} catch (e) {
 				girando = false;
 				salir.disabled = false;
 				fichas.bloquear(false);
 				actualizar();
-				resultado.textContent = 'No se ha podido apostar. Inténtalo otra vez';
+				resultado.textContent = MENSAJES_ERROR[e instanceof Error ? e.message : ''] ?? 'No se ha podido apostar. Inténtalo otra vez';
+				crupier.decir('Vaya, no ha entrado la apuesta.');
 				return;
 			}
 			neto += ganancia;
