@@ -96,6 +96,30 @@
 	color-scheme: dark;
 }
 
+/* Juegos: la isla de Catan. Madera, pergamino y oro, con letra de rótulo serif. */
+:root[data-tema='catan'] {
+	--color-granate: #6b4423;
+	--color-granate-oscuro: #46290f;
+	--color-granate-claro: #8a5a30;
+	--color-amarillo: #f0c14b;
+	--color-amarillo-claro: #f7dc8f;
+	--color-amarillo-oscuro: #b98a22;
+	--color-crema: #f3e4bd;
+	--color-crema-oscuro: #e6d29b;
+	--color-tinta: #2c1b0d;
+	--color-tinta-suave: #6f5538;
+	--color-extra: #b5301f;
+	--font-rotulo: 'Cinzel', 'Trajan Pro', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 800;
+	--rotulo-espaciado: 0.05em;
+	--rotulo-interlineado: 1.05;
+	--radius-lg: 0.75rem;
+}
+:root[data-tema='catan'] header[data-barra] {
+	box-shadow: 0 3px 0 0 var(--color-amarillo-oscuro);
+}
+
 /* Inicio: la charca de Trioland. Verde bosque como color principal y lima como acento.
  * (Las variables --c-* de .selva, más abajo, son las de las escenas ilustradas.) */
 :root[data-tema='charca'] {

@@ -1,0 +1,915 @@
+---
+import { getImage } from 'astro:assets';
+import Button from '../common/Button.astro';
+import rana from '../../assets/mascota/saluda.png';
+import ladron from '../../assets/mascota/ladron.png';
+import crupier from '../../assets/mascota/crupier.png';
+import FotosDemo from '../cromos/FotosDemo.astro';
+
+// Ventana a pantalla completa donde se juega un minijuego. La abre `lanzar(id)` de partida.ts
+// y cada juego pinta su tablero dentro de [data-area].
+const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' });
+const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'webp' });
+const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: 'webp' });
+---
+
+<dialog
+	data-partida
+	data-rana-src={ranaSrc}
+	data-ladron-src={ladronSrc}
+	data-crupier-src={crupierSrc}
+	aria-label="Minijuego"
+	class="fixed inset-0 m-0 hidden h-dvh max-h-none w-dvw max-w-none overflow-y-auto bg-granate-oscuro p-0 text-crema backdrop:bg-black/70 open:block"
+>
+	<button
+		type="button"
+		aria-label="Cerrar"
+		onclick="this.closest('dialog').close()"
+		class="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid size-11 place-items-center rounded-full bg-crema/10 text-2xl font-black text-crema active:bg-crema/25"
+	>
+		×
+	</button>
+
+	<div class="mx-auto flex min-h-full max-w-md flex-col items-center justify-center px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
+		<!-- 1 · Instrucciones -->
+		<div data-pantalla="intro" class="w-full text-center">
+			<h2 data-titulo class="text-3xl text-amarillo"></h2>
+			<p data-instrucciones class="mx-auto mt-4 max-w-xs text-crema/90"></p>
+			<p data-limite class="mt-3 text-xs font-bold uppercase tracking-widest text-amarillo-claro"></p>
+			<Button data-jugar tamano="lg" class="mt-8 w-full">¡A jugar!</Button>
+		</div>
+
+		<!-- 2 · Partida -->
+		<div data-pantalla="juego" hidden class="w-full">
+			<div data-area></div>
+		</div>
+
+		<!-- 3 · Resultado -->
+		<div data-pantalla="final" hidden class="w-full text-center">
+			<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">Partida terminada</p>
+			<p class="rotulo mt-3 text-7xl text-amarillo"><span data-final-puntos>0</span></p>
+			<p data-final-etiqueta class="text-sm font-bold uppercase tracking-widest">puntos para tu equipo</p>
+			<p data-final-detalle class="mt-3 text-crema/80"></p>
+			<p data-final-subida class="mt-2 text-lg font-black text-amarillo"></p>
+			<Button tamano="lg" class="mt-8 w-full" onclick="this.closest('dialog').close()">Volver al tablero</Button>
+		</div>
+	</div>
+</dialog>
+
+<!-- Fotos de ejemplo del trío para el memory (TODO: vendrán de listar_cromos) -->
+<FotosDemo />
+
+<style is:global>
+	/* === Golpea la rana === */
+	.rana-hud {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		font-weight: 900;
+	}
+	.rana-hud .rana-tiempo {
+		flex: 1;
+		height: 0.75rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: var(--color-granate);
+	}
+	.rana-hud .rana-tiempo i {
+		display: block;
+		height: 100%;
+		width: 100%;
+		border-radius: 999px;
+		background: var(--color-amarillo);
+	}
+	.rana-hud output {
+		min-width: 4.5rem;
+		text-align: right;
+		color: var(--color-amarillo);
+		font-size: 1.25rem;
+	}
+	.rana-campo {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.5rem;
+		padding: 0.75rem;
+		border-radius: 1rem;
+		background: #12402c;
+		touch-action: manipulation;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.rana-agujero {
+		position: relative;
+		aspect-ratio: 1;
+		overflow: hidden;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	/* El agujero: una elipse oscura y un borde de hierba por delante de la rana */
+	.rana-fondo {
+		position: absolute;
+		inset: auto 4% 12% 4%;
+		height: 36%;
+		border-radius: 50%;
+		background: radial-gradient(ellipse at 50% 30%, #0b1f15, #06150e);
+	}
+	.rana-borde {
+		position: absolute;
+		inset: auto 0 0 0;
+		height: 30%;
+		border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+		border-top: 4px solid #8fbf3a;
+		background: #1d6b45;
+	}
+	.rana-bicho {
+		position: absolute;
+		left: 50%;
+		bottom: 12%;
+		width: 70%;
+		transform: translate(-50%, 115%);
+		transition: transform 0.12s ease-out;
+		pointer-events: none;
+		-webkit-user-drag: none;
+	}
+	.rana-agujero.arriba .rana-bicho {
+		transform: translate(-50%, 0);
+	}
+	.rana-agujero.golpeada .rana-bicho {
+		transform: translate(-50%, 8%) rotate(-10deg) scaleY(0.88);
+		filter: brightness(1.4);
+	}
+	.rana-agujero.dorada .rana-bicho {
+		filter: sepia(1) saturate(4) hue-rotate(-8deg) brightness(1.15);
+	}
+	.rana-pop {
+		position: absolute;
+		left: 50%;
+		top: 20%;
+		translate: -50% 0;
+		color: #fbf4e4;
+		font-size: 1.5rem;
+		font-weight: 900;
+		pointer-events: none;
+		animation: rana-pop 0.6s ease-out forwards;
+	}
+	@keyframes rana-pop {
+		to {
+			transform: translateY(-1.5rem);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.rana-bicho {
+			transition: none;
+		}
+		.rana-pop {
+			animation-duration: 0.01s;
+		}
+	}
+
+	/* === Memory de cromos === */
+	.memo-hud {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+		color: var(--color-amarillo);
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+	.memo-campo {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.6rem;
+		touch-action: manipulation;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.memo-carta {
+		aspect-ratio: 3 / 4;
+		padding: 0;
+		border: 0;
+		background: none;
+		perspective: 600px;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.memo-int {
+		position: relative;
+		display: block;
+		width: 100%;
+		height: 100%;
+		transform-style: preserve-3d;
+		transition: transform 0.35s;
+	}
+	.memo-carta.vuelta .memo-int {
+		transform: rotateY(180deg);
+	}
+	.memo-cara {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		border: 3px solid var(--color-amarillo);
+		border-radius: 0.6rem;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.memo-dorso {
+		background:
+			radial-gradient(circle at 50% 50%, var(--color-granate-claro) 0 22%, transparent 23%),
+			repeating-linear-gradient(45deg, var(--color-granate), var(--color-granate) 8px, var(--color-granate-oscuro) 8px 16px);
+	}
+	.memo-frente {
+		display: flex;
+		flex-direction: column;
+		transform: rotateY(180deg);
+		background: var(--color-crema);
+	}
+	.memo-frente img {
+		flex: 1;
+		min-height: 0;
+		width: 100%;
+		object-fit: cover;
+		object-position: 50% 20%;
+		-webkit-user-drag: none;
+	}
+	.memo-numero {
+		display: grid;
+		flex: 1;
+		place-items: center;
+		background: var(--color-granate-claro);
+		color: var(--color-amarillo);
+		font-size: 1.5rem;
+		font-weight: 900;
+	}
+	.memo-nombre {
+		padding: 0.25rem;
+		background: var(--color-granate);
+		color: var(--color-amarillo);
+		font-size: 0.7rem;
+		font-weight: 900;
+		line-height: 1.1;
+		text-align: center;
+		text-transform: uppercase;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.memo-carta.pareja .memo-cara {
+		border-color: #c6f26b;
+		box-shadow: 0 0 0 2px #c6f26b;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.memo-int {
+			transition: none;
+		}
+	}
+
+	/* === Dados de Catan (tirada diaria) ===
+	 * Dos cubos 3D sobre un tapete con marco de madera, vistos desde arriba. tirada.ts calcula la trayectoria
+	 * de cada lanzamiento y la anima; aquí solo está el aspecto. */
+	.dados-escena {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		text-align: center;
+	}
+	.dados-marco {
+		display: block;
+		width: 100%;
+		padding: 0.7rem;
+		border: 0;
+		border-radius: 1.4rem;
+		background:
+			repeating-linear-gradient(100deg, rgb(255 255 255 / 0.05) 0 3px, transparent 3px 11px),
+			linear-gradient(160deg, #9a6838, #6b4423 55%, #4a2c12);
+		box-shadow:
+			inset 0 2px 0 rgb(255 255 255 / 0.18),
+			inset 0 -3px 0 rgb(0 0 0 / 0.3),
+			0 8px 0 #2e1a09,
+			0 14px 24px rgb(0 0 0 / 0.45);
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.dados-marco.usado {
+		cursor: default;
+	}
+	.dados-tapete {
+		--lado: 4.25rem;
+		position: relative;
+		display: block;
+		aspect-ratio: 4 / 3;
+		max-height: 46dvh;
+		width: 100%;
+		overflow: hidden;
+		border-radius: 0.9rem;
+		background:
+			radial-gradient(ellipse at 50% 38%, rgb(255 255 255 / 0.1), transparent 60%),
+			radial-gradient(circle at 50% 50%, #1e6a46, #134a31 60%, #0c2f1f);
+		box-shadow:
+			inset 0 6px 16px rgb(0 0 0 / 0.6),
+			inset 0 0 0 2px rgb(0 0 0 / 0.25);
+	}
+	/* Destello rojo cuando sale el diablillo (por debajo de los dados) */
+	.dados-tapete::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle, rgb(181 48 31 / 0.55), rgb(90 10 6 / 0.75));
+		opacity: 0;
+		transition: opacity 0.4s;
+		pointer-events: none;
+	}
+	.dados-escena.ladron .dados-tapete::before {
+		opacity: 1;
+	}
+	.dados-pista {
+		position: absolute;
+		inset: auto 0 0.7rem;
+		color: rgb(243 228 189 / 0.75);
+		font-size: 0.75rem;
+		font-weight: 900;
+		letter-spacing: 0.25em;
+		text-transform: uppercase;
+		animation: dados-pista 1.6s ease-in-out infinite;
+		transition: opacity 0.2s;
+	}
+	.dados-marco.usado .dados-pista {
+		opacity: 0;
+		animation: none;
+	}
+	@keyframes dados-pista {
+		50% {
+			opacity: 0.35;
+		}
+	}
+
+	.dado3d,
+	.dado-sombra {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: var(--lado);
+		height: var(--lado);
+	}
+	.dado-sombra {
+		border-radius: 35%;
+		background: radial-gradient(closest-side, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.5) 55%, transparent);
+		filter: blur(2px);
+	}
+	/* Cada dado lleva su perspectiva: se ve desde justo encima, sin asomar los laterales en reposo */
+	.dado3d {
+		perspective: 620px;
+	}
+	.dado-cubo {
+		position: absolute;
+		inset: 0;
+		transform-style: preserve-3d;
+		will-change: transform;
+	}
+	.dado3d.claro {
+		--dado-fondo: linear-gradient(145deg, #fffaf0, #f1e2bd 70%, #e2cd9b);
+		--dado-canto: #e2cfa0;
+		--dado-punto: #2c1b0d;
+	}
+	.dado3d.rojo {
+		--dado-fondo: linear-gradient(145deg, #e0533b, #b5301f 65%, #8f2213);
+		--dado-canto: #93261a;
+		--dado-punto: #fbf0d4;
+	}
+	.dado-cara,
+	.dado-nucleo {
+		position: absolute;
+		inset: 0;
+	}
+	.dado-nucleo {
+		border-radius: 12%;
+		background: var(--dado-canto);
+	}
+	.dado-cara {
+		display: grid;
+		grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+		padding: 15%;
+		border-radius: 20%;
+		background: var(--dado-fondo);
+		box-shadow:
+			inset 0 0 0 1px rgb(0 0 0 / 0.12),
+			inset -0.25rem -0.3rem 0.55rem rgb(0 0 0 / 0.2),
+			inset 0.2rem 0.25rem 0.45rem rgb(255 255 255 / 0.4);
+		backface-visibility: hidden;
+	}
+	.dado-punto {
+		place-self: center;
+		width: 78%;
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background: var(--dado-punto);
+		box-shadow:
+			inset 0 0.12rem 0.18rem rgb(0 0 0 / 0.55),
+			0 1px 0 rgb(255 255 255 / 0.35);
+	}
+	/* El uno del dado claro, grande y rojo, como en los dados de toda la vida */
+	.dado3d.claro .cara-1 .dado-punto {
+		width: 120%;
+		background: #b5301f;
+	}
+
+	/* Ficha numerada de Catan con el resultado */
+	.dados-resultado {
+		display: grid;
+		place-items: center;
+		min-height: 6rem;
+	}
+	.dados-ficha {
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		width: 5.5rem;
+		height: 5.5rem;
+		border-radius: 50%;
+		background: radial-gradient(circle at 35% 30%, #fdf6e2, #ecdcae 70%, #d9c38a);
+		box-shadow:
+			0 0 0 4px #b98a22,
+			0 0 0 6px #46290f,
+			0 7px 0 6px rgb(0 0 0 / 0.35);
+		color: var(--color-tinta);
+		font-family: var(--font-rotulo);
+		transition: filter 0.3s;
+	}
+	.dados-ficha:empty {
+		visibility: hidden;
+	}
+	.dados-ficha-num {
+		font-size: 2.6rem;
+		font-weight: 800;
+		line-height: 1;
+	}
+	.dados-ficha-puntos {
+		display: flex;
+		gap: 3px;
+		height: 6px;
+		margin-top: 0.2rem;
+	}
+	.dados-ficha-puntos span {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+	.dados-ficha.roja {
+		color: #b5301f;
+	}
+	.dados-ficha.diablo {
+		background: radial-gradient(circle at 35% 30%, #7a2418, #3a0e08);
+		box-shadow:
+			0 0 0 4px #b5301f,
+			0 0 0 6px #2a0a06,
+			0 0 28px 8px rgb(255 90 60 / 0.45);
+		color: #ffb3a6;
+	}
+	.dados-ficha.apagada {
+		filter: grayscale(0.8) brightness(0.75);
+	}
+	.dados-mensaje {
+		min-height: 1.75rem;
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.dados-escena.ladron .dados-mensaje {
+		color: #ff7f6e;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.dados-pista {
+			animation: none;
+		}
+	}
+
+	/* === Adivina el cromo === */
+	.adv-hud {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+		color: var(--color-amarillo);
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+	.adv-marco {
+		position: relative;
+		margin-inline: auto;
+		max-width: 17rem;
+		aspect-ratio: 3 / 4;
+		overflow: hidden;
+		border: 4px solid var(--color-amarillo);
+		border-radius: 0.9rem;
+		background: var(--color-granate);
+	}
+	.adv-foto {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 50% 20%;
+		/* Se amplía un poco para que el difuminado no deje bordes claros */
+		transform: scale(1.12);
+		-webkit-user-drag: none;
+	}
+	.adv-quien {
+		position: absolute;
+		inset: auto 0 0 0;
+		padding: 0.5rem;
+		background: var(--color-granate-oscuro);
+		color: var(--color-amarillo);
+		font-weight: 900;
+		text-align: center;
+		text-transform: uppercase;
+	}
+	.adv-opciones {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.6rem;
+		margin-top: 1rem;
+	}
+	.adv-opcion {
+		min-height: 3.5rem;
+		padding: 0.5rem;
+		border: 3px solid var(--color-amarillo);
+		border-radius: 0.6rem;
+		background: var(--color-granate);
+		color: var(--color-crema);
+		font-size: 0.95rem;
+		font-weight: 900;
+		line-height: 1.1;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	.adv-opcion:active:not(:disabled) {
+		transform: scale(0.97);
+	}
+	.adv-opcion.bien {
+		border-color: #c6f26b;
+		background: #2f6b2a;
+		color: #fff;
+	}
+	.adv-opcion.mal {
+		border-color: #ff7f6e;
+		background: #8a2a20;
+		color: #fff;
+	}
+
+	/* === La conga de Catan === */
+	.conga-lienzo {
+		display: block;
+		margin-inline: auto;
+		border: 4px solid var(--color-amarillo);
+		border-radius: 0.6rem;
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+
+	/* === Tirada diaria de dados === */
+	.tirada-acciones {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		margin-top: 0.5rem;
+	}
+	.tirada-boton {
+		width: 100%;
+		padding: 1rem;
+		border: 0;
+		border-radius: 0.3rem;
+		background: var(--color-amarillo);
+		color: var(--color-granate-oscuro);
+		font-weight: 900;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		box-shadow: 0 4px 0 var(--color-amarillo-oscuro);
+		cursor: pointer;
+	}
+	.tirada-boton:disabled {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+	.tirada-boton-sec {
+		border: 2px solid rgb(251 244 228 / 0.4);
+		background: transparent;
+		color: var(--color-crema);
+		box-shadow: none;
+	}
+	.tirada-diablillo {
+		height: 9rem;
+		width: auto;
+		filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.5));
+	}
+
+	/* === Ruleta de casino === */
+	.ruleta-rueda {
+		position: relative;
+		width: 18rem;
+		height: 18rem;
+		margin-top: 0.75rem;
+	}
+	.ruleta-rueda canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		box-shadow:
+			0 0 0 5px var(--color-amarillo),
+			0 6px 0 5px var(--color-amarillo-oscuro);
+		transition: transform 4.2s cubic-bezier(0.12, 0.65, 0.12, 1);
+	}
+	.ruleta-marca {
+		position: absolute;
+		top: -1.1rem;
+		left: 50%;
+		z-index: 2;
+		width: 0;
+		height: 0;
+		transform: translateX(-50%);
+		border-top: 1.3rem solid #fff;
+		border-right: 0.7rem solid transparent;
+		border-left: 0.7rem solid transparent;
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.5));
+	}
+	.ruleta-resultado {
+		min-height: 2.6rem;
+		text-align: center;
+		font-weight: 900;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.ruleta-resultado.bien {
+		color: #c6f26b;
+	}
+	.ruleta-resultado.mal {
+		color: #ff7f6e;
+	}
+	.ruleta-apuestas {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.4rem;
+		width: 100%;
+	}
+	.ruleta-apuesta {
+		min-height: 3rem;
+		padding: 0.25rem;
+		border: 3px solid var(--color-amarillo);
+		border-radius: 0.5rem;
+		background: var(--color-granate);
+		color: var(--color-crema);
+		font-size: 0.8rem;
+		font-weight: 900;
+		line-height: 1.1;
+		cursor: pointer;
+	}
+	.ruleta-apuesta small {
+		display: block;
+		font-size: 0.65rem;
+		opacity: 0.85;
+	}
+	.ruleta-apuesta[data-color='rojo'] {
+		background: #8a2a20;
+	}
+	.ruleta-apuesta[data-color='negro'] {
+		background: #1d1d1f;
+	}
+	.ruleta-apuesta.sel {
+		background: var(--color-amarillo);
+		color: var(--color-granate-oscuro);
+	}
+	.ruleta-numeros {
+		display: grid;
+		grid-template-columns: repeat(12, 1fr);
+		gap: 0.2rem;
+		width: 100%;
+	}
+	.ruleta-numeros[hidden] {
+		display: none;
+	}
+	.ruleta-numero {
+		height: 2.7rem;
+		padding: 0;
+		border: 2px solid transparent;
+		border-radius: 0.3rem;
+		color: #fff;
+		font-size: 0.7rem;
+		font-weight: 900;
+		cursor: pointer;
+	}
+	.ruleta-numero[data-color='rojo'] {
+		background: #c0392b;
+	}
+	.ruleta-numero[data-color='verde'] {
+		grid-column: 1 / -1;
+		height: 2.4rem;
+		background: #2e8b3d;
+		font-size: 0.95rem;
+	}
+	.ruleta-numero[data-color='negro'] {
+		background: #1d1d1f;
+	}
+	.ruleta-numero.sel {
+		border-color: var(--color-amarillo);
+		box-shadow: 0 0 0 2px var(--color-amarillo);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ruleta-rueda canvas {
+			transition-duration: 0.3s;
+		}
+	}
+	/* === Casino: marcador, fichas y blackjack === */
+	.casino-escena {
+		width: 100%;
+	}
+	/* El crupier, de pie detrás de la mesa: el borde de madera le tapa de la cintura para abajo */
+	.casino-crupier {
+		position: relative;
+		height: 14.2rem;
+		overflow: hidden;
+		border: 4px solid var(--color-amarillo);
+		border-bottom: 0;
+		border-radius: 1rem 1rem 0 0;
+		background:
+			radial-gradient(ellipse at 34% 30%, rgb(240 193 75 / 0.35), transparent 60%),
+			linear-gradient(180deg, #2b0d0a, #4a1712);
+	}
+	.casino-crupier-img {
+		position: absolute;
+		top: 0.6rem;
+		left: 34%;
+		width: auto;
+		height: 20.4rem;
+		max-width: none;
+		transform: translateX(-50%);
+		filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.55));
+	}
+	.casino-borde {
+		position: absolute;
+		inset: auto 0 0;
+		height: 1.3rem;
+		background: linear-gradient(180deg, #8a5a2c, #4d2f14);
+		border-top: 3px solid var(--color-amarillo);
+		box-shadow: 0 -4px 8px rgb(0 0 0 / 0.4);
+	}
+	.casino-dicho {
+		position: absolute;
+		top: 0.8rem;
+		right: 0.7rem;
+		max-width: 42%;
+		padding: 0.5rem 0.7rem;
+		border-radius: 0.8rem;
+		background: var(--color-crema);
+		color: var(--color-granate-oscuro);
+		font-size: 0.82rem;
+		font-weight: 900;
+		line-height: 1.2;
+		box-shadow: 0 2px 4px rgb(0 0 0 / 0.4);
+	}
+	.casino-dicho::before {
+		content: '';
+		position: absolute;
+		bottom: 0.5rem;
+		left: -0.5rem;
+		border-top: 0.4rem solid transparent;
+		border-right: 0.6rem solid var(--color-crema);
+		border-bottom: 0.4rem solid transparent;
+	}
+	/* El fieltro verde donde se apuesta */
+	.casino-mesa {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.9rem;
+		padding: 0.9rem 0.75rem 1.1rem;
+		border: 4px solid var(--color-amarillo);
+		border-top: 0;
+		border-radius: 0 0 1rem 1rem;
+		background: radial-gradient(circle at 50% 25%, #2f7a45, #1c4d2b 80%);
+		box-shadow: 0 6px 0 var(--color-amarillo-oscuro);
+	}
+	.casino-banca {
+		width: 100%;
+		padding: 0.4rem 0.75rem;
+		border-radius: 999px;
+		background: rgb(0 0 0 / 0.25);
+		text-align: center;
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+	}
+	.casino-banca strong {
+		color: var(--color-amarillo);
+		font-size: 1rem;
+		font-weight: 900;
+	}
+	.casino-fichas {
+		display: flex;
+		justify-content: center;
+		gap: 0.6rem;
+		width: 100%;
+	}
+	.casino-ficha {
+		width: 3.4rem;
+		height: 3.4rem;
+		border: 4px dashed var(--color-crema);
+		border-radius: 50%;
+		background: #8a2a20;
+		color: var(--color-crema);
+		font-size: 1.05rem;
+		font-weight: 900;
+		box-shadow: 0 3px 0 rgb(0 0 0 / 0.4);
+		cursor: pointer;
+	}
+	.casino-ficha.sel {
+		border-color: var(--color-granate-oscuro);
+		background: var(--color-amarillo);
+		color: var(--color-granate-oscuro);
+		transform: translateY(-3px);
+	}
+	.casino-ficha:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+	.bj-mesa {
+		width: 100%;
+		text-align: center;
+	}
+	.bj-etiqueta {
+		font-size: 0.65rem;
+		font-weight: 900;
+		letter-spacing: 0.25em;
+		text-transform: uppercase;
+		opacity: 0.8;
+	}
+	.bj-mano {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.4rem;
+		min-height: 4.9rem;
+		margin-top: 0.3rem;
+	}
+	.bj-total {
+		min-height: 1.5rem;
+		margin-bottom: 0.5rem;
+		font-size: 1.1rem;
+		font-weight: 900;
+		color: var(--color-amarillo-claro);
+	}
+	.bj-carta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 3.3rem;
+		height: 4.7rem;
+		border-radius: 0.4rem;
+		background: var(--color-crema);
+		color: #1d1d1f;
+		font-weight: 900;
+		line-height: 1;
+		box-shadow: 0 2px 4px rgb(0 0 0 / 0.45);
+		animation: bj-reparto 0.25s ease-out;
+	}
+	.bj-carta.roja {
+		color: #c0392b;
+	}
+	.bj-rango {
+		font-size: 1.4rem;
+	}
+	.bj-palo {
+		font-size: 1.3rem;
+	}
+	.bj-oculta {
+		background: repeating-linear-gradient(45deg, #8a2a20 0 6px, #6c1f17 6px 12px);
+		border: 3px solid var(--color-crema);
+	}
+	.bj-acciones {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		width: 100%;
+	}
+	@keyframes bj-reparto {
+		from {
+			opacity: 0;
+			transform: translateY(-0.6rem);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.bj-carta {
+			animation: none;
+		}
+	}
+</style>

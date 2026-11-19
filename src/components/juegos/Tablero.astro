@@ -1,0 +1,450 @@
+---
+import { getImage } from 'astro:assets';
+import Hoja from '../common/Hoja.astro';
+import ladron from '../../assets/mascota/ladron.png';
+import ElegirEquipo from './ElegirEquipo.astro';
+import Partida from './Partida.astro';
+import Premios from './Premios.astro';
+import Tirada from './Tirada.astro';
+import Ranking from './Ranking.astro';
+import { MINIJUEGOS } from './liga';
+
+// Hub de /juegos: una isla de Catan de 19 hexágonos (3-4-5-4-3) rodeada de mar. Los 8 del centro son
+// juegos o zonas; el resto son terreno de relleno, a la espera de que vayan pasando cosas.
+// Los hexágonos con ficha numerada son juegos: si la tirada de dados del día saca ese número, toca jugar a ese.
+// Los desiertos son el casino (ruleta y blackjack): sin ficha ni tirada, siempre abiertos, y se apuestan puntos propios.
+// Arriba, una tarjeta con tu estado (equipo, rango, puntos).
+
+interface Terreno {
+	fondo: string;
+	borde: string;
+	color: string;
+	deco: string;
+}
+
+// Terrenos de Catan. `oro` y `puerto` son para las zonas que no son un recurso.
+const T: Record<string, Terreno> = {
+	bosque: { fondo: '#3f7d3a', borde: '#255222', color: '#ffffff', deco: '🌲' },
+	colinas: { fondo: '#c4593a', borde: '#82361f', color: '#ffffff', deco: '🧱' },
+	pasto: { fondo: '#a9d160', borde: '#6c9a2c', color: '#27390f', deco: '🐑' },
+	campos: { fondo: '#efce52', borde: '#b8942a', color: '#3d2d05', deco: '🌾' },
+	montana: { fondo: '#9ea4ad', borde: '#656b75', color: '#1d2127', deco: '⛰️' },
+	desierto: { fondo: '#ead9a0', borde: '#b9a56a', color: '#46290f', deco: '🏜️' },
+	oro: { fondo: '#f0bc44', borde: '#b98a22', color: '#46290f', deco: '' },
+	puerto: { fondo: '#58a8cc', borde: '#2f7596', color: '#06283a', deco: '' },
+};
+
+interface Zona {
+	terreno: string;
+	icono: string;
+	corto: string;
+	titulo: string;
+	texto: string;
+	ficha?: number | null;
+}
+
+const juego = (id: string, terreno: string, icono: string, corto: string): Zona => {
+	const m = MINIJUEGOS.find((x) => x.id === id)!;
+	return { terreno, icono, corto, titulo: m.titulo, texto: m.libre ? `${m.descripcion} Sin tirada: juegas cuando quieras, con tus puntos.` : `${m.descripcion} Una partida al día.`, ficha: m.numero };
+};
+
+const zonas: Record<string, Zona> = {
+	'memory-cromos': juego('memory-cromos', 'pasto', '🃏', 'Memory'),
+	'golpea-rana': juego('golpea-rana', 'bosque', '🐸', 'Rana'),
+	'ruleta-casino': juego('ruleta-casino', 'desierto', '🎰', 'Ruleta'),
+	blackjack: juego('blackjack', 'desierto', '♠️', 'Blackjack'),
+	'adivina-cromo': juego('adivina-cromo', 'campos', '🕵️', 'Cromo'),
+	'conga-catan': juego('conga-catan', 'campos', '🐍', 'Conga'),
+	'wordle-trio': juego('wordle-trio', 'colinas', '🔤', 'Wordle'),
+	ranking: { terreno: 'oro', icono: '🏆', corto: 'Ranking', titulo: 'Ranking', texto: 'Marcador por equipos y clasificación de todos.' },
+	premios: { terreno: 'puerto', icono: '🎁', corto: 'Premios', titulo: 'Premios', texto: 'Lo que se llevan los mejores de la liga.' },
+};
+
+// Cada celda: una zona jugable (`z`) o terreno de relleno (`r`). `ladron` pone la ficha negra del ladrón.
+type Celda = { z: string } | { r: string; ladron?: boolean };
+const mapa: Celda[][] = [
+	[{ z: 'premios' }, { r: 'pasto' }, { r: 'campos' }],
+	[{ r: 'colinas' }, { z: 'memory-cromos' }, { z: 'golpea-rana' }, { z: 'ruleta-casino' }],
+	[{ r: 'pasto' }, { r: 'montana' }, { z: 'ranking' }, { z: 'adivina-cromo' }, { r: 'bosque' }],
+	[{ r: 'desierto', ladron: true }, { z: 'wordle-trio' }, { z: 'conga-catan' }, { r: 'colinas' }],
+	[{ r: 'montana' }, { r: 'bosque' }, { z: 'blackjack' }],
+];
+// El ladrón de Catan es la rana en versión diablillo
+const { src: ladronUrl } = await getImage({ src: ladron, width: 180, format: 'webp' });
+const estilo = (t: Terreno) => `--fondo:${t.fondo};--borde:${t.borde};--texto:${t.color}`;
+---
+
+<div class="[container-type:inline-size] -mx-4 sm:mx-0" data-tablero>
+	<div class="px-4 sm:px-0">
+		<button
+			type="button"
+			data-centro
+			aria-label="Tu estado en la liga"
+			class="tarjeta-yo mx-auto mb-3 block w-full max-w-md rounded-lg border-2 border-amarillo-oscuro bg-granate-oscuro p-4 text-left text-amarillo shadow-chapa"
+		>
+			<span class="flex items-center justify-between gap-3">
+				<span>
+					<span class="block text-[0.65rem] font-black uppercase tracking-widest opacity-80">Tu equipo</span>
+					<strong data-centro-equipo class="rotulo block text-2xl leading-none">Elige equipo</strong>
+				</span>
+				<span class="text-right">
+					<span data-centro-rango class="rotulo block text-lg">Hierro</span>
+					<span data-centro-puntos class="block text-xs font-bold opacity-80">0 pts</span>
+				</span>
+			</span>
+			<span class="mt-3 block h-2 overflow-hidden rounded-full bg-granate" aria-hidden="true">
+				<span data-centro-barra class="block h-full rounded-full bg-amarillo transition-[width] duration-500" style="width:0%"></span>
+			</span>
+		</button>
+
+		<button
+			type="button"
+			data-tirar
+			class="tirar mx-auto block w-full max-w-md rounded-lg bg-amarillo px-4 py-3.5 text-base font-black uppercase tracking-wider text-granate-oscuro shadow-chapa-amarillo [font-stretch:110%] disabled:pointer-events-none disabled:opacity-60"
+		>
+			<span data-tirar-texto>🎲 Tirar los dados</span>
+		</button>
+		<p data-hoy class="mx-auto mb-5 mt-2.5 max-w-md text-center text-sm font-bold text-granate"></p>
+		<p
+			data-prueba
+			hidden
+			class="mx-auto mb-5 max-w-md rounded-lg border-2 border-dashed border-extra bg-white p-3 text-center text-xs font-bold text-tinta"
+		>
+			🧪 Modo prueba: juegas a lo que quieras, las veces que quieras, pero no suma puntos.
+			<span class="mt-1.5 flex justify-center gap-4">
+				<button type="button" data-prueba-equipo class="underline">Cambiar equipo</button>
+				<button type="button" data-prueba-salir class="underline">Salir</button>
+			</span>
+		</p>
+	</div>
+
+	<!-- El mar, con su marco de madera. En móvil ocupa todo el ancho -->
+	<div class="mar relative mx-auto max-w-[44rem] border-y-[5px] border-granate sm:rounded-2xl sm:border-[5px]">
+		<span class="barco absolute left-3 top-1 text-2xl" aria-hidden="true">⛵</span>
+		<span class="barco absolute bottom-1 right-4 text-2xl [animation-delay:-2s]" aria-hidden="true">⛵</span>
+		<span class="absolute right-5 top-2 text-lg opacity-70" aria-hidden="true">🧭</span>
+
+		<div class="tablero mx-auto">
+			{
+				mapa.map((fila) => (
+					<div class="fila">
+						{fila.map((c) =>
+							'z' in c ? (
+								<button type="button" class="hex hex-boton" data-hex={c.z} data-titulo={zonas[c.z].titulo} data-texto={zonas[c.z].texto} aria-label={zonas[c.z].titulo} style={estilo(T[zonas[c.z].terreno])}>
+									<span class="hex-int">
+										<span class="hex-icono" aria-hidden="true">{zonas[c.z].icono}</span>
+										<span class="hex-nombre">{zonas[c.z].corto}</span>
+										{zonas[c.z].ficha && (
+											<span data-ficha class="ficha" aria-label={`Ficha ${zonas[c.z].ficha}`}>
+												{zonas[c.z].ficha}
+											</span>
+										)}
+									</span>
+								</button>
+							) : (
+								<div class="hex" aria-hidden="true" style={estilo(T[c.r])}>
+									<span class="hex-int">
+										{c.ladron ? <img class="ladron" src={ladronUrl} alt="" width="90" height="140" /> : <span class="hex-deco">{T[c.r].deco}</span>}
+									</span>
+								</div>
+							),
+						)}
+					</div>
+				))
+			}
+		</div>
+	</div>
+
+	<p class="mx-auto mt-4 max-w-sm px-4 text-center text-xs text-tinta-suave">
+		Tira los dados cada día: el número que salga es la ficha del hexágono que produce, y ese es tu juego de hoy. Si sale el 7, el diablillo te quita puntos. Los desiertos son el casino: ruleta y blackjack, sin tirada, siempre abiertos y apostando tus puntos. El resto de la isla está por descubrir.
+	</p>
+</div>
+
+<ElegirEquipo />
+<Partida />
+<Ranking />
+<Premios />
+<Tirada />
+
+<Hoja id="hoja-hex" titulo="hoja-hex-titulo">
+	<div class="space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-8 sm:p-6">
+		<h3 id="hoja-hex-titulo" data-hex-titulo class="text-2xl text-granate"></h3>
+		<p data-hex-texto class="text-tinta-suave"></p>
+		<form method="dialog">
+			<button class="w-full rounded border-2 border-granate/25 py-3 text-sm font-bold text-granate">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<style>
+	/* Mar: azul con olas dibujadas */
+	.mar {
+		padding: 1.5rem 0.4rem;
+		background-color: #2a85b5;
+		background-image:
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='22'%3E%3Cpath d='M0 11q5.5-7 11 0t11 0 11 0 11 0' fill='none' stroke='%23ffffff' stroke-opacity='.22' stroke-width='1.6'/%3E%3C/svg%3E"),
+			linear-gradient(180deg, #3a9bc8, #1f6a97);
+		box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.12);
+	}
+	.barco {
+		animation: mece 4s ease-in-out infinite;
+	}
+	@keyframes mece {
+		50% {
+			transform: translateY(-3px) rotate(3deg);
+		}
+	}
+	.tablero {
+		/* Ancho de un hexágono: caben 5 en la fila más larga, con un máximo en pantallas grandes */
+		--w: min(calc((100cqw - 1.5rem) / 5), 7.5rem);
+		--h: calc(var(--w) * 1.1547);
+		width: calc(var(--w) * 5 + 0.7rem);
+		max-width: 100%;
+	}
+	.fila {
+		display: flex;
+		justify-content: center;
+	}
+	/* Las filas se encajan: cada una sube 1/4 de hexágono (menos una holgura) */
+	.fila + .fila {
+		margin-top: calc(var(--w) * -0.2887 + 2px);
+	}
+	.hex {
+		--punta: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+		display: block;
+		width: var(--w);
+		height: var(--h);
+		margin-inline: 1px;
+		padding: 2px;
+		border: 0;
+		flex: none;
+		clip-path: var(--punta);
+		/* El borde de cada hexágono toma el color de su terreno */
+		background: var(--borde);
+		transition:
+			transform 0.15s ease-out,
+			background-color 0.15s;
+	}
+	.hex-int {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.1rem;
+		width: 100%;
+		height: 100%;
+		clip-path: var(--punta);
+		background:
+			radial-gradient(circle at 30% 22%, rgb(255 255 255 / 0.25), transparent 55%),
+			var(--fondo);
+		color: var(--texto);
+		text-align: center;
+		box-shadow: inset 0 -6px 10px rgb(0 0 0 / 0.12);
+	}
+	.hex-icono {
+		font-size: calc(var(--w) * 0.3);
+		line-height: 1;
+	}
+	.hex-nombre {
+		font-size: max(0.5rem, calc(var(--w) * 0.14));
+		font-weight: 900;
+		letter-spacing: 0.02em;
+		line-height: 1;
+		text-transform: uppercase;
+	}
+	.hex-deco {
+		font-size: calc(var(--w) * 0.34);
+		line-height: 1;
+		opacity: 0.55;
+		filter: saturate(0.8);
+	}
+	.ladron {
+		height: calc(var(--h) * 0.66);
+		width: auto;
+		margin-top: calc(var(--h) * 0.06);
+		filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.45));
+	}
+	.hex-boton {
+		cursor: pointer;
+	}
+	.hex-boton:active {
+		transform: scale(0.95);
+	}
+	@media (hover: hover) {
+		.hex-boton:hover {
+			transform: scale(1.06);
+			background: #fff;
+		}
+	}
+	/* El outline se recortaría con el clip-path: el foco se marca con el borde */
+	.hex-boton:focus-visible {
+		outline: none;
+		background: #fff;
+		padding: 4px;
+		transform: scale(1.06);
+	}
+	/* Ficha numerada de Catan */
+	.ficha {
+		display: grid;
+		place-items: center;
+		min-width: calc(var(--w) * 0.3);
+		height: calc(var(--w) * 0.3);
+		margin-top: 0.1rem;
+		border-radius: 999px;
+		border: 1.5px solid #8a6f3a;
+		background: #f6ead0;
+		color: #3d2512;
+		font-family: var(--font-rotulo);
+		font-size: max(0.6rem, calc(var(--w) * 0.17));
+		font-weight: 900;
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+	}
+	.ficha.hecha {
+		background: #46290f;
+		border-color: #46290f;
+		color: #f0c14b;
+	}
+	/* Hexágonos según la tirada de hoy: el que te toca brilla y el resto se apaga */
+	.hex[data-estado='cerrado'],
+	.hex[data-estado='pronto'] {
+		filter: saturate(0.4) brightness(0.92);
+	}
+	.hex[data-estado='hoy'] {
+		animation: brilla 1.4s ease-in-out infinite;
+	}
+	@keyframes brilla {
+		50% {
+			background: #fff6cc;
+			transform: scale(1.07);
+		}
+	}
+	/* Mientras no hay equipo, la tarjeta late para llamar a elegirlo */
+	.tarjeta-yo.sin-equipo {
+		animation: late 1.8s ease-in-out infinite;
+	}
+	@keyframes late {
+		50% {
+			transform: scale(1.02);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.tarjeta-yo.sin-equipo,
+		.hex[data-estado='hoy'],
+		.barco {
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	import { estadoLiga, equipoPorId, MINIJUEGOS, modoPrueba, olvidarEquipo, puedeOlvidarEquipo, salirModoPrueba } from './liga';
+	import { lanzar } from './partida';
+	import { abrirTirada } from './tirada';
+
+	const tablero = document.querySelector<HTMLElement>('[data-tablero]')!;
+	const hoja = document.getElementById('hoja-hex') as HTMLDialogElement;
+	const hojaEquipo = document.getElementById('hoja-equipo') as HTMLDialogElement;
+	const centro = tablero.querySelector<HTMLElement>('[data-centro]')!;
+	let estado = await estadoLiga();
+
+	function abrirHoja(titulo: string, texto: string) {
+		hoja.querySelector('[data-hex-titulo]')!.textContent = titulo;
+		hoja.querySelector('[data-hex-texto]')!.textContent = texto;
+		hoja.showModal();
+	}
+
+	// Pintar el estado propio en el hexágono central y marcar los minijuegos ya jugados hoy
+	function pintar() {
+		const poner = (sel: string, texto: string) => (centro.querySelector(`[data-centro-${sel}]`)!.textContent = texto);
+		poner('equipo', estado.equipo ? equipoPorId(estado.equipo).nombre : 'Elige equipo');
+		poner('rango', estado.rango.nombre);
+		poner('puntos', `${estado.puntos} pts`);
+		centro.classList.toggle('sin-equipo', !estado.equipo);
+		const { rango, siguienteRango: sig, puntos } = estado;
+		const pct = sig ? Math.round(((puntos - rango.desde) / (sig.desde - rango.desde)) * 100) : 100;
+		centro.querySelector<HTMLElement>('[data-centro-barra]')!.style.width = `${pct}%`;
+		tablero.querySelector<HTMLElement>('[data-prueba]')!.hidden = !modoPrueba();
+		// Botón de tirar y resumen del día
+		const tirar = tablero.querySelector<HTMLButtonElement>('[data-tirar]')!;
+		const restantes = estado.tiradasMax - estado.tiradasHoy;
+		tirar.disabled = !!estado.equipo && restantes <= 0;
+		tirar.querySelector('[data-tirar-texto]')!.textContent = !estado.equipo
+			? '🎲 Elige equipo para tirar'
+			: restantes > 0
+				? `🎲 Tirar los dados${estado.tiradasMax > 1 ? ` (${restantes} de ${estado.tiradasMax})` : ''}`
+				: 'Ya has tirado hoy';
+		const titulos = estado.asignadosHoy.map((id) => `${MINIJUEGOS.find((m) => m.id === id)?.titulo}${estado.jugadosHoy.includes(id) ? ' ✓' : ''}`);
+		const partes = [titulos.length ? `Hoy te toca: ${titulos.join(' y ')}` : '', estado.diablosHoy ? 'Hoy te salió el diablillo' : ''].filter(Boolean);
+		tablero.querySelector('[data-hoy]')!.textContent = !estado.equipo ? '' : partes.length ? partes.join(' · ') : 'Tira los dados para saber a qué juegas hoy.';
+		// Estado de cada hexágono de juego: el que toca brilla, el resto se apaga
+		tablero.querySelectorAll<HTMLElement>('[data-hex]').forEach((hex) => {
+			const m = MINIJUEGOS.find((x) => x.id === hex.dataset.hex);
+			if (!m) return;
+			hex.dataset.estado = !m.disponible ? 'pronto' : modoPrueba() || m.libre ? 'libre' : estado.jugadosHoy.includes(m.id) ? 'hecho' : estado.asignadosHoy.includes(m.id) ? 'hoy' : 'cerrado';
+		});
+		for (const id of estado.jugadosHoy) {
+			const ficha = tablero.querySelector<HTMLElement>(`[data-hex="${id}"] [data-ficha]`);
+			if (ficha) {
+				ficha.textContent = '✓';
+				ficha.classList.add('hecha');
+				ficha.setAttribute('aria-label', `${MINIJUEGOS.find((m) => m.id === id)?.titulo}: ya jugado hoy`);
+			}
+		}
+	}
+	pintar();
+	document.addEventListener('liga:cambio', async () => {
+		estado = await estadoLiga();
+		pintar();
+	});
+
+	// El centro: sin equipo, a elegirlo; con equipo, tu progreso hacia el siguiente rango
+	centro.addEventListener('click', () => {
+		if (!estado.equipo) return hojaEquipo.showModal();
+		const { nombre, lema } = equipoPorId(estado.equipo);
+		const falta = estado.siguienteRango ? ` Te faltan ${estado.siguienteRango.desde - estado.puntos} puntos para ${estado.siguienteRango.nombre}.` : ' Has llegado al rango máximo.';
+		abrirHoja(`Equipo ${nombre}`, `${lema}. Rango ${estado.rango.nombre} con ${estado.puntos} puntos, puesto ${estado.puesto} de la liga.${falta}`);
+	});
+
+	tablero.querySelector('[data-prueba-salir]')!.addEventListener('click', () => {
+		salirModoPrueba();
+		location.assign(location.pathname);
+	});
+
+	// Modo prueba: olvidar el equipo y volver a la selección de campeón (solo con los datos simulados: en la base
+	// de datos el equipo es definitivo)
+	const botonCambiarEquipo = tablero.querySelector<HTMLButtonElement>('[data-prueba-equipo]')!;
+	botonCambiarEquipo.hidden = !puedeOlvidarEquipo();
+	botonCambiarEquipo.addEventListener('click', async () => {
+		olvidarEquipo();
+		estado = await estadoLiga();
+		pintar();
+		hojaEquipo.showModal();
+	});
+
+	// Tirada diaria
+	tablero.querySelector('[data-tirar]')!.addEventListener('click', () => {
+		if (!estado.equipo) return hojaEquipo.showModal();
+		void abrirTirada({ tiradaActual: estado.tiradasHoy + 1, tiradasMax: estado.tiradasMax });
+	});
+
+	// Cada hexágono abre su hoja o su minijuego
+	tablero.querySelectorAll<HTMLButtonElement>('[data-hex]').forEach((boton) => {
+		boton.addEventListener('click', () => {
+			if (boton.dataset.hex === 'ranking' || boton.dataset.hex === 'premios') return; // los abren Ranking.astro y Premios.astro
+			const m = MINIJUEGOS.find((x) => x.id === boton.dataset.hex);
+			if (m) {
+				if (!m.disponible) return abrirHoja(m.titulo, `${m.descripcion} Se abre muy pronto.`);
+				if (modoPrueba()) return void lanzar(m.id);
+				if (!estado.equipo) return hojaEquipo.showModal();
+				// El casino no depende de la tirada: siempre se puede entrar
+				if (m.libre) return void lanzar(m.id);
+				if (estado.jugadosHoy.includes(m.id)) return abrirHoja(m.titulo, 'Ya has jugado hoy a este. Vuelve mañana.');
+				if (estado.asignadosHoy.includes(m.id)) return void lanzar(m.id);
+				const puedeTirar = estado.tiradasHoy < estado.tiradasMax;
+				return abrirHoja(m.titulo, `Hoy no te ha tocado este juego: su ficha es el ${m.numero}. ${puedeTirar ? 'Tira los dados para ver qué te toca.' : 'Vuelve mañana a tirar.'}`);
+			}
+			abrirHoja(boton.dataset.titulo ?? '', `${boton.dataset.texto} Se abre muy pronto.`);
+		});
+	});
+</script>

@@ -1,0 +1,677 @@
+---
+import Hoja from '../common/Hoja.astro';
+import { EQUIPOS, RANGOS } from './liga';
+import { emblema, icono, splash } from './lol/imagenes';
+
+// Hoja del hexágono Ranking, como la pantalla de clasificatorias del LoL:
+// - Tu perfil: emblema de tu rango, LP (puntos dentro del rango) y, cerca de subir, la serie de ascenso.
+// - Marcador por equipos estilo "Tab": icono del campeón de cada equipo y su nexo (barra) según los puntos.
+// - Clasificación estilo op.gg: emblema y campeón de cada uno; el top 3 con el splash de su campeón.
+//   Tu fila se queda fija abajo mientras no la tengas a la vista.
+// Además, al subir de rango (en cualquier juego) salta la pantalla de "¡Ascenso!".
+// Se rellena al abrirla, para que refleje los puntos del momento.
+const emblemas = Object.fromEntries(
+	await Promise.all(RANGOS.map(async (r) => [r.nombre, { grande: await emblema(r.emblema, 240), chico: await emblema(r.emblema, 64) }])),
+);
+const campeones = Object.fromEntries(
+	await Promise.all(EQUIPOS.map(async (e) => [e.id, { icono: await icono(e.campeon.clave), splash: await splash(e.campeon.clave, 480), foco: e.campeon.foco }])),
+);
+---
+
+<Hoja id="hoja-ranking" titulo="hoja-ranking-titulo" asaClara>
+	<div class="rk" data-rk-imagenes={JSON.stringify({ emblemas, campeones })}>
+		<header class="rk-cabecera">
+			<p class="rk-paso">Clasificatoria · Liga del Trío</p>
+			<h3 id="hoja-ranking-titulo" class="rk-titulo">Ranking</h3>
+		</header>
+
+		<section data-mi-rango hidden aria-label="Tu rango" class="rk-perfil">
+			<img data-rango-emblema class="rk-perfil-emblema" src={emblemas[RANGOS[0].nombre].grande} alt="" width="240" height="240" />
+			<p data-rango-actual class="rk-perfil-rango"></p>
+			<p class="rk-perfil-lp"><strong data-rango-lp></strong> LP · <span data-rango-puesto></span></p>
+			<div class="rk-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso hasta el siguiente rango">
+				<div data-rango-barra></div>
+			</div>
+			<p data-rango-falta class="rk-perfil-falta"></p>
+			<div data-serie hidden class="rk-serie">
+				<span>Serie de ascenso</span>
+				<span data-serie-pips class="rk-pips" aria-hidden="true"></span>
+			</div>
+		</section>
+		<p data-sin-equipo hidden class="rk-sin-equipo">Elige equipo para entrar en la clasificatoria.</p>
+
+		<section class="rk-seccion" aria-labelledby="rk-equipos">
+			<h4 id="rk-equipos" class="rk-subtitulo">Marcador por equipos</h4>
+			<ul data-equipos class="rk-marcador"></ul>
+		</section>
+
+		<section class="rk-seccion" aria-labelledby="rk-todos">
+			<h4 id="rk-todos" class="rk-subtitulo">Clasificación</h4>
+			<ol data-clasificacion class="rk-ladder"></ol>
+		</section>
+
+		<div data-yo-fijo hidden class="rk-yo-fijo" aria-hidden="true"></div>
+
+		<form method="dialog" class="rk-pie">
+			<button class="rk-cerrar">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<dialog id="rk-ascenso" class="rk-ascenso" aria-labelledby="rk-ascenso-titulo">
+	<div class="rk-ascenso-rayos" aria-hidden="true"></div>
+	<p class="rk-paso">¡Ascenso!</p>
+	<img data-ascenso-emblema class="rk-ascenso-emblema" src={emblemas[RANGOS[0].nombre].grande} alt="" width="240" height="240" />
+	<h3 id="rk-ascenso-titulo" data-ascenso-rango class="rk-ascenso-rango"></h3>
+	<p class="rk-ascenso-texto">Has subido de rango</p>
+	<form method="dialog">
+		<button class="rk-cerrar rk-continuar">Continuar</button>
+	</form>
+</dialog>
+
+<style is:global>
+	.rk,
+	.rk-ascenso {
+		--lol-fondo: #010a13;
+		--lol-panel: #0a1428;
+		--lol-oro: #c8aa6e;
+		--lol-oro-oscuro: #785a28;
+		--lol-crema: #f0e6d2;
+		--lol-azul: #0ac8b9;
+	}
+	.rk {
+		min-height: 100%;
+		padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+		background:
+			radial-gradient(ellipse at 50% 0%, rgb(10 200 185 / 0.14), transparent 55%),
+			var(--lol-fondo);
+		color: var(--lol-crema);
+	}
+
+	.rk-cabecera {
+		padding: 2rem 1.25rem 0.5rem;
+		text-align: center;
+	}
+	.rk-paso {
+		color: var(--lol-oro);
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.3em;
+		text-transform: uppercase;
+	}
+	.rk-titulo {
+		color: var(--lol-crema);
+		font-family: var(--font-rotulo);
+		font-size: 1.6rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	/* --- Tu perfil de clasificatoria --- */
+	.rk-perfil {
+		margin: 0.5rem 1.25rem 0;
+		padding: 0 1rem 1rem;
+		border-bottom: 1px solid var(--lol-oro-oscuro);
+		text-align: center;
+	}
+	.rk-perfil[hidden],
+	.rk-serie[hidden],
+	.rk-yo-fijo[hidden] {
+		display: none;
+	}
+	.rk-perfil-emblema {
+		display: block;
+		width: 8rem;
+		height: 8rem;
+		margin: 0 auto -0.5rem;
+		object-fit: contain;
+		filter: drop-shadow(0 0 18px rgb(200 170 110 / 0.35));
+	}
+	.rk-perfil-rango {
+		color: var(--lol-oro);
+		font-family: var(--font-rotulo);
+		font-size: 1.6rem;
+		font-weight: 800;
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+	.rk-perfil-lp {
+		margin-top: 0.15rem;
+		color: rgb(240 230 210 / 0.75);
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+	.rk-perfil-lp strong {
+		color: var(--lol-crema);
+		font-size: 1.05rem;
+	}
+	.rk-barra {
+		height: 0.5rem;
+		margin: 0.6rem auto 0;
+		max-width: 16rem;
+		overflow: hidden;
+		border: 1px solid var(--lol-oro-oscuro);
+		background: var(--lol-panel);
+	}
+	.rk-barra div {
+		height: 100%;
+		width: 0;
+		background: linear-gradient(90deg, var(--lol-azul), #cdfafa);
+		box-shadow: 0 0 8px var(--lol-azul);
+		transition: width 0.6s ease-out;
+	}
+	.rk-perfil-falta {
+		margin-top: 0.4rem;
+		color: rgb(240 230 210 / 0.6);
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+	.rk-serie {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-top: 0.6rem;
+		padding: 0.3rem 0.7rem;
+		border: 1px solid var(--lol-oro);
+		color: var(--lol-oro);
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		animation: rk-latido 1.6s ease-in-out infinite;
+	}
+	.rk-pips {
+		display: inline-flex;
+		gap: 0.3rem;
+	}
+	.rk-pips i {
+		width: 0.6rem;
+		height: 0.6rem;
+		border: 1px solid var(--lol-oro);
+		border-radius: 50%;
+	}
+	.rk-pips i.lleno {
+		background: var(--lol-azul);
+		border-color: var(--lol-azul);
+		box-shadow: 0 0 6px var(--lol-azul);
+	}
+	@keyframes rk-latido {
+		50% {
+			box-shadow: 0 0 12px rgb(200 170 110 / 0.5);
+		}
+	}
+	.rk-sin-equipo {
+		margin: 0.5rem 1.25rem 0;
+		color: rgb(240 230 210 / 0.7);
+		font-size: 0.85rem;
+		font-weight: 700;
+		text-align: center;
+	}
+
+	/* --- Secciones --- */
+	.rk-seccion {
+		margin-top: 1.5rem;
+		padding: 0 1.25rem;
+	}
+	.rk-subtitulo {
+		margin-bottom: 0.6rem;
+		color: var(--lol-oro);
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+	}
+
+	/* --- Marcador por equipos (el "Tab") --- */
+	.rk-marcador {
+		display: grid;
+		gap: 0.5rem;
+	}
+	.rk-equipo {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid rgb(120 90 40 / 0.6);
+		border-left: 3px solid var(--color);
+		background: linear-gradient(90deg, rgb(10 20 40 / 0.95), rgb(1 10 19 / 0.95));
+	}
+	.rk-equipo.mio {
+		border-color: var(--lol-oro);
+		border-left-color: var(--color);
+	}
+	.rk-equipo-icono {
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-shrink: 0;
+		border: 2px solid var(--color);
+		object-fit: cover;
+	}
+	.rk-equipo-texto {
+		min-width: 0;
+		flex: 1;
+	}
+	.rk-equipo-nombre {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: var(--font-rotulo);
+		font-size: 1.05rem;
+		font-weight: 800;
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+	.rk-etiqueta {
+		padding: 0.1rem 0.35rem;
+		background: var(--lol-oro);
+		color: var(--lol-fondo);
+		font-family: inherit;
+		font-size: 0.55rem;
+		letter-spacing: 0.1em;
+	}
+	.rk-equipo-sub {
+		color: rgb(240 230 210 / 0.55);
+		font-size: 0.7rem;
+		font-weight: 700;
+	}
+	.rk-nexo {
+		height: 0.4rem;
+		margin-top: 0.35rem;
+		background: rgb(240 230 210 / 0.1);
+	}
+	.rk-nexo div {
+		height: 100%;
+		background: var(--color);
+		box-shadow: 0 0 6px var(--color);
+		transition: width 0.6s ease-out;
+	}
+	.rk-equipo-puntos {
+		flex-shrink: 0;
+		color: var(--lol-crema);
+		font-family: var(--font-rotulo);
+		font-size: 1.15rem;
+		font-weight: 800;
+		text-align: right;
+	}
+	.rk-equipo-puntos small {
+		display: block;
+		color: rgb(240 230 210 / 0.5);
+		font-family: inherit;
+		font-size: 0.6rem;
+		letter-spacing: 0.1em;
+	}
+
+	/* --- Clasificación (la ladder) --- */
+	.rk-ladder {
+		display: grid;
+		gap: 2px;
+	}
+	.rk-fila {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.55rem 0.75rem;
+		overflow: hidden;
+		background: var(--lol-panel);
+	}
+	.rk-fila.top {
+		padding-block: 0.85rem;
+		background:
+			linear-gradient(90deg, rgb(1 10 19 / 0.92) 35%, rgb(1 10 19 / 0.45)),
+			var(--splash) var(--foco) / cover;
+	}
+	.rk-fila.top:first-child {
+		border: 1px solid var(--lol-oro);
+	}
+	.rk-fila.yo {
+		box-shadow: inset 0 0 0 1px var(--lol-azul);
+		background-color: #0c2a33;
+	}
+	.rk-pos {
+		width: 1.4rem;
+		flex-shrink: 0;
+		color: rgb(240 230 210 / 0.6);
+		font-family: var(--font-rotulo);
+		font-size: 1rem;
+		font-weight: 800;
+		text-align: center;
+	}
+	.rk-fila.top .rk-pos {
+		color: var(--lol-oro);
+		font-size: 1.3rem;
+	}
+	.rk-fila-emblema {
+		width: 2.25rem;
+		height: 2.25rem;
+		flex-shrink: 0;
+		object-fit: contain;
+	}
+	.rk-fila.top .rk-fila-emblema {
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+	.rk-quien {
+		min-width: 0;
+		flex: 1;
+	}
+	.rk-nombre {
+		display: block;
+		overflow: hidden;
+		color: var(--lol-crema);
+		font-size: 0.9rem;
+		font-weight: 800;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.rk-sub {
+		display: block;
+		color: rgb(240 230 210 / 0.55);
+		font-size: 0.7rem;
+		font-weight: 700;
+	}
+	.rk-fila-campeon {
+		width: 1.9rem;
+		height: 1.9rem;
+		flex-shrink: 0;
+		border: 1px solid var(--color);
+		object-fit: cover;
+	}
+	.rk-fila-puntos {
+		width: 2.5rem;
+		flex-shrink: 0;
+		color: var(--lol-crema);
+		font-size: 0.9rem;
+		font-weight: 800;
+		text-align: right;
+	}
+
+	/* Tu fila, fija abajo mientras no se ve en la lista */
+	.rk-yo-fijo {
+		position: sticky;
+		bottom: 0;
+		z-index: 2;
+		margin: 1rem 1.25rem 0;
+		border-top: 1px solid var(--lol-azul);
+		box-shadow: 0 -8px 20px rgb(1 10 19 / 0.9);
+	}
+
+	.rk-pie {
+		padding: 1.25rem 1.25rem 0;
+	}
+	.rk-cerrar {
+		display: block;
+		width: 100%;
+		padding: 0.85rem;
+		border: 2px solid var(--lol-oro);
+		background: linear-gradient(var(--lol-panel), #1e2328);
+		color: var(--lol-crema);
+		font-family: var(--font-rotulo);
+		font-size: 0.95rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		box-shadow: inset 0 0 0 2px var(--lol-fondo);
+	}
+
+	/* --- Pantalla de ascenso --- */
+	.rk-ascenso {
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		margin: 0;
+		padding: 2rem 1.5rem max(2rem, env(safe-area-inset-bottom));
+		overflow: hidden;
+		border: 0;
+		background: radial-gradient(circle at 50% 42%, #0b2c3a, var(--lol-fondo) 65%);
+		color: var(--lol-crema);
+		text-align: center;
+	}
+	.rk-ascenso[open] {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.rk-ascenso::backdrop {
+		background: var(--lol-fondo);
+	}
+	.rk-ascenso-rayos {
+		position: absolute;
+		inset: -50%;
+		background: repeating-conic-gradient(from 0deg at 50% 50%, rgb(200 170 110 / 0.09) 0 6deg, transparent 6deg 14deg);
+		animation: rk-girar 30s linear infinite;
+		pointer-events: none;
+	}
+	.rk-ascenso > :not(.rk-ascenso-rayos) {
+		position: relative;
+	}
+	.rk-ascenso .rk-paso {
+		font-size: 0.8rem;
+		animation: rk-aparecer 0.5s 0.9s both;
+	}
+	.rk-ascenso-emblema {
+		width: 13rem;
+		height: 13rem;
+		margin: 0.5rem 0;
+		object-fit: contain;
+		filter: drop-shadow(0 0 30px rgb(200 170 110 / 0.6));
+		animation: rk-emblema 1.2s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+	}
+	.rk-ascenso-rango {
+		color: var(--lol-oro);
+		font-family: var(--font-rotulo);
+		font-size: 2.4rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		text-shadow: 0 0 20px rgb(200 170 110 / 0.6);
+		animation: rk-aparecer 0.5s 1s both;
+	}
+	.rk-ascenso-texto {
+		color: rgb(240 230 210 / 0.7);
+		font-weight: 700;
+		animation: rk-aparecer 0.5s 1.15s both;
+	}
+	.rk-continuar {
+		width: 14rem;
+		margin-top: 2rem;
+		animation: rk-aparecer 0.5s 1.4s both;
+	}
+	@keyframes rk-emblema {
+		from {
+			opacity: 0;
+			transform: scale(0.3) rotateY(540deg);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	@keyframes rk-aparecer {
+		from {
+			opacity: 0;
+			transform: translateY(0.75rem);
+		}
+	}
+	@keyframes rk-girar {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.rk-serie,
+		.rk-ascenso-rayos,
+		.rk-ascenso *,
+		.rk-ascenso .rk-paso {
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	import { estadoLiga, ranking, marcadorEquipos, equipoPorId, RANGOS, type FilaRanking, type Rango } from './liga';
+
+	const hoja = document.getElementById('hoja-ranking') as HTMLDialogElement;
+	const ascenso = document.getElementById('rk-ascenso') as HTMLDialogElement;
+	const raiz = hoja.querySelector<HTMLElement>('[data-rk-imagenes]')!;
+	const q = <T extends HTMLElement>(sel: string) => hoja.querySelector<T>(sel)!;
+
+	const IMG = JSON.parse(raiz.dataset.rkImagenes!) as {
+		emblemas: Record<string, { grande: string; chico: string }>;
+		campeones: Record<string, { icono: string; splash: string; foco: string }>;
+	};
+	/** A partir de cuántos LP del siguiente rango se juega la "serie de ascenso" (3 círculos, uno cada 5 LP) */
+	const SERIE = 15;
+
+	const rangoPorNombre = (nombre: string) => RANGOS.find((r) => r.nombre === nombre) ?? RANGOS[0];
+
+	// Todo el texto va con textContent: los nombres vienen de los invitados
+	function el(etiqueta: string, clase: string, texto?: string) {
+		const e = document.createElement(etiqueta);
+		e.className = clase;
+		if (texto !== undefined) e.textContent = texto;
+		return e;
+	}
+	function img(src: string, clase: string) {
+		const i = el('img', clase) as HTMLImageElement;
+		i.src = src;
+		i.alt = '';
+		i.decoding = 'async';
+		return i;
+	}
+
+	function filaLadder(f: FilaRanking, puesto: number) {
+		const equipo = equipoPorId(f.equipo);
+		const campeon = IMG.campeones[f.equipo];
+		const rango = rangoPorNombre(f.rango);
+		const top = puesto <= 3;
+		const li = el('li', `rk-fila${top ? ' top' : ''}${f.yo ? ' yo' : ''}`);
+		li.style.setProperty('--color', equipo.color);
+		if (top) {
+			li.style.setProperty('--splash', `url("${campeon.splash}")`);
+			li.style.setProperty('--foco', campeon.foco);
+		}
+		if (f.yo) li.setAttribute('aria-current', 'true');
+		const quien = el('span', 'rk-quien');
+		quien.append(el('span', 'rk-nombre', f.yo ? `${f.nombre} (tú)` : f.nombre), el('span', 'rk-sub', `${rango.nombre} · ${f.puntos - rango.desde} LP`));
+		const icono = img(campeon.icono, 'rk-fila-campeon');
+		icono.title = `Equipo ${equipo.nombre}`;
+		li.append(el('span', 'rk-pos', String(puesto)), img(IMG.emblemas[rango.nombre].chico, 'rk-fila-emblema'), quien, icono, el('span', 'rk-fila-puntos', String(f.puntos)));
+		return li;
+	}
+
+	let observador: IntersectionObserver | null = null;
+
+	async function pintar() {
+		const [estado, marcador, filas] = await Promise.all([estadoLiga(), marcadorEquipos(), ranking(20)]);
+		const conEquipo = !!estado.equipo;
+
+		// Tu perfil: emblema, LP dentro del rango y serie de ascenso si estás cerca
+		q('[data-mi-rango]').hidden = !conEquipo;
+		q('[data-sin-equipo]').hidden = conEquipo;
+		if (conEquipo) {
+			const { rango, siguienteRango: sig, puntos } = estado;
+			const lp = puntos - rango.desde;
+			const falta = sig ? sig.desde - puntos : 0;
+			const pct = sig ? Math.round((lp / (sig.desde - rango.desde)) * 100) : 100;
+			q<HTMLImageElement>('[data-rango-emblema]').src = IMG.emblemas[rango.nombre].grande;
+			q('[data-rango-actual]').textContent = rango.nombre;
+			q('[data-rango-lp]').textContent = String(lp);
+			q('[data-rango-puesto]').textContent = `puesto ${estado.puesto}`;
+			q('[data-rango-barra]').style.width = `${pct}%`;
+			q('[data-rango-barra]').parentElement!.setAttribute('aria-valuenow', String(pct));
+			q('[data-rango-falta]').textContent = sig ? `${falta} LP para ${sig.nombre}` : 'Rango máximo: eres Challenger';
+			const enSerie = !!sig && falta <= SERIE;
+			q('[data-serie]').hidden = !enSerie;
+			if (enSerie) {
+				const llenos = Math.min(2, Math.floor((SERIE - falta) / 5));
+				q('[data-serie-pips]').replaceChildren(...[0, 1, 2].map((i) => el('i', i < llenos ? 'lleno' : '')));
+			}
+		}
+
+		// Marcador por equipos: icono del campeón y su nexo, proporcional al líder
+		const max = Math.max(1, ...marcador.map((m) => m.puntos));
+		q('[data-equipos]').replaceChildren(
+			...marcador.map(({ equipo, puntos, miembros }, i) => {
+				const li = el('li', `rk-equipo${estado.equipo === equipo.id ? ' mio' : ''}`);
+				li.style.setProperty('--color', equipo.color);
+				const texto = el('div', 'rk-equipo-texto');
+				const nombre = el('span', 'rk-equipo-nombre', `${i === 0 ? '👑 ' : ''}${equipo.nombre}`);
+				if (estado.equipo === equipo.id) nombre.append(el('span', 'rk-etiqueta', 'Tu equipo'));
+				const nexo = el('div', 'rk-nexo');
+				const vida = el('div', '');
+				vida.style.width = `${Math.round((puntos / max) * 100)}%`;
+				nexo.append(vida);
+				texto.append(nombre, el('span', 'rk-equipo-sub', `${equipo.campeon.nombre} · ${miembros} ${miembros === 1 ? 'jugador' : 'jugadores'}`), nexo);
+				const pts = el('span', 'rk-equipo-puntos', String(puntos));
+				pts.append(el('small', '', 'PTS'));
+				li.append(img(IMG.campeones[equipo.id].icono, 'rk-equipo-icono'), texto, pts);
+				return li;
+			}),
+		);
+
+		// La ladder
+		const lista = q('[data-clasificacion]');
+		lista.replaceChildren(...filas.map((f, i) => filaLadder(f, i + 1)));
+
+		// Tu fila fija abajo mientras la tuya no se ve (o si estás fuera del top que se muestra)
+		const fijo = q('[data-yo-fijo]');
+		observador?.disconnect();
+		fijo.hidden = true;
+		if (conEquipo) {
+			const yo = filas.find((f) => f.yo);
+			const mia: FilaRanking = yo ?? { id: 'yo', nombre: 'Tú', equipo: estado.equipo!, puntos: estado.puntos, rango: estado.rango.nombre, yo: true };
+			fijo.replaceChildren(filaLadder(mia, estado.puesto));
+			const enLista = lista.querySelector('[aria-current]');
+			if (!enLista) fijo.hidden = false;
+			else {
+				observador = new IntersectionObserver(([e]) => (fijo.hidden = e.isIntersecting), { root: hoja });
+				observador.observe(enLista);
+			}
+		}
+	}
+
+	document.querySelector('[data-hex="ranking"]')?.addEventListener('click', async () => {
+		await pintar();
+		hoja.showModal();
+		hoja.scrollTop = 0; // el foco inicial cae en "Cerrar", al final, y la hoja saldría desplazada
+	});
+
+	// ───── Ascenso: al subir de rango, la pantalla del emblema nuevo ─────
+	const CLAVE_VISTO = 'trio-rango-visto';
+
+	function mostrarAscenso(rango: Rango) {
+		ascenso.querySelector<HTMLImageElement>('[data-ascenso-emblema]')!.src = IMG.emblemas[rango.nombre].grande;
+		ascenso.querySelector('[data-ascenso-rango]')!.textContent = rango.nombre;
+		if (ascenso.open) ascenso.close();
+		ascenso.showModal();
+		navigator.vibrate?.([40, 60, 40, 60, 120]);
+	}
+
+	/** Compara tu rango con el último que se vio en este móvil; si es mayor, ascenso. La primera vez solo lo apunta. */
+	async function comprobarAscenso() {
+		const estado = await estadoLiga();
+		if (!estado.equipo) return;
+		const actual = RANGOS.findIndex((r) => r.nombre === estado.rango.nombre);
+		let visto: number | null = null;
+		try {
+			const v = localStorage.getItem(CLAVE_VISTO);
+			visto = v === null ? null : Number(v);
+			localStorage.setItem(CLAVE_VISTO, String(actual));
+		} catch {
+			return; // sin almacenamiento no sabemos de dónde vienes
+		}
+		if (visto !== null && actual > visto) mostrarAscenso(estado.rango);
+	}
+
+	void comprobarAscenso();
+	// Los juegos avisan con `liga:cambio` al sumar puntos; un respiro para que se vea antes su resultado
+	document.addEventListener('liga:cambio', () => setTimeout(() => void comprobarAscenso(), 700));
+	ascenso.addEventListener('click', (ev) => {
+		if (ev.target === ascenso) ascenso.close();
+	});
+</script>

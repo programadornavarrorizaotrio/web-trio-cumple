@@ -5,10 +5,13 @@ export interface Asistencia {
 	alergias: string | null;
 }
 
+import { rpcConClave, usaBD } from '../../lib/rpc';
+
 const CLAVE_DEMO = 'trio-demo-asistencia';
 
-// TODO(B4): leerla de la RPC `get_invitado(clave)`.
+// RPC `get_invitado(clave)` (su campo `asistencia`). Sin registro en la BD, la de ejemplo del navegador.
 export async function obtenerAsistencia(): Promise<Asistencia | null> {
+	if (usaBD()) return (await rpcConClave<{ asistencia: Asistencia | null } | null>('get_invitado'))?.asistencia ?? null;
 	try {
 		return JSON.parse(localStorage.getItem(CLAVE_DEMO) ?? 'null');
 	} catch {
@@ -16,8 +19,12 @@ export async function obtenerAsistencia(): Promise<Asistencia | null> {
 	}
 }
 
-// TODO(B4): RPC `confirmar_asistencia(clave, asiste, acompanantes, alergias)`.
+// RPC `confirmar_asistencia(clave, asiste, acompanantes, alergias)`. Error: 'datos'.
 export async function guardarAsistencia(asistencia: Asistencia): Promise<Asistencia> {
+	if (usaBD()) {
+		await rpcConClave('confirmar_asistencia', { ...asistencia });
+		return asistencia;
+	}
 	localStorage.setItem(CLAVE_DEMO, JSON.stringify(asistencia));
 	return asistencia;
 }
