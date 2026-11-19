@@ -40,6 +40,15 @@ const actual = (href: string) => ruta === href;
 					</li>
 				))
 			}
+			<li data-solo-admin hidden>
+				<a
+					href="/admin"
+					aria-current={actual('/admin') ? 'page' : undefined}
+					class="rounded-sm border-2 border-amarillo/70 px-2 py-0.5 text-amarillo hover:bg-amarillo hover:text-granate-oscuro aria-[current=page]:bg-amarillo aria-[current=page]:text-granate-oscuro"
+				>
+					Admin
+				</a>
+			</li>
 		</ul>
 
 		<!-- Hamburguesa (móvil y tablet) -->
@@ -86,6 +95,16 @@ const actual = (href: string) => ruta === href;
 					<span class="text-sm text-crema/70">¿Vienes o qué?</span>
 				</a>
 			</li>
+			<li data-solo-admin hidden>
+				<a
+					href="/admin"
+					aria-current={actual('/admin') ? 'page' : undefined}
+					class="flex flex-col rounded-lg bg-amarillo/10 px-4 py-3 text-amarillo active:bg-granate aria-[current=page]:bg-granate"
+				>
+					<span class="rotulo text-lg">Admin</span>
+					<span class="text-sm text-crema/70">Solo para los organizadores</span>
+				</a>
+			</li>
 		</ul>
 	</div>
 </header>
@@ -103,6 +122,36 @@ const actual = (href: string) => ruta === href;
 </style>
 
 <script>
+	import { claveBD, rpcConClave } from '../../lib/rpc';
+
+	// Enlace "Admin" solo para los organizadores. El rol lo dice la base de datos (`get_invitado`); se recuerda
+	// en el navegador para no preguntarlo en cada página. Es solo para enseñar el enlace: las RPC `admin_*`
+	// comprueban el rol en el servidor de todas formas.
+	const CLAVE_ROL = 'trio-rol';
+	async function mostrarAdmin() {
+		const clave = claveBD();
+		if (!clave) return;
+		const id = clave.slice(0, 12);
+		let rol: string | null = null;
+		try {
+			const guardado = JSON.parse(localStorage.getItem(CLAVE_ROL) ?? 'null');
+			if (guardado?.id === id) rol = guardado.rol;
+		} catch {
+			// sin almacenamiento: se pregunta
+		}
+		if (rol === null) {
+			rol = (await rpcConClave<{ rol: string } | null>('get_invitado').catch(() => null))?.rol ?? null;
+			if (rol === null) return;
+			try {
+				localStorage.setItem(CLAVE_ROL, JSON.stringify({ id, rol }));
+			} catch {
+				// sin almacenamiento: se preguntará la próxima vez
+			}
+		}
+		if (rol === 'admin') document.querySelectorAll<HTMLElement>('[data-solo-admin]').forEach((e) => (e.hidden = false));
+	}
+	void mostrarAdmin();
+
 	const cabecera = document.querySelector<HTMLElement>('[data-nav]');
 	const boton = cabecera?.querySelector<HTMLButtonElement>('[data-menu-boton]');
 	const menu = cabecera?.querySelector<HTMLElement>('#menu-movil');
