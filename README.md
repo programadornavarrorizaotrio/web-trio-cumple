@@ -27,10 +27,11 @@ Estética general: **rótulo de estanco** (granate `#742434` y amarillo `#f0bc44
 
 ### 0. Registro — `/registro`
 - **Sin registrarse no se ve nada**: cualquier página manda a `/registro`.
-- Pasos: **código de la fiesta (PIN)** → buscar tu nombre → rellenar apodo, frase, asistencia, acompañantes y alergias → **se revela tu cromo** (con la foto que pusimos nosotros) → entrar.
+- Pasos (ambientado como una oficina del SEPE): coges número (**A-067**) y esperas turno → en la ventanilla 3 la rana pide la **cita previa (el PIN)** → te buscas en el sistema → rellenas el **Modelo 067** (apodo y frase, con vista previa del cromo) → sello de APROBADO, **te entrega tu cromo** y abres el sobre del álbum. **La asistencia no se pregunta aquí**: se confirma después en la portada.
 - El PIN va en el mensaje de WhatsApp. Si el enlace es `/registro?pin=XXXX`, se rellena solo. Sirve para que un desconocido que vea la URL no pueda registrarse.
 - Cada nombre solo se puede registrar una vez. El registro devuelve una **clave de sesión** que se guarda en el móvil.
-- Si alguien cambia de móvil o se registró otro por él: lo reseteamos desde `/admin` ("Nuevo móvil") y vuelve a registrarse.
+- **Otro dispositivo** (el portátil, un móvil nuevo): desde donde ya está dentro pulsa "Entrar en otro dispositivo" (pie de página) y le sale un código de un solo uso (10 min). En el nuevo, en `/registro`, mete el PIN, se busca y escribe el código. Los dos siguen conectados (`crear_codigo_acceso` / `entrar_con_codigo`).
+- Si alguien perdió el móvil o se registró otro por él: lo reseteamos desde `/admin` ("Nuevo móvil") y vuelve a registrarse.
 
 **Cada sección tiene su propia página.** La home reúne portada, el trío, las "ventanas" a cada sección y la asistencia.
 
@@ -115,6 +116,7 @@ liga_tiradas          invitado_id, dia, dados jsonb, resultado (minijuego o 'dia
 liga_movimientos      invitado_id, dia, tipo ('partida' | 'diablo' | 'casino' | 'ajuste'), minijuego, puntos, detalle
 casino_manos          invitado_id, apuesta, jugador, banca, doblada, estado, neto   ← blackjack en el servidor
 premios_codigos       (invitado_id, premio_id) PK, codigo, entregado_en
+codigos_acceso        hash PK, invitado_id, caduca_en, usado_en   ← entrar en otro dispositivo
 
 wordle_palabras       id, palabra (MAYÚSCULAS, 4–8 letras), dia (cuando sale), orden
 admin_registro        admin_id, accion, detalle, created_at   ← qué ha tocado cada admin
