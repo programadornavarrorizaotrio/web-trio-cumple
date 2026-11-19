@@ -30,7 +30,7 @@ Estética general: **rótulo de estanco** (granate `#742434` y amarillo `#f0bc44
 - Pasos: **código de la fiesta (PIN)** → buscar tu nombre → rellenar apodo, frase, asistencia, acompañantes y alergias → **se revela tu cromo** (con la foto que pusimos nosotros) → entrar.
 - El PIN va en el mensaje de WhatsApp. Si el enlace es `/registro?pin=XXXX`, se rellena solo. Sirve para que un desconocido que vea la URL no pueda registrarse.
 - Cada nombre solo se puede registrar una vez. El registro devuelve una **clave de sesión** que se guarda en el móvil.
-- Si alguien cambia de móvil o se registró otro por él: lo reseteamos desde el panel de Supabase y vuelve a registrarse.
+- Si alguien cambia de móvil o se registró otro por él: lo reseteamos desde `/admin` ("Nuevo móvil") y vuelve a registrarse.
 
 **Cada sección tiene su propia página.** La home reúne portada, el trío, las "ventanas" a cada sección y la asistencia.
 
@@ -83,7 +83,7 @@ Reglas:
 - **Fotos de cromos**: bucket con nombres de archivo aleatorios (uuid). `listar_cromos` solo devuelve las de registrados, y solo a quien tiene clave.
 - **Fotos de la fiesta**: subida con la Edge Function `subir-foto`, que valida la clave y devuelve una URL de subida firmada. La `service_role` solo vive en la función.
 - **Limitación conocida**: el contenido fijo de la web (textos, lugar) va en el HTML; la pantalla de registro lo tapa, pero no es secreto. Los datos de invitados sí lo son: solo llegan por RPC con clave.
-- **Consultar datos**: desde el panel de Supabase, con vistas SQL en el esquema `privado` (`v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`; más adelante `v_estanco_totales`, `v_canciones`) exportables a CSV. Habrá un admin para los tres (ver "Pensado para crecer").
+- **Consultar datos**: desde el panel de Supabase, con vistas SQL en el esquema `privado` (`v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`; más adelante `v_estanco_totales`, `v_canciones`) exportables a CSV. Lo del día a día, en `/admin`.
 
 ---
 
@@ -115,6 +115,9 @@ liga_tiradas          invitado_id, dia, dados jsonb, resultado (minijuego o 'dia
 liga_movimientos      invitado_id, dia, tipo ('partida' | 'diablo' | 'casino' | 'ajuste'), minijuego, puntos, detalle
 casino_manos          invitado_id, apuesta, jugador, banca, doblada, estado, neto   ← blackjack en el servidor
 premios_codigos       (invitado_id, premio_id) PK, codigo, entregado_en
+
+wordle_palabras       id, palabra (MAYÚSCULAS, 4–8 letras), dia (cuando sale), orden
+admin_registro        admin_id, accion, detalle, created_at   ← qué ha tocado cada admin
 ```
 
 Pendiente:
@@ -132,11 +135,21 @@ Reglas de la base de datos:
 - Lo interno (comprobar la clave, el PIN, sumar puntos…) va en el esquema **`privado`**, que la API no expone. Las **vistas del panel** también (`privado.v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`): una vista en `public` saldría por la API saltándose RLS.
 - Supabase da permiso a `anon` en cada tabla y función nueva de `public`: **cada migración termina quitándolos** y dando `execute` solo a sus RPC (ver el final de `…_liga.sql`).
 - Los puntos de la liga son la suma de `liga_movimientos`: para corregir a alguien se mete un movimiento `ajuste`, nunca se edita el histórico. Lo que va al azar (dados, ruleta, cartas) lo calcula el servidor.
-- **PIN**: solo se guarda su hash, a mano desde el SQL editor (`insert into ajustes … privado.hash('<pin>')`). El de `seed.sql` (1234) es solo de desarrollo.
-- **Resetear a un invitado** (cambió de móvil): `update sesiones set revocada_en = now() where invitado_id = …` y `update invitados set registrado_en = null where id = …`.
+- **PIN**: solo se guarda su hash. Se cambia desde `/admin` (o a mano: `insert into ajustes … privado.hash('<pin>')`). El de `seed.sql` (1234) es solo de desarrollo.
+- **Resetear a un invitado** (cambió de móvil): "Nuevo móvil" en `/admin` (`admin_nuevo_movil`): cierra sus sesiones y conserva asistencia, equipo y puntos.
+
+### Admin — `/admin`
+
+Para los tres cumpleañeros (`invitados.rol = 'admin'`). **No hay cuentas aparte**: se registran en `/registro` como cualquiera y su clave de sesión les abre las RPC `admin_*` (fallan con `'no-admin'` para el resto). Cada cambio queda en `admin_registro` (vista `privado.v_admin_registro`).
+
+- `admin_resumen`: registrados, quién viene, personas en total, alergias, equipos y premios por entregar.
+- `admin_invitados`, `admin_guardar_invitado` (crear/editar/ocultar), `admin_nuevo_movil`.
+- `admin_premios`, `admin_guardar_premio` (texto), `admin_buscar_codigo` y `admin_entregar_premio` (canjear en la fiesta).
+- `admin_ajustar_puntos` (movimiento `ajuste` con motivo), `admin_ajustes` / `admin_guardar_ajustes` (tiradas, diablillo, cierre de la liga), `admin_cambiar_pin`.
+- `admin_wordle`, `admin_anadir_wordle`, `admin_borrar_wordle`: las palabras del Wordle del trío.
 
 Pensado para crecer (aún sin hacer):
-- **Admin de los tres**: `invitados.rol = 'admin'` ya está; las RPC de admin comprobarán `privado.es_admin(invitado)` con la misma clave de sesión. Lo editable (minijuegos, rangos, premios, `ajustes`) ya vive en tablas.
+- **Más cosas en el admin**: lo editable (minijuegos, rangos, premios, `ajustes`) ya vive en tablas; cada pantalla nueva es una RPC `admin_*` más.
 - **Formulario inicial** con preguntas que decidan los admins: tablas `formulario_preguntas` (id, texto, tipo, opciones jsonb, obligatoria, orden) y `formulario_respuestas` (invitado_id, pregunta_id, valor jsonb). Así se añaden preguntas sin migraciones.
 - **Personaje del LoL de cada invitado**: columna `invitados.campeon` (clave de Data Dragon), ya creada.
 - **Más datos por invitado**: tabla 1:1 con `invitado_id` como clave (como `confirmaciones`), no columnas sueltas en `invitados`.
@@ -241,7 +254,7 @@ Referencia visual de las dos: [infolavelada.com](https://www.infolavelada.com/).
 - [x] **Identidad**: registro buscando el nombre + clave de sesión en el móvil
 - [x] **Spotify**: lista colaborativa incrustada + propuestas (API aplazada)
 - [x] **Estética**: retro, estanco vintage
-- [x] **Admin**: panel de Supabase con vistas SQL
+- [x] **Admin**: página `/admin` para los tres (con su sesión normal) y vistas SQL en el panel de Supabase
 - [ ] **Estanco**: confirmar la fecha de cierre de reservas y revisar precios con el estanquero.
 - [ ] **Repo**: ¿público (protección de `main` gratis, pero contenido visible) o privado (protección por acuerdo)?
 - [ ] **Reparto**: quién hace el diseño base y qué secciones lleva cada uno
