@@ -1,0 +1,23 @@
+---
+// Ventana a pantalla completa de la tirada diaria de dados. La abre `abrirTirada()` de tirada.ts y
+// ella misma pinta los dados y el resultado dentro de [data-tirada-area].
+---
+
+<dialog
+	data-tirada
+	aria-label="Tirada de dados del día"
+	class="fixed inset-0 m-0 hidden h-dvh max-h-none w-dvw max-w-none overflow-y-auto bg-granate-oscuro p-0 text-crema backdrop:bg-black/70 open:block"
+>
+	<button
+		type="button"
+		aria-label="Cerrar"
+		onclick="this.closest('dialog').close()"
+		class="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 grid size-11 place-items-center rounded-full bg-crema/10 text-2xl font-black text-crema active:bg-crema/25"
+	>
+		×
+	</button>
+
+	<div class="mx-auto flex min-h-full max-w-md flex-col items-center justify-center px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
+		<div data-tirada-area class="w-full"></div>
+	</div>
+</dialog>

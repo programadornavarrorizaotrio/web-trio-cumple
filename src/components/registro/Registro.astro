@@ -159,6 +159,7 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 <script>
 	import { buscarInvitados, comprobarPin, registrar, type Coincidencia } from './datos';
 	import { guardarSesion, leerSesion } from './sesion';
+	import { hayBD } from '../../lib/rpc';
 	import { guardarAsistencia, leerCampos } from '../rsvp/datos';
 	import { obtenerAlbum } from '../cromos/datos';
 	import { abrirSobre } from '../cromos/sobre';
@@ -260,11 +261,19 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 				...asistencia,
 			});
 			guardarSesion({ clave, id: elegido.id, nombre: elegido.nombre });
-			await guardarAsistencia(asistencia); // TODO(B): sobra cuando `registrar` la guarde en la BD
+			if (!hayBD) await guardarAsistencia(asistencia); // con BD ya la guarda `registrar`
 			prepararSobre(cromo, asistencia.asiste);
 			irA('revelar');
-		} catch {
-			error.textContent = 'Este nombre ya está registrado. Si no has sido tú, habla con los organizadores.';
+		} catch (e) {
+			const codigo = e instanceof Error ? e.message : '';
+			error.textContent =
+				codigo === 'ya-registrado'
+					? 'Este nombre ya está registrado. Si no has sido tú, habla con los organizadores.'
+					: codigo === 'pin'
+						? 'El código de la fiesta no es correcto. Vuelve a empezar y míralo en el mensaje.'
+						: codigo === 'datos'
+							? 'Revisa los datos: el apodo es obligatorio y los textos no pueden ser tan largos.'
+							: 'No se ha podido registrar. Comprueba la conexión e inténtalo otra vez.';
 			error.hidden = false;
 		}
 	});

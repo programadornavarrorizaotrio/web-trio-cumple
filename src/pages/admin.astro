@@ -1,0 +1,14 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Section from '../components/common/Section.astro';
+import Admin from '../components/admin/Admin.astro';
+---
+
+<Layout title="Admin · Trio Feliz">
+	<main>
+		<h1 class="sr-only">Admin de los organizadores</h1>
+		<Section id="admin" antetitulo="Solo organizadores" titulo="Admin" subtitulo="Invitados, premios, liga y Wordle. Todo lo que cambies aquí lo ven los invitados al momento.">
+			<Admin />
+		</Section>
+	</main>
+</Layout>

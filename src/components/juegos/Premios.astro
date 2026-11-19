@@ -1,0 +1,504 @@
+---
+import Hoja from '../common/Hoja.astro';
+import { RANGOS } from './liga';
+import { emblema } from './lol/imagenes';
+
+// Hoja del hexágono Premios: el "road to Challenger". Los diez rangos del LoL de abajo (Hierro) arriba
+// (Challenger), con tu progreso y los premios de cada rango; debajo, los que se deciden al cierre de la
+// liga (podio, campeón y equipo). Los premios y sus textos vienen de `premios()` (liga.ts).
+const rangos = await Promise.all(
+	RANGOS.map(async (r, i) => ({ ...r, indice: i, img: await emblema(r.emblema, 160) })),
+);
+const camino = [...rangos].reverse(); // Challenger arriba
+---
+
+<Hoja id="hoja-premios" titulo="hoja-premios-titulo" asaClara>
+	<div class="rd">
+		<header class="rd-cabecera">
+			<p class="rd-paso">Premios</p>
+			<h3 id="hoja-premios-titulo" class="rd-titulo">Road to Challenger</h3>
+			<div data-rd-yo class="rd-yo" hidden>
+				<img data-rd-yo-emblema src={rangos[0].img} alt="" width="160" height="160" class="rd-yo-emblema" />
+				<div class="min-w-0 flex-1">
+					<p class="rd-yo-rango" data-rd-yo-rango></p>
+					<p class="rd-yo-puntos" data-rd-yo-puntos></p>
+					<div class="rd-yo-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso hasta el siguiente rango">
+						<div data-rd-yo-relleno></div>
+					</div>
+					<p class="rd-yo-falta" data-rd-yo-falta></p>
+				</div>
+			</div>
+			<p data-rd-sin-equipo class="rd-sin-equipo" hidden>Elige un equipo para empezar a subir.</p>
+		</header>
+
+		<ol class="rd-camino" aria-label="Rangos, de Challenger a Hierro">
+			{
+				camino.map((r) => (
+					<li class="rd-rango" data-rango={r.indice}>
+						<span class="rd-tramo" aria-hidden="true">
+							<span class="rd-tramo-relleno" />
+						</span>
+						<span class="rd-nodo">
+							<img src={r.img} alt="" width="160" height="160" loading="lazy" />
+						</span>
+						<div class="rd-texto">
+							<p class="rd-nombre">
+								{r.nombre}
+								<span class="rd-aqui">Estás aquí</span>
+							</p>
+							<p class="rd-desde">{r.desde === 0 ? 'Punto de partida' : `Desde ${r.desde} puntos`}</p>
+							<div data-rd-premio />
+						</div>
+					</li>
+				))
+			}
+		</ol>
+
+		<section class="rd-cierre" aria-labelledby="rd-cierre-titulo">
+			<h4 id="rd-cierre-titulo" class="rd-cierre-titulo">Al cierre de la liga</h4>
+			<p data-premios-cierre class="rd-cierre-texto"></p>
+			<ul data-premios-cierre-lista class="space-y-3"></ul>
+		</section>
+
+		<p class="rd-pie">Cuando consigas un premio, enséñale el código a uno de los tres en la fiesta. Cada premio se entrega una sola vez.</p>
+
+		<form method="dialog" class="rd-pie-form">
+			<button class="rd-cerrar">Cerrar</button>
+		</form>
+	</div>
+</Hoja>
+
+<style is:global>
+	.rd {
+		--lol-fondo: #010a13;
+		--lol-panel: #0a1428;
+		--lol-oro: #c8aa6e;
+		--lol-oro-oscuro: #785a28;
+		--lol-crema: #f0e6d2;
+		--lol-azul: #0ac8b9;
+		--rd-nodo: 4.5rem;
+		min-height: 100%;
+		padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+		background:
+			radial-gradient(ellipse at 50% 0%, rgb(10 200 185 / 0.12), transparent 50%),
+			var(--lol-fondo);
+		color: var(--lol-crema);
+	}
+
+	/* --- Cabecera y tu rango --- */
+	.rd-cabecera {
+		padding: 2rem 1.25rem 1rem;
+		text-align: center;
+	}
+	.rd-paso {
+		color: var(--lol-oro);
+		font-size: 0.65rem;
+		font-weight: 800;
+		letter-spacing: 0.3em;
+		text-transform: uppercase;
+	}
+	.rd-titulo {
+		color: var(--lol-crema);
+		font-family: var(--font-rotulo);
+		font-size: 1.6rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+	.rd-yo {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 1rem;
+		padding: 0.75rem;
+		border: 1px solid var(--lol-oro-oscuro);
+		background: linear-gradient(135deg, var(--lol-panel), var(--lol-fondo));
+		text-align: left;
+	}
+	.rd-yo[hidden] {
+		display: none;
+	}
+	.rd-yo-emblema {
+		width: 5rem;
+		height: 5rem;
+		flex-shrink: 0;
+		filter: drop-shadow(0 0 10px rgb(200 170 110 / 0.35));
+	}
+	.rd-yo-rango {
+		color: var(--lol-oro);
+		font-family: var(--font-rotulo);
+		font-size: 1.3rem;
+		font-weight: 800;
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+	.rd-yo-puntos {
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: rgb(240 230 210 / 0.75);
+	}
+	.rd-yo-barra {
+		height: 0.4rem;
+		margin-top: 0.4rem;
+		overflow: hidden;
+		background: #1e2328;
+	}
+	.rd-yo-barra div {
+		width: 0;
+		height: 100%;
+		background: linear-gradient(90deg, var(--lol-azul), #cdfafa);
+		box-shadow: 0 0 8px var(--lol-azul);
+		transition: width 0.6s ease-out;
+	}
+	.rd-yo-falta {
+		margin-top: 0.3rem;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: rgb(240 230 210 / 0.6);
+	}
+	.rd-sin-equipo {
+		margin-top: 0.75rem;
+		color: var(--lol-oro);
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	/* --- El camino: un tramo vertical por rango; se rellena hasta donde has llegado --- */
+	.rd-camino {
+		padding: 0.5rem 1.25rem 0;
+	}
+	.rd-rango {
+		position: relative;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.9rem;
+		padding-bottom: 1.5rem;
+	}
+	.rd-tramo {
+		position: absolute;
+		left: calc(var(--rd-nodo) / 2 - 2px);
+		top: calc(var(--rd-nodo) / 2);
+		bottom: calc(var(--rd-nodo) / -2);
+		width: 4px;
+		background: #1e2328;
+	}
+	/* El de Hierro no tiene tramo por debajo */
+	.rd-rango:last-child .rd-tramo {
+		display: none;
+	}
+	.rd-tramo-relleno {
+		position: absolute;
+		inset: auto 0 0;
+		height: var(--relleno, 0%);
+		background: linear-gradient(to top, var(--lol-oro), var(--lol-azul));
+		box-shadow: 0 0 8px rgb(10 200 185 / 0.6);
+		transition: height 0.8s ease-out;
+	}
+	.rd-nodo {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		width: var(--rd-nodo);
+		height: var(--rd-nodo);
+		flex-shrink: 0;
+		border: 2px solid #3c3c41;
+		border-radius: 50%;
+		background: radial-gradient(circle, #1e2328, var(--lol-fondo) 70%);
+	}
+	.rd-nodo img {
+		width: 88%;
+		height: 88%;
+		object-fit: contain;
+		filter: grayscale(1) brightness(0.6);
+		transition: filter 0.4s;
+	}
+	.rd-texto {
+		min-width: 0;
+		flex: 1;
+		padding-top: 0.6rem;
+	}
+	.rd-nombre {
+		color: rgb(240 230 210 / 0.45);
+		font-family: var(--font-rotulo);
+		font-size: 1.1rem;
+		font-weight: 800;
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+	.rd-aqui {
+		display: none;
+		margin-left: 0.4rem;
+		padding: 0.1rem 0.4rem;
+		background: var(--lol-azul);
+		color: var(--lol-fondo);
+		font-family: system-ui, sans-serif;
+		font-size: 0.55rem;
+		letter-spacing: 0.12em;
+		vertical-align: middle;
+	}
+	.rd-desde {
+		margin-top: 0.1rem;
+		color: rgb(240 230 210 / 0.4);
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	/* Rangos ya alcanzados y el actual */
+	.rd-rango.alcanzado .rd-nodo {
+		border-color: var(--lol-oro-oscuro);
+	}
+	.rd-rango.alcanzado .rd-nodo img {
+		filter: none;
+	}
+	.rd-rango.alcanzado .rd-nombre {
+		color: var(--lol-crema);
+	}
+	.rd-rango.alcanzado .rd-desde {
+		color: rgb(240 230 210 / 0.65);
+	}
+	.rd-rango.actual .rd-nodo {
+		border-color: var(--lol-oro);
+		box-shadow:
+			0 0 0 3px var(--lol-fondo),
+			0 0 0 5px var(--lol-azul),
+			0 0 24px 6px rgb(10 200 185 / 0.45);
+		animation: rd-latido 2.4s ease-in-out infinite;
+	}
+	.rd-rango.actual .rd-nombre {
+		color: var(--lol-oro);
+	}
+	.rd-rango.actual .rd-aqui {
+		display: inline-block;
+	}
+	@keyframes rd-latido {
+		50% {
+			box-shadow:
+				0 0 0 3px var(--lol-fondo),
+				0 0 0 5px var(--lol-azul),
+				0 0 34px 10px rgb(10 200 185 / 0.6);
+		}
+	}
+
+	/* --- Tarjetas de premio --- */
+	.rd-premio {
+		margin-top: 0.6rem;
+		padding: 0.7rem 0.8rem;
+		border: 1px solid #3c3c41;
+		background: rgb(30 35 40 / 0.6);
+	}
+	.rd-premio.conseguido {
+		border-color: var(--lol-oro);
+		background: linear-gradient(135deg, rgb(200 170 110 / 0.22), rgb(30 35 40 / 0.6));
+	}
+	.rd-premio.perdido {
+		opacity: 0.55;
+	}
+	.rd-premio-cab {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.6rem;
+	}
+	.rd-premio-titulo {
+		color: var(--lol-crema);
+		font-size: 0.9rem;
+		font-weight: 800;
+	}
+	.rd-premio-titulo::before {
+		content: '🎁 ';
+	}
+	.rd-etiqueta {
+		flex-shrink: 0;
+		padding: 0.1rem 0.4rem;
+		font-size: 0.55rem;
+		font-weight: 900;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	.rd-etiqueta.conseguido {
+		background: var(--lol-oro);
+		color: var(--lol-fondo);
+	}
+	.rd-etiqueta.en-juego {
+		background: var(--lol-azul);
+		color: var(--lol-fondo);
+	}
+	.rd-etiqueta.bloqueado,
+	.rd-etiqueta.perdido {
+		background: #3c3c41;
+		color: rgb(240 230 210 / 0.7);
+	}
+	.rd-premio-desc {
+		margin-top: 0.2rem;
+		color: rgb(240 230 210 / 0.65);
+		font-size: 0.8rem;
+	}
+	.rd-premio-detalle {
+		margin-top: 0.35rem;
+		color: var(--lol-crema);
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+	.rd-codigo {
+		margin-top: 0.6rem;
+		padding: 0.45rem;
+		border: 1px dashed var(--lol-oro);
+		background: var(--lol-fondo);
+		text-align: center;
+	}
+	.rd-codigo span {
+		display: block;
+		color: rgb(240 230 210 / 0.6);
+		font-size: 0.55rem;
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+	}
+	.rd-codigo strong {
+		display: block;
+		color: var(--lol-oro);
+		font-family: ui-monospace, monospace;
+		font-size: 1.4rem;
+		letter-spacing: 0.15em;
+	}
+
+	/* --- Cierre de la liga y pie --- */
+	.rd-cierre {
+		margin: 0.5rem 1.25rem 0;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--lol-oro-oscuro);
+	}
+	.rd-cierre-titulo {
+		color: var(--lol-oro);
+		font-family: var(--font-rotulo);
+		font-size: 1.1rem;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+	.rd-cierre-texto {
+		margin: 0.2rem 0 0.25rem;
+		color: rgb(240 230 210 / 0.6);
+		font-size: 0.8rem;
+	}
+	.rd-pie {
+		margin: 1.25rem 1.25rem 0;
+		color: rgb(240 230 210 / 0.5);
+		font-size: 0.75rem;
+	}
+	.rd-pie-form {
+		margin: 1rem 1.25rem 0;
+	}
+	.rd-cerrar {
+		width: 100%;
+		padding: 0.8rem;
+		border: 1px solid var(--lol-oro-oscuro);
+		color: var(--lol-crema);
+		font-size: 0.85rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.rd-rango.actual .rd-nodo {
+			animation: none;
+		}
+		.rd-tramo-relleno,
+		.rd-yo-barra div {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	import { estadoLiga, premios, ligaCerrada, RANGOS, type EstadoPremio, type PremioEstado } from './liga';
+
+	const hoja = document.getElementById('hoja-premios') as HTMLDialogElement;
+	const q = <T extends HTMLElement>(sel: string) => hoja.querySelector<T>(sel)!;
+
+	const ETIQUETAS: Record<EstadoPremio, string> = {
+		conseguido: 'Conseguido',
+		'en-juego': 'En juego',
+		bloqueado: 'Bloqueado',
+		perdido: 'No ha podido ser',
+	};
+
+	// Todo el texto con textContent: los premios los editará una persona
+	function el(etiqueta: string, clase: string, texto?: string) {
+		const e = document.createElement(etiqueta);
+		e.className = clase;
+		if (texto !== undefined) e.textContent = texto;
+		return e;
+	}
+
+	function tarjeta(p: PremioEstado, enLista = false) {
+		const t = el(enLista ? 'li' : 'div', `rd-premio ${p.estado}`);
+		const cab = el('div', 'rd-premio-cab');
+		cab.append(el('p', 'rd-premio-titulo', p.titulo), el('span', `rd-etiqueta ${p.estado}`, p.entregado ? 'Entregado' : ETIQUETAS[p.estado]));
+		t.append(cab, el('p', 'rd-premio-desc', p.descripcion), el('p', 'rd-premio-detalle', p.detalle));
+		if (p.codigo) {
+			const codigo = el('div', 'rd-codigo');
+			codigo.append(el('span', '', 'Tu código'), el('strong', '', p.codigo));
+			t.append(codigo);
+		}
+		return t;
+	}
+
+	async function pintar() {
+		const [estado, lista] = await Promise.all([estadoLiga(), premios()]);
+		const conEquipo = !!estado.equipo;
+		const actual = conEquipo ? RANGOS.findIndex((r) => r.nombre === estado.rango.nombre) : -1;
+
+		// Tu rango arriba, con su emblema
+		q('[data-rd-yo]').hidden = !conEquipo;
+		q('[data-rd-sin-equipo]').hidden = conEquipo;
+		const sig = estado.siguienteRango;
+		const pct = !conEquipo ? 0 : sig ? Math.round(((estado.puntos - estado.rango.desde) / (sig.desde - estado.rango.desde)) * 100) : 100;
+		if (conEquipo) {
+			const nodoActual = hoja.querySelector<HTMLImageElement>(`[data-rango="${actual}"] img`)!;
+			q<HTMLImageElement>('[data-rd-yo-emblema]').src = nodoActual.src;
+			q('[data-rd-yo-rango]').textContent = estado.rango.nombre;
+			q('[data-rd-yo-puntos]').textContent = `${estado.puntos} pts · puesto ${estado.puesto}`;
+			q('[data-rd-yo-relleno]').style.width = `${pct}%`;
+			q('[data-rd-yo-relleno]').parentElement!.setAttribute('aria-valuenow', String(pct));
+			q('[data-rd-yo-falta]').textContent = sig ? `${sig.desde - estado.puntos} puntos para ${sig.nombre}` : '¡Eres Challenger!';
+		}
+
+		// El camino: lo alcanzado brilla; el tramo que sale de tu rango se llena según lo que llevas hacia el siguiente.
+		// Cada tramo va del nodo de su rango hacia abajo, así que el que se rellena a medias es el del rango siguiente.
+		hoja.querySelectorAll<HTMLElement>('[data-rango]').forEach((li) => {
+			const i = Number(li.dataset.rango);
+			li.classList.toggle('alcanzado', i <= actual);
+			li.classList.toggle('actual', i === actual);
+			const relleno = i <= actual ? 100 : i === actual + 1 && conEquipo ? pct : 0;
+			li.querySelector<HTMLElement>('.rd-tramo-relleno')!.style.setProperty('--relleno', `${relleno}%`);
+		});
+
+		// Premios de rango en su nodo; los demás, al cierre
+		hoja.querySelectorAll<HTMLElement>('[data-rd-premio]').forEach((hueco) => hueco.replaceChildren());
+		const cierre: PremioEstado[] = [];
+		for (const p of lista) {
+			if (p.requisito.tipo === 'rango') {
+				const i = RANGOS.findIndex((r) => r.nombre === (p.requisito as { rango: string }).rango);
+				hoja.querySelector(`[data-rango="${i}"] [data-rd-premio]`)?.append(tarjeta(p));
+			} else {
+				cierre.push(p);
+			}
+		}
+		q('[data-premios-cierre]').textContent = ligaCerrada()
+			? 'La liga ha terminado: estos son los resultados.'
+			: 'El podio y el equipo ganador se deciden cuando termine la liga, en la fiesta.';
+		q('[data-premios-cierre-lista]').replaceChildren(...cierre.map((p) => tarjeta(p, true)));
+
+		return actual;
+	}
+
+	document.querySelector('[data-hex="premios"]')?.addEventListener('click', async () => {
+		const actual = await pintar();
+		hoja.showModal();
+		// Se abre con tu rango a la vista (el foco inicial cae en "Cerrar", al final)
+		const nodo = hoja.querySelector<HTMLElement>(`[data-rango="${Math.max(actual, 0)}"]`)!;
+		hoja.scrollTop = Math.max(0, nodo.offsetTop - hoja.clientHeight / 2 + nodo.offsetHeight / 2);
+	});
+</script>
