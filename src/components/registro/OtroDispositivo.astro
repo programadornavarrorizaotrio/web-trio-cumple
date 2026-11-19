@@ -1,0 +1,93 @@
+---
+// "Entrar en otro dispositivo" (pie de todas las páginas): saca un código de un solo uso para abrir la web en
+// otro móvil u ordenador sin cerrar la sesión de este. En el otro se escribe en /registro (ver Registro.astro).
+// Solo aparece con base de datos y sesión real: sin BD no hay códigos.
+---
+
+<button type="button" data-otro-dispositivo hidden class="font-bold text-amarillo underline underline-offset-4">Entrar en otro dispositivo</button>
+
+<dialog data-hoja-codigo class="m-auto w-[min(100%-2rem,24rem)] rounded-lg bg-crema p-0 text-left text-tinta backdrop:bg-tinta/60">
+	<div class="space-y-4 p-5">
+		<div class="flex items-start justify-between gap-3">
+			<h2 class="text-xl text-granate">Entrar en otro dispositivo</h2>
+			<button type="button" data-cerrar-codigo class="text-2xl leading-none text-tinta-suave" aria-label="Cerrar">×</button>
+		</div>
+
+		<div data-codigo-cargando class="py-6 text-center text-sm font-bold text-tinta-suave">Sacando tu código…</div>
+
+		<div data-codigo-listo hidden class="space-y-4">
+			<p class="rotulo select-all rounded-lg border-2 border-dashed border-granate bg-white py-4 text-center text-4xl tracking-[0.25em] text-granate" data-codigo-texto></p>
+			<p class="text-center text-xs font-bold text-tinta-suave" data-codigo-cuenta aria-live="polite"></p>
+			<ol class="list-decimal space-y-1 pl-5 text-sm">
+				<li>En el otro dispositivo abre la web y entra con el código de la fiesta.</li>
+				<li>Búscate y pulsa en tu nombre (<em>Ya registrado · Entrar</em>).</li>
+				<li>Escribe este código. Sirve una sola vez.</li>
+			</ol>
+			<p class="text-xs text-tinta-suave">Aquí seguirás dentro. No se lo pases a nadie: con él se entra como tú.</p>
+			<button type="button" data-otro-codigo class="text-sm font-bold text-granate underline underline-offset-4">Sacar otro código</button>
+		</div>
+
+		<p data-codigo-error hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
+	</div>
+</dialog>
+
+<script>
+	import { usaBD } from '../../lib/rpc';
+	import { crearCodigoAcceso } from './datos';
+
+	const boton = document.querySelector<HTMLButtonElement>('[data-otro-dispositivo]');
+	const hoja = document.querySelector<HTMLDialogElement>('[data-hoja-codigo]');
+
+	if (boton && hoja && usaBD()) {
+		const $ = <T extends HTMLElement = HTMLElement>(sel: string) => hoja.querySelector<T>(sel)!;
+		const cargando = $('[data-codigo-cargando]');
+		const listo = $('[data-codigo-listo]');
+		const error = $('[data-codigo-error]');
+		const cuenta = $('[data-codigo-cuenta]');
+		let reloj: number | undefined;
+
+		boton.hidden = false;
+
+		async function sacar() {
+			clearInterval(reloj);
+			cargando.hidden = false;
+			listo.hidden = true;
+			error.hidden = true;
+			try {
+				const { codigo, caducaEn } = await crearCodigoAcceso();
+				$('[data-codigo-texto]').textContent = codigo;
+				// La cuenta se lleva con el reloj del móvil (que puede ir adelantado o atrasado respecto al servidor):
+				// como mucho los 10 minutos que dura, y nunca más allá de la caducidad que dice el servidor
+				const fin = Math.min(new Date(caducaEn).getTime(), Date.now() + 10 * 60 * 1000);
+				const pintar = () => {
+					const s = Math.max(0, Math.round((fin - Date.now()) / 1000));
+					cuenta.textContent = s > 0 ? `Caduca en ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'Ha caducado: saca otro';
+					$('[data-codigo-texto]').classList.toggle('opacity-30', s === 0);
+					if (s === 0) clearInterval(reloj);
+				};
+				pintar();
+				reloj = window.setInterval(pintar, 1000);
+				cargando.hidden = true;
+				listo.hidden = false;
+			} catch (e) {
+				const codigo = e instanceof Error ? e.message : '';
+				error.textContent =
+					codigo === 'demasiados'
+						? 'Has pedido muchos códigos seguidos. Espera un rato.'
+						: codigo === 'sesion'
+							? 'Tu sesión ya no vale en este dispositivo.'
+							: 'No se ha podido sacar el código. Comprueba la conexión.';
+				cargando.hidden = true;
+				error.hidden = false;
+			}
+		}
+
+		boton.addEventListener('click', () => {
+			hoja.showModal();
+			void sacar();
+		});
+		$('[data-otro-codigo]').addEventListener('click', () => void sacar());
+		$('[data-cerrar-codigo]').addEventListener('click', () => hoja.close());
+		hoja.addEventListener('close', () => clearInterval(reloj));
+	}
+</script>

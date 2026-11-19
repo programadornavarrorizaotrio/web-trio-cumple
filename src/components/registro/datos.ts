@@ -1,6 +1,6 @@
 import type { Cromo } from '../cromos/tipos';
 import { demoBuscar, demoRegistrar } from '../cromos/demo';
-import { hayBD, rpc } from '../../lib/rpc';
+import { hayBD, rpc, rpcConClave } from '../../lib/rpc';
 
 // Contrato con la base de datos (tareas de B). Si cambia algo aquí, avisar a quien lleve `supabase/`.
 
@@ -60,4 +60,25 @@ export async function registrar(pin: string, id: string, datos: DatosRegistro): 
 	}
 	if (!(await comprobarPin(pin))) throw new Error('pin');
 	return demoRegistrar(id, { apodo: datos.apodo, frase: datos.frase, asiste: datos.asiste });
+}
+
+// ───────────── Entrar en otro dispositivo ─────────────
+
+/** Lo que devuelve `entrar_con_codigo`: una sesión nueva para este dispositivo */
+export interface Entrada {
+	clave: string;
+	id: string;
+	nombre: string;
+}
+
+/**
+ * RPC `crear_codigo_acceso(clave)`: desde un dispositivo donde ya está dentro, un código de un solo uso
+ * (10 minutos) para entrar en otro. Errores: 'sesion', 'demasiados'.
+ */
+export const crearCodigoAcceso = () => rpcConClave<{ codigo: string; caducaEn: string }>('crear_codigo_acceso');
+
+/** RPC `entrar_con_codigo(pin, codigo)`. Errores: 'pin', 'codigo' (no existe, ya usado o caducado). */
+export async function entrarConCodigo(pin: string, codigo: string): Promise<Entrada> {
+	if (!hayBD) throw new Error('codigo');
+	return rpc<Entrada>('entrar_con_codigo', { pin: pin.trim(), codigo });
 }
