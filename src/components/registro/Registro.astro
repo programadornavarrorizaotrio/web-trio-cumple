@@ -123,6 +123,36 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 		<Button type="submit" tamano="lg" class="w-full">Activar mi cromo</Button>
 	</form>
 
+	<!-- Ya registrado en otro dispositivo: entra con el código que saca desde allí -->
+	<form data-paso="codigo" hidden class="mt-6 space-y-5 rounded-lg bg-crema p-5 text-tinta shadow-chapa">
+		<button type="button" data-atras-codigo class="text-sm font-bold text-granate underline underline-offset-4">← No soy yo</button>
+
+		<h2 class="text-2xl text-granate">¡Hola otra vez, <span data-nombre-codigo></span>!</h2>
+		<p class="text-sm text-tinta-suave">
+			Ya te registraste en otro dispositivo. Para entrar también aquí, abre la web donde ya estás dentro, baja del todo y pulsa
+			<strong class="text-granate">Entrar en otro dispositivo</strong>: te dará un código.
+		</p>
+
+		<label class="block">
+			<span class="text-xs font-black uppercase tracking-[0.2em] text-granate">Código</span>
+			<input
+				data-codigo
+				required
+				autocomplete="one-time-code"
+				autocapitalize="characters"
+				spellcheck="false"
+				maxlength="9"
+				placeholder="K7P-4QX"
+				class="rotulo mt-1.5 block w-full rounded border-2 border-granate/25 bg-white px-4 py-3 text-center text-2xl uppercase tracking-[0.3em] text-granate placeholder:text-tinta-suave/40 focus:border-granate focus:outline-none"
+			/>
+		</label>
+
+		<p data-error-codigo hidden role="alert" class="rounded border-2 border-granate bg-granate/10 px-3 py-2 text-sm font-bold text-granate"></p>
+
+		<Button type="submit" tamano="lg" class="w-full">Entrar</Button>
+		<p class="text-xs text-tinta-suave">¿Perdiste el otro móvil? Escribe a los organizadores y te dejan registrarte de nuevo.</p>
+	</form>
+
 	<!-- Paso 3: abrir el sobre (con todos los cromos de quienes ya confirmaron) -->
 	<section data-paso="revelar" hidden class="mt-6 text-center">
 		<p class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">¡Registrado!</p>
@@ -157,7 +187,7 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 </div>
 
 <script>
-	import { buscarInvitados, comprobarPin, registrar, type Coincidencia } from './datos';
+	import { buscarInvitados, comprobarPin, entrarConCodigo, registrar, type Coincidencia } from './datos';
 	import { guardarSesion, leerSesion } from './sesion';
 	import { hayBD } from '../../lib/rpc';
 	import { guardarAsistencia, leerCampos } from '../rsvp/datos';
@@ -172,9 +202,10 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => raiz.querySelector<T>(sel)!;
 	const pasos = ['buscar', 'datos', 'revelar'] as const;
 
-	function irA(paso: (typeof pasos)[number]) {
+	/** `codigo` no cuenta en la barra de progreso: es la entrada de quien ya se registró en otro dispositivo */
+	function irA(paso: (typeof pasos)[number] | 'codigo') {
 		raiz.querySelectorAll<HTMLElement>('[data-paso]').forEach((el) => (el.hidden = el.dataset.paso !== paso));
-		const n = pasos.indexOf(paso);
+		const n = paso === 'codigo' ? 0 : pasos.indexOf(paso);
 		raiz.querySelectorAll('[data-marca] span').forEach((barra, i) => {
 			barra.classList.toggle('bg-amarillo', i <= n);
 			barra.classList.toggle('bg-crema/25', i > n);
@@ -216,11 +247,22 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 				const boton = li.querySelector('button')!;
 				li.querySelector('[data-nombre]')!.textContent = inv.nombre;
 				if (inv.registrado) {
-					boton.disabled = true;
-					li.querySelector('[data-accion]')!.textContent = 'Ya registrado';
+					// Con BD, quien ya se registró puede entrar aquí también con un código; sin BD no hay códigos
+					if (hayBD) li.querySelector('[data-accion]')!.textContent = 'Ya registrado · Entrar →';
+					else {
+						boton.disabled = true;
+						li.querySelector('[data-accion]')!.textContent = 'Ya registrado';
+					}
 				}
 				boton.addEventListener('click', () => {
 					elegido = inv;
+					if (inv.registrado) {
+						$('[data-nombre-codigo]').textContent = inv.nombre.split(' ')[0];
+						$('[data-error-codigo]').hidden = true;
+						irA('codigo');
+						$<HTMLInputElement>('[data-codigo]').focus();
+						return;
+					}
 					$('[data-nombre-elegido]').textContent = inv.nombre.split(' ')[0];
 					irA('datos');
 				});
@@ -275,6 +317,32 @@ import CamposAsistencia from '../rsvp/CamposAsistencia.astro';
 							? 'Revisa los datos: el apodo es obligatorio y los textos no pueden ser tan largos.'
 							: 'No se ha podido registrar. Comprueba la conexión e inténtalo otra vez.';
 			error.hidden = false;
+		}
+	});
+
+	// --- Ya registrado: entrar con código ---
+	const formCodigo = $<HTMLFormElement>('[data-paso="codigo"]');
+	$('[data-atras-codigo]').addEventListener('click', () => irA('buscar'));
+	formCodigo.addEventListener('submit', async (ev) => {
+		ev.preventDefault();
+		const error = $('[data-error-codigo]');
+		const boton = (ev as SubmitEvent).submitter as HTMLButtonElement | null;
+		error.hidden = true;
+		if (boton) boton.disabled = true;
+		try {
+			const entrada = await entrarConCodigo(pin, $<HTMLInputElement>('[data-codigo]').value);
+			guardarSesion({ clave: entrada.clave, id: entrada.id, nombre: entrada.nombre });
+			location.replace('/');
+		} catch (e) {
+			const codigo = e instanceof Error ? e.message : '';
+			error.textContent =
+				codigo === 'codigo'
+					? 'Ese código no vale: puede que haya caducado (duran 10 minutos) o que ya se usara. Pide otro.'
+					: codigo === 'pin'
+						? 'El código de la fiesta no es correcto. Vuelve a empezar.'
+						: 'No se ha podido entrar. Comprueba la conexión e inténtalo otra vez.';
+			error.hidden = false;
+			if (boton) boton.disabled = false;
 		}
 	});
 

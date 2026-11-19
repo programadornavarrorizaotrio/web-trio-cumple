@@ -6,6 +6,7 @@ import '@fontsource/space-mono/700.css';
 import '@fontsource/silkscreen/700.css';
 import '../styles/global.css';
 import Nav from '../components/common/Nav.astro';
+import OtroDispositivo from '../components/registro/OtroDispositivo.astro';
 import { CLAVE_SESION, EXIGIR_REGISTRO } from '../components/registro/sesion';
 import { getImage } from 'astro:assets';
 import { imagenTema, temaDeRuta, TEMAS, type Tema } from './temas';
@@ -93,8 +94,9 @@ const base = Astro.site ?? Astro.url;
 			<p>{t.pie}</p>
 			<p data-salir hidden class="mt-3 text-xs text-crema/70">
 				¿No eres <span data-salir-nombre></span>?
-				<button type="button" class="font-bold text-amarillo underline underline-offset-4">Salir</button>
+				<button type="button" data-boton-salir class="font-bold text-amarillo underline underline-offset-4">Salir</button>
 			</p>
+			<div class="mt-2 text-xs"><OtroDispositivo /></div>
 		</footer>
 
 		<script>
@@ -106,7 +108,7 @@ const base = Astro.site ?? Astro.url;
 			if (sesion && salir) {
 				salir.querySelector('[data-salir-nombre]')!.textContent = sesion.nombre.split(' ')[0];
 				salir.hidden = false;
-				salir.querySelector('button')!.addEventListener('click', () => {
+				salir.querySelector('[data-boton-salir]')!.addEventListener('click', () => {
 					borrarSesion();
 					location.replace(EXIGIR_REGISTRO ? '/registro' : '/');
 				});
