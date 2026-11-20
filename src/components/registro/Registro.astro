@@ -263,12 +263,25 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		animation: sepe-temblor 0.35s linear;
 	}
 
+	/* En el móvil la oficina ocupa todo el ancho, de borde a borde; desde tablet es una tarjeta centrada */
+	@media (min-width: 640px) {
+		.membrete {
+			border-radius: 0.4rem 0.4rem 0 0;
+		}
+		.escena {
+			border-radius: 0 0 0.4rem 0.4rem;
+		}
+		.pruebas {
+			margin: 0 0 1rem;
+		}
+	}
+
 	.pruebas {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
-		margin-bottom: 1rem;
+		margin: 0.75rem 1rem;
 		border: 2px dashed #ffffff55;
 		border-radius: 0.25rem;
 		padding: 0.5rem 0.75rem;
@@ -288,7 +301,6 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	/* Cabecera como la de una web de la Administración: escudo y Gobierno, franja de bandera, organismo y migas */
 	.membrete {
 		overflow: hidden;
-		border-radius: 0.4rem 0.4rem 0 0;
 		font-family: 'Archivo Variable', Arial, sans-serif;
 	}
 	.gobierno {
@@ -438,7 +450,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	}
 
 	.escena {
-		border-radius: 0 0 0.4rem 0.4rem;
+
 		background:
 			linear-gradient(transparent 70%, #00000010 70%) 0 0 / 100% 2.4rem,
 			var(--pared);
