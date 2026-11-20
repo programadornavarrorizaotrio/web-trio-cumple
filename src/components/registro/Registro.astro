@@ -17,10 +17,17 @@ import reloj from '../../assets/mascota/reloj.png';
 import denegado from '../../assets/mascota/no_rsvp.png';
 import aprobado from '../../assets/mascota/si_rsvp.png';
 import saluda from '../../assets/mascota/saluda.png';
+// Los que esperan en la sala: van saliendo cuando la pantalla llama su turno (A-064, A-065, A-066)
+import impaciente from '../../assets/mascota/reloj.png';
+import perdida from '../../assets/mascota/mapa.png';
+import aburridaDados from '../../assets/mascota/juegos.png';
 
 const poses = { aburrida, papeles, reloj, denegado, aprobado, saluda };
 const ranas = Object.fromEntries(
 	await Promise.all(Object.entries(poses).map(async ([k, img]) => [k, (await getImage({ src: img, width: 640, format: 'webp' })).src])),
+);
+const esperando = await Promise.all(
+	[impaciente, perdida, aburridaDados].map(async (img) => (await getImage({ src: img, width: 160, format: 'webp' })).src),
 );
 const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new Date());
 ---
@@ -72,7 +79,17 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			</div>
 		</div>
 
-		<div class="sillas" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+		<div class="sillas" aria-hidden="true">
+			{
+				esperando.map((src, i) => (
+					<span class="silla">
+						<img data-esperando={i} src={src} alt="" class="esperando" style={`--retraso:${i * 0.4}s`} />
+						<span class="asiento" />
+					</span>
+				))
+			}
+			<span class="silla"><span class="asiento" /></span>
+		</div>
 		<p data-aviso-sala class="aviso-sala">Saque su número y espere a ser llamado.</p>
 		<button type="button" data-saltar hidden class="saltar">Colarse (no se lo diga a nadie) →</button>
 	</section>
@@ -411,15 +428,35 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	.sillas {
 		display: flex;
 		justify-content: center;
-		gap: 0.4rem;
-		margin-top: 10.5rem;
+		gap: 0.5rem;
+		margin-top: 15rem;
 	}
-	.sillas span {
-		width: 2.6rem;
+	.silla {
+		position: relative;
+		width: 3rem;
 		height: 2.2rem;
+	}
+	/* El asiento va después de la rana en el HTML: la tapa de cintura para abajo y parece que está sentada */
+	.asiento {
+		position: absolute;
+		inset: 0;
 		border-radius: 0.6rem 0.6rem 0.2rem 0.2rem;
 		background: linear-gradient(#f2892b, #c96512);
 		box-shadow: 0 0.9rem 0 -0.5rem #555;
+	}
+	.esperando {
+		position: absolute;
+		bottom: 0.35rem;
+		left: 50%;
+		height: 6.8rem;
+		width: auto;
+		max-width: none;
+		translate: -50% 0;
+		transform-origin: bottom;
+		animation: sepe-respira 2.4s ease-in-out var(--retraso, 0s) infinite;
+	}
+	.esperando.se-va {
+		animation: sepe-se-va 0.9s ease-in forwards;
 	}
 	.aviso-sala {
 		margin-top: 1.4rem;
@@ -853,6 +890,21 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			scale: 1;
 		}
 	}
+	@keyframes sepe-respira {
+		50% {
+			transform: scaleY(1.03);
+		}
+	}
+	/* Se levanta de un salto y se va hacia la ventanilla */
+	@keyframes sepe-se-va {
+		30% {
+			transform: translate(0, -1.4rem);
+		}
+		100% {
+			transform: translate(9rem, -0.6rem);
+			opacity: 0;
+		}
+	}
 	@keyframes sepe-sale {
 		from {
 			opacity: 0;
@@ -1025,6 +1077,8 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			await esperar(1300);
 			if (enVentanilla) return;
 			llamar(n, v);
+			// Sale el primero que queda en las sillas
+			raiz.querySelector(`[data-esperando="${n - 64}"]`)?.classList.add('se-va');
 			ding();
 			$('[data-delante]').textContent = String(66 - n);
 			$('[data-aviso-sala]').textContent = n === 66 ? '¡El siguiente es usted!' : `Personas delante: ${66 - n}`;
