@@ -1066,7 +1066,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		$('[data-nombre-impreso]').textContent = inv.nombre;
 		formImpreso.reset();
 		tramite('impreso');
-		pintarPrevia();
+		pintarPrevia(true);
 		void habla('papeles', `${nombre}… Rellene el Modelo 067. Con letra clara, por favor.`);
 	}
 
@@ -1075,7 +1075,8 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	const previa = formImpreso.querySelector<HTMLElement>('[data-cromo]')!;
 	const campoImpreso = (n: string) => formImpreso.elements.namedItem(n) as HTMLInputElement;
 
-	function pintarPrevia() {
+	/** `animar` solo al abrir el impreso: al escribir se repinta sin relanzar la entrada (si no, parpadea) */
+	function pintarPrevia(animar = false) {
 		if (!elegido) return;
 		pintarCromo(previa, {
 			id: elegido.id,
@@ -1084,12 +1085,12 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			apodo: campoImpreso('apodo').value.trim() || 'Tu alias',
 			frase: campoImpreso('frase').value.trim() || null,
 			foto: null,
-		});
+		}, undefined, { animar });
 	}
 	let pintando: number | undefined;
 	formImpreso.addEventListener('input', () => {
 		clearTimeout(pintando);
-		pintando = window.setTimeout(pintarPrevia, 150);
+		pintando = window.setTimeout(() => pintarPrevia(), 150);
 	});
 	$('[data-atras]').addEventListener('click', () => {
 		tramite('buscar');

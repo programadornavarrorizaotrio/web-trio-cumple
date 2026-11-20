@@ -37,8 +37,9 @@ export function energia(tipo: TipoCarta) {
 }
 
 /** Rellena un <Cromo /> con los datos y relanza su animación de entrada.
- *  `total`: invitados del álbum, para el número de la carta ("007/020"). */
-export function pintarCromo(raiz: HTMLElement, c: Cromo, total?: number) {
+ *  `total`: invitados del álbum, para el número de la carta ("007/020").
+ *  `animar: false` para repintar sin relanzar la entrada (la vista previa del registro, que cambia con cada tecla). */
+export function pintarCromo(raiz: HTMLElement, c: Cromo, total?: number, { animar = true }: { animar?: boolean } = {}) {
 	const img = campo<HTMLImageElement>(raiz, 'foto');
 	pintarFoto(img, campo(raiz, 'inicial'), c);
 	img.alt = `Cromo de ${c.nombre}`;
@@ -71,6 +72,7 @@ export function pintarCromo(raiz: HTMLElement, c: Cromo, total?: number) {
 	// El nombre baja de tamaño si no cabe (después de pintar el "ex" y los PS)
 	ajustarTexto(campo(raiz, 'apodo'), 6.2, 3);
 
+	if (!animar) return;
 	raiz.classList.remove('entra');
 	void raiz.offsetWidth;
 	raiz.classList.add('entra');
