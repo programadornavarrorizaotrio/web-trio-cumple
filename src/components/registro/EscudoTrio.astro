@@ -1,0 +1,105 @@
+---
+// Escudo del "Gobierno del Trío" para la cabecera del SEPE del registro. Parodia de un escudo heráldico (no copia
+// ninguno real): corona, escudo cuartelado con la rana, el tabaco del estanco, la cerveza y el dado, escusón con el
+// 67 y dos columnas con cinta a los lados. Plano, para que se vea nítido a cualquier tamaño.
+interface Props {
+	class?: string;
+}
+const { class: clase } = Astro.props;
+const oro = '#e0a526';
+const rojo = '#c8102e';
+const azul = '#1d4a7a';
+const plata = '#f2efe6';
+---
+
+<svg viewBox="0 0 120 146" class={clase} role="img" aria-label="Escudo del Gobierno del Trío" xmlns="http://www.w3.org/2000/svg">
+	<defs>
+		<clipPath id="escudo-trio-forma">
+			<path d="M28 40H92V100Q92 128 60 134Q28 128 28 100Z"></path>
+		</clipPath>
+		<linearGradient id="escudo-trio-columna" x1="0" x2="1">
+			<stop offset="0" stop-color="#9aa0a8"></stop>
+			<stop offset=".45" stop-color="#eef0f2"></stop>
+			<stop offset="1" stop-color="#9aa0a8"></stop>
+		</linearGradient>
+	</defs>
+
+	<!-- Columnas con su cinta -->
+	{
+		[4, 104].map((x) => (
+			<g>
+				<rect x={x - 2} y="44" width="16" height="5" rx="1" fill={oro} />
+				<rect x={x} y="49" width="12" height="78" fill="url(#escudo-trio-columna)" />
+				<path d={`M${x + 3} 52V124M${x + 6} 52V124M${x + 9} 52V124`} stroke="#8a9098" stroke-width=".6" />
+				<rect x={x - 2} y="127" width="16" height="5" rx="1" fill={oro} />
+				<path d={`M${x - 4} 80H${x + 16}L${x + 13} 86L${x + 16} 92H${x - 4}L${x - 1} 86Z`} fill={rojo} stroke={oro} stroke-width="1" />
+				<circle cx={x + 6} cy="40" r="4" fill={oro} />
+			</g>
+		))
+	}
+
+	<!-- Corona -->
+	<g>
+		<path d="M36 32Q40 12 60 9Q80 12 84 32Z" fill={oro}></path>
+		<path d="M42 31Q46 17 60 15Q74 17 78 31Z" fill={rojo}></path>
+		<path d="M60 9V31M48 13Q52 22 51 31M72 13Q68 22 69 31" stroke={oro} stroke-width="2.4" fill="none"></path>
+		<circle cx="60" cy="6" r="3.4" fill={oro}></circle>
+		<path d="M60 1V11M55 6H65" stroke={oro} stroke-width="1.6"></path>
+		<rect x="34" y="31" width="52" height="8" rx="1.5" fill={oro} stroke="#a8781a" stroke-width=".8"></rect>
+		{[40, 50, 60, 70, 80].map((cx, i) => <circle cx={cx} cy="35" r="1.8" fill={i % 2 ? rojo : azul} />)}
+	</g>
+
+	<!-- Escudo cuartelado -->
+	<g clip-path="url(#escudo-trio-forma)">
+		<rect x="28" y="40" width="32" height="47" fill={rojo}></rect>
+		<rect x="60" y="40" width="32" height="47" fill={plata}></rect>
+		<rect x="28" y="87" width="32" height="50" fill={azul}></rect>
+		<rect x="60" y="87" width="32" height="50" fill={oro}></rect>
+
+		<!-- 1: la rana -->
+		<ellipse cx="44" cy="68" rx="11" ry="8" fill="#5cb531" stroke="#2f6d14" stroke-width=".8"></ellipse>
+		<circle cx="38" cy="60" r="4.2" fill="#5cb531" stroke="#2f6d14" stroke-width=".8"></circle>
+		<circle cx="50" cy="60" r="4.2" fill="#5cb531" stroke="#2f6d14" stroke-width=".8"></circle>
+		<circle cx="38" cy="60" r="2.5" fill="#fff"></circle>
+		<circle cx="50" cy="60" r="2.5" fill="#fff"></circle>
+		<circle cx="38.6" cy="60.6" r="1.2" fill="#111"></circle>
+		<circle cx="50.6" cy="60.6" r="1.2" fill="#111"></circle>
+		<path d="M38 70Q44 74 50 70" stroke="#2f6d14" stroke-width="1.2" fill="none" stroke-linecap="round"></path>
+		<path d="M44 76L42 81H46Z" fill="#111"></path>
+
+		<!-- 2: el tabaco del estanco -->
+		<rect x="70" y="48" width="3" height="8" fill="#fff" stroke="#bbb" stroke-width=".4"></rect>
+		<rect x="74" y="46" width="3" height="10" fill="#fff" stroke="#bbb" stroke-width=".4"></rect>
+		<rect x="78" y="49" width="3" height="7" fill="#fff" stroke="#bbb" stroke-width=".4"></rect>
+		<rect x="70" y="48" width="3" height="2.2" fill="#e08a3a"></rect>
+		<rect x="74" y="46" width="3" height="2.2" fill="#e08a3a"></rect>
+		<rect x="78" y="49" width="3" height="2.2" fill="#e08a3a"></rect>
+		<rect x="67" y="55" width="18" height="22" rx="1.2" fill={rojo} stroke="#7d0a1c" stroke-width=".8"></rect>
+		<rect x="67" y="55" width="18" height="6" fill="#fff"></rect>
+		<circle cx="76" cy="69" r="3.6" fill={oro}></circle>
+
+		<!-- 3: la cerveza -->
+		<path d="M50 104h3.5a4 4 0 0 1 0 9H50" stroke={oro} stroke-width="2.4" fill="none"></path>
+		<rect x="35" y="100" width="16" height="21" rx="1.5" fill="#f2b632" stroke="#a8781a" stroke-width=".8"></rect>
+		<path d="M39 104V118M43 104V118M47 104V118" stroke="#d4951b" stroke-width="1"></path>
+		<circle cx="37" cy="99" r="3.2" fill="#fff"></circle>
+		<circle cx="42" cy="97.5" r="3.6" fill="#fff"></circle>
+		<circle cx="47.5" cy="99" r="3.2" fill="#fff"></circle>
+
+		<!-- 4: el dado -->
+		<rect x="67" y="99" width="18" height="18" rx="3" fill="#fff" stroke="#333" stroke-width=".9" transform="rotate(-8 76 108)"></rect>
+		<g fill="#111" transform="rotate(-8 76 108)">
+			<circle cx="71.5" cy="103.5" r="1.6"></circle>
+			<circle cx="80.5" cy="103.5" r="1.6"></circle>
+			<circle cx="76" cy="108" r="1.6"></circle>
+			<circle cx="71.5" cy="112.5" r="1.6"></circle>
+			<circle cx="80.5" cy="112.5" r="1.6"></circle>
+		</g>
+	</g>
+	<path d="M28 40H92V100Q92 128 60 134Q28 128 28 100Z" fill="none" stroke={oro} stroke-width="3"></path>
+	<path d="M60 40V134M28 87H92" stroke={oro} stroke-width="1"></path>
+
+	<!-- Escusón con el 67 -->
+	<path d="M51 80H69V90Q69 97 60 99Q51 97 51 90Z" fill={azul} stroke={oro} stroke-width="1.6"></path>
+	<text x="60" y="92.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#fff">67</text>
+</svg>
