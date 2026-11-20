@@ -14,7 +14,6 @@ import { PIN_DEMO } from './datos';
 // Detrás de la ventanilla, con gafas y sin ganas de trabajar (el resto de poses son las de la mascota)
 import aburrida from '../../assets/mascota/sepe.png';
 import papeles from '../../assets/mascota/rsvp.png';
-import reloj from '../../assets/mascota/reloj.png';
 import denegado from '../../assets/mascota/no_rsvp.png';
 import aprobado from '../../assets/mascota/si_rsvp.png';
 import saluda from '../../assets/mascota/saluda.png';
@@ -25,7 +24,7 @@ import espera2 from '../../assets/mascota/sentado1.png';
 import espera3 from '../../assets/mascota/sentado2.png';
 import espera4 from '../../assets/mascota/sentado3.png';
 
-const poses = { aburrida, papeles, reloj, denegado, aprobado, saluda };
+const poses = { aburrida, papeles, denegado, aprobado, saluda };
 const ranas = Object.fromEntries(
 	await Promise.all(Object.entries(poses).map(async ([k, img]) => [k, (await getImage({ src: img, width: 640, format: 'webp' })).src])),
 );
@@ -1076,7 +1075,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 
 	const raiz = document.querySelector<HTMLElement>('[data-registro]')!;
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => raiz.querySelector<T>(sel)!;
-	type Pose = 'aburrida' | 'papeles' | 'reloj' | 'denegado' | 'aprobado' | 'saluda';
+	type Pose = 'aburrida' | 'papeles' | 'denegado' | 'aprobado' | 'saluda';
 	const ranas = JSON.parse(raiz.dataset.ranas!) as Record<Pose, string>;
 	const reducido = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, reducido() ? Math.min(ms, 150) : ms));
@@ -1303,7 +1302,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			$('[data-nombre-codigo]').textContent = inv.nombre;
 			$('[data-error-codigo]').hidden = true;
 			tramite('duplicado');
-			void habla('reloj', `¿${nombre} otra vez? Ya tiene expediente. Para un duplicado necesito el código de su otro dispositivo.`);
+			void habla('papeles', `¿${nombre} otra vez? Ya tiene expediente. Para un duplicado necesito el código de su otro dispositivo.`);
 			return;
 		}
 		$('[data-nombre-impreso]').textContent = inv.nombre;
