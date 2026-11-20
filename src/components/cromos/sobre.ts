@@ -5,6 +5,8 @@ interface Opciones {
 	/** Id del invitado que abre el sobre: su cromo sale casi al final */
 	propio?: string;
 	titulo?: string;
+	/** Nombre que sale en la ventanilla del sobre certificado */
+	destinatario?: string;
 }
 
 /** Orden de salida: primero el resto, luego el del propio invitado y, al final, el trío (los especiales) */
@@ -17,7 +19,7 @@ function ordenar(cromos: Cromo[], propio?: string) {
  * Abre el sobre con las cartas dadas (hay que tener <Sobre /> en la página).
  * Se resuelve cuando el invitado cierra el diálogo, termine o no de pasar las cartas.
  */
-export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tu sobre' }: Opciones = {}): Promise<void> {
+export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una notificación', destinatario = 'Invitado/a' }: Opciones = {}): Promise<void> {
 	const dialogo = document.querySelector<HTMLDialogElement>('[data-sobre-dialogo]')!;
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialogo.querySelector<T>(sel)!;
 	const plantilla = $<HTMLTemplateElement>('[data-plantilla-carta]').content.firstElementChild!;
@@ -40,7 +42,8 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tu sobre' }: Opc
 	pasoFinal.hidden = true;
 	escenario.replaceChildren();
 	$('[data-titulo-sobre]').textContent = titulo;
-	$('[data-n-cartas]').textContent = `${cartas.length} cromo${cartas.length === 1 ? '' : 's'}`;
+	$('[data-destinatario]').textContent = destinatario;
+	$('[data-n-cartas]').textContent = `Contiene ${cartas.length} cromo${cartas.length === 1 ? '' : 's'}`;
 	$('[data-total]').textContent = String(cartas.length);
 	$('[data-final-n]').textContent = String(cartas.length);
 
@@ -51,7 +54,7 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tu sobre' }: Opc
 		carta.classList.add('entra');
 		escenario.replaceChildren(carta);
 		$('[data-actual]').textContent = String(indice + 1);
-		$('[data-anuncio]').textContent = `Cromo ${indice + 1} de ${cartas.length}: ${c.apodo} (${c.nombre})`;
+		$('[data-anuncio]').textContent = `Documento ${indice + 1} de ${cartas.length}: ${c.apodo} (${c.nombre})`;
 		botonSiguiente.textContent = indice === cartas.length - 1 ? 'Terminar' : 'Siguiente →';
 	}
 
