@@ -6,6 +6,7 @@
 // La asistencia NO se pregunta aquí: se confirma después en la portada.
 import { getImage } from 'astro:assets';
 import Cromo from '../cromos/Cromo.astro';
+import EscudoTrio from './EscudoTrio.astro';
 import Sobre from '../cromos/Sobre.astro';
 import FotosDemo from '../cromos/FotosDemo.astro';
 import { EXIGIR_REGISTRO } from './sesion';
@@ -51,11 +52,29 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 
 	<!-- Cabecera institucional -->
 	<header class="membrete">
-		<span class="escudo" aria-hidden="true">🐸</span>
-		<span>
-			<strong>SEPE</strong>
-			<small>Servicio Público de Empleo del Trío</small>
-		</span>
+		<div class="gobierno">
+			<EscudoTrio class="escudo-trio" />
+			<span class="separador" aria-hidden="true"></span>
+			<p class="gobierno-texto">
+				<strong>Gobierno<br />del Trío</strong>
+			</p>
+			<p class="ministerio">Ministerio de Trabajo,<br />Fiesta y Economía Sumergida</p>
+		</div>
+		<div class="bandera" aria-hidden="true"></div>
+		<div class="organismo">
+			<p class="sepe-marca">
+				<span class="sepe-sigla">sepe</span>
+				<span class="sepe-nombre">Servicio Público<br />de Empleo del Trío</span>
+			</p>
+			<p class="sede">
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7V5a4 4 0 0 1 8 0v2h1v8H3V7Zm2 0h4V5a2 2 0 0 0-4 0Z" fill="currentColor"></path></svg>
+				Sede<br />electrónica
+			</p>
+		</div>
+		<p class="migas">
+			<span>Inicio › Trámites › <strong>Alta</strong></span>
+			<time data-reloj></time>
+		</p>
 	</header>
 
 	<!-- Pantalla de turnos: siempre a la vista -->
@@ -266,34 +285,122 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	}
 
 	/* Membrete y pantalla de turnos */
+	/* Cabecera como la de una web de la Administración: escudo y Gobierno, franja de bandera, organismo y migas */
 	.membrete {
+		overflow: hidden;
+		border-radius: 0.4rem 0.4rem 0 0;
+		font-family: 'Archivo Variable', Arial, sans-serif;
+	}
+	.gobierno {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		border-bottom: 4px solid #c8102e;
-		background: var(--azul);
-		padding: 0.6rem 0.9rem;
-		color: white;
-		border-radius: 0.4rem 0.4rem 0 0;
+		gap: 0.55rem;
+		background: #fff;
+		padding: 0.5rem 0.8rem;
+		color: #1a1a1a;
 	}
-	.membrete strong {
+	.gobierno :global(.escudo-trio) {
+		flex-shrink: 0;
+		width: 2.9rem;
+		height: auto;
+	}
+	.separador {
+		align-self: stretch;
+		width: 3px;
+		background: linear-gradient(#c8102e 0 25%, #f1bf00 25% 75%, #c8102e 75%);
+	}
+	.gobierno-texto strong {
 		display: block;
-		font-size: 1.25rem;
-		letter-spacing: 0.2em;
+		font-size: 0.82rem;
+		font-weight: 800;
+		line-height: 1.05;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+	.ministerio {
+		margin-left: auto;
+		border-left: 1px solid #ccc;
+		padding-left: 0.55rem;
+		font-size: 0.58rem;
+		line-height: 1.25;
+		color: #555;
+	}
+	.bandera {
+		height: 5px;
+		background: linear-gradient(#c8102e 0 25%, #f1bf00 25% 75%, #c8102e 75%);
+	}
+	.organismo {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		background:
+			radial-gradient(circle at 92% -40%, #ffffff22 0 35%, transparent 36%),
+			linear-gradient(100deg, var(--azul), #2a6aa8);
+		padding: 0.6rem 0.8rem;
+		color: #fff;
+	}
+	.sepe-marca {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+	}
+	.sepe-sigla {
+		position: relative;
+		font-size: 1.9rem;
+		font-weight: 900;
+		font-style: italic;
+		letter-spacing: -0.02em;
 		line-height: 1;
 	}
-	.membrete small {
-		font-size: 0.65rem;
-		opacity: 0.85;
+	/* La "ola" amarilla bajo la sigla */
+	.sepe-sigla::after {
+		content: '';
+		position: absolute;
+		left: 0.05rem;
+		right: -0.15rem;
+		bottom: -0.3rem;
+		height: 0.45rem;
+		border-bottom: 3px solid #f1bf00;
+		border-radius: 0 0 50% 50%;
 	}
-	.escudo {
-		display: grid;
-		place-items: center;
-		width: 2.3rem;
-		height: 2.3rem;
-		border: 2px solid #ffffffaa;
-		border-radius: 50%;
-		font-size: 1.2rem;
+	.sepe-nombre {
+		border-left: 1px solid #ffffff55;
+		padding-left: 0.55rem;
+		font-size: 0.66rem;
+		font-weight: 600;
+		line-height: 1.2;
+	}
+	.sede {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.55rem;
+		line-height: 1.15;
+		text-align: left;
+		opacity: 0.9;
+	}
+	.sede svg {
+		width: 0.9rem;
+		height: 0.9rem;
+		color: #f1bf00;
+	}
+	.migas {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5rem;
+		border-bottom: 1px solid #c9c4b4;
+		background: #f4f1e8;
+		padding: 0.35rem 0.8rem;
+		font-family: 'Space Mono', ui-monospace, monospace;
+		font-size: 0.55rem;
+		color: #555;
+	}
+	.migas strong {
+		color: var(--azul);
+	}
+	.migas time {
+		flex-shrink: 0;
 	}
 	.turnos {
 		display: flex;
@@ -1016,6 +1123,16 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			await new Promise((r) => setTimeout(r, 18));
 		}
 	}
+
+	// ── Fecha y hora de la cabecera, como en las sedes electrónicas ──
+	const reloj = $<HTMLTimeElement>('[data-reloj]');
+	const ponerHora = () => {
+		const ahora = new Date();
+		reloj.dateTime = ahora.toISOString();
+		reloj.textContent = new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(ahora);
+	};
+	ponerHora();
+	setInterval(ponerHora, 30000);
 
 	// ── Pantalla de turnos ──
 	const turnos = $('.turnos');
