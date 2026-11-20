@@ -10,7 +10,8 @@ import Sobre from '../cromos/Sobre.astro';
 import FotosDemo from '../cromos/FotosDemo.astro';
 import { EXIGIR_REGISTRO } from './sesion';
 import { PIN_DEMO } from './datos';
-import aburrida from '../../assets/mascota/estanco.png';
+// Detrás de la ventanilla, con gafas y sin ganas de trabajar (el resto de poses son las de la mascota)
+import aburrida from '../../assets/mascota/sepe.png';
 import papeles from '../../assets/mascota/rsvp.png';
 import reloj from '../../assets/mascota/reloj.png';
 import denegado from '../../assets/mascota/no_rsvp.png';
@@ -19,7 +20,7 @@ import saluda from '../../assets/mascota/saluda.png';
 
 const poses = { aburrida, papeles, reloj, denegado, aprobado, saluda };
 const ranas = Object.fromEntries(
-	await Promise.all(Object.entries(poses).map(async ([k, img]) => [k, (await getImage({ src: img, width: 320, format: 'webp' })).src])),
+	await Promise.all(Object.entries(poses).map(async ([k, img]) => [k, (await getImage({ src: img, width: 640, format: 'webp' })).src])),
 );
 const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new Date());
 ---
@@ -81,7 +82,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		<div class="ventanilla">
 			<p class="ventanilla-cartel">Ventanilla 3</p>
 			<div class="cristal">
-				<img data-rana src={ranas.aburrida} alt="La funcionaria, una rana con corbata" width="320" height="378" class="rana" />
+				<img data-rana data-pose="aburrida" src={ranas.aburrida} alt="La funcionaria, una rana con corbata y gafas" width="640" height="794" class="rana" />
 				<span class="reflejo" aria-hidden="true"></span>
 			</div>
 			<div class="mostrador"></div>
@@ -460,6 +461,12 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		height: 14.5rem;
 		width: auto;
 		translate: -50% 0;
+	}
+	/* La de la mesa (sepe.png) trae la mesa a media altura: más grande y bajada para que el tablero quede justo
+	   encima del mostrador y no se vean las patas */
+	.rana[data-pose='aburrida'] {
+		bottom: -7.7rem;
+		height: 18.5rem;
 	}
 	.rana.cambia {
 		animation: sepe-rebote 0.35s ease-out;
@@ -881,6 +888,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		if (nueva !== pose) {
 			pose = nueva;
 			rana.src = ranas[nueva];
+			rana.dataset.pose = nueva;
 			rana.classList.remove('cambia');
 			void rana.offsetWidth;
 			rana.classList.add('cambia');
@@ -1058,7 +1066,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		$('[data-nombre-impreso]').textContent = inv.nombre;
 		formImpreso.reset();
 		tramite('impreso');
-		pintarPrevia();
+		pintarPrevia(true);
 		void habla('papeles', `${nombre}… Rellene el Modelo 067. Con letra clara, por favor.`);
 	}
 
@@ -1067,7 +1075,8 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	const previa = formImpreso.querySelector<HTMLElement>('[data-cromo]')!;
 	const campoImpreso = (n: string) => formImpreso.elements.namedItem(n) as HTMLInputElement;
 
-	function pintarPrevia() {
+	/** `animar` solo al abrir el impreso: al escribir se repinta sin relanzar la entrada (si no, parpadea) */
+	function pintarPrevia(animar = false) {
 		if (!elegido) return;
 		pintarCromo(previa, {
 			id: elegido.id,
@@ -1076,12 +1085,12 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			apodo: campoImpreso('apodo').value.trim() || 'Tu alias',
 			frase: campoImpreso('frase').value.trim() || null,
 			foto: null,
-		});
+		}, undefined, { animar });
 	}
 	let pintando: number | undefined;
 	formImpreso.addEventListener('input', () => {
 		clearTimeout(pintando);
-		pintando = window.setTimeout(pintarPrevia, 150);
+		pintando = window.setTimeout(() => pintarPrevia(), 150);
 	});
 	$('[data-atras]').addEventListener('click', () => {
 		tramite('buscar');
