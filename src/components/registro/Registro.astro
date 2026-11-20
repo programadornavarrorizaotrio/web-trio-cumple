@@ -1153,7 +1153,10 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			fotoBlob = blob;
 			fotoUrl = URL.createObjectURL(blob);
 			botonFoto.classList.add('con-foto');
-			$('[data-foto-texto]').textContent = '✓ Foto grapada · Cambiar';
+			const cambiar = document.createElement('span');
+			cambiar.textContent = 'Cambiar';
+			cambiar.style.cssText = 'margin-left:0.6rem;font-weight:400;text-decoration:underline;text-underline-offset:3px';
+			$('[data-foto-texto]').replaceChildren('✓ Foto grapada', cambiar);
 			quitar.hidden = false;
 			pintarPrevia();
 			void habla('papeles', '¿Esa es su mejor foto? Bueno, vale. Se la grapo al expediente.');
