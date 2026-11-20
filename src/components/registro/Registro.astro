@@ -144,6 +144,16 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			<p class="seccion">3. Motivo de la solicitud <small>(opcional)</small></p>
 			<input name="frase" maxlength="60" placeholder="Vengo por el estanco" autocomplete="off" class="campo" />
 
+			<p class="seccion">4. Fotografía de carnet <small>(opcional)</small></p>
+			<div class="fotomaton">
+				<label class="fotomaton-boton">
+					<input data-foto type="file" accept="image/*" class="sr-only" />
+					<span data-foto-texto>📷 Hacer o elegir foto</span>
+				</label>
+				<button type="button" data-quitar-foto hidden class="volver">Quitar</button>
+			</div>
+			<p class="nota">Saldrá en su cromo. Se recorta sola: mire cómo queda en la vista previa.</p>
+
 			<label class="jura">
 				<input type="checkbox" required />
 				<span>Declaro bajo juramento que vengo a pasarlo bien y que no me llevaré hielo a casa.</span>
@@ -603,6 +613,32 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		flex-shrink: 0;
 		accent-color: var(--azul);
 	}
+	.fotomaton {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+	}
+	.fotomaton-boton {
+		flex: 1;
+		cursor: pointer;
+		border: 2px dashed var(--azul);
+		border-radius: 0.3rem;
+		background: #1d4a7a0d;
+		padding: 0.7rem;
+		text-align: center;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--azul);
+	}
+	.fotomaton-boton:focus-within {
+		outline: 2px solid var(--azul);
+		outline-offset: 2px;
+	}
+	.fotomaton-boton.con-foto {
+		border-style: solid;
+		background: #1f7a3214;
+		color: #1f7a32;
+	}
 	.previa {
 		margin: 0 auto;
 		width: 62%;
@@ -834,7 +870,8 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 </style>
 
 <script>
-	import { buscarInvitados, comprobarPin, entrarConCodigo, registrar, type Coincidencia } from './datos';
+	import { buscarInvitados, comprobarPin, entrarConCodigo, prepararFoto, registrar, subirFoto, type Coincidencia } from './datos';
+	import { usaBD } from '../../lib/rpc';
 	import { guardarSesion, leerSesion } from './sesion';
 	import { obtenerAlbum, conFoto } from '../cromos/datos';
 	import { abrirSobre } from '../cromos/sobre';
@@ -1065,6 +1102,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		}
 		$('[data-nombre-impreso]').textContent = inv.nombre;
 		formImpreso.reset();
+		quitarFoto();
 		tramite('impreso');
 		pintarPrevia(true);
 		void habla('papeles', `${nombre}… Rellene el Modelo 067. Con letra clara, por favor.`);
@@ -1084,9 +1122,50 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 			nombre: elegido.nombre,
 			apodo: campoImpreso('apodo').value.trim() || 'Tu alias',
 			frase: campoImpreso('frase').value.trim() || null,
-			foto: null,
+			foto: fotoUrl,
 		}, undefined, { animar });
 	}
+
+	// ── Fotografía de carnet ──
+	const campoFoto = $<HTMLInputElement>('[data-foto]');
+	const botonFoto = $('.fotomaton-boton');
+	const quitar = $<HTMLButtonElement>('[data-quitar-foto]');
+	let fotoBlob: Blob | null = null;
+	let fotoUrl: string | null = null;
+
+	function quitarFoto() {
+		if (fotoUrl) URL.revokeObjectURL(fotoUrl);
+		fotoBlob = null;
+		fotoUrl = null;
+		campoFoto.value = '';
+		botonFoto.classList.remove('con-foto');
+		$('[data-foto-texto]').textContent = '📷 Hacer o elegir foto';
+		quitar.hidden = true;
+	}
+
+	campoFoto.addEventListener('change', async () => {
+		const archivo = campoFoto.files?.[0];
+		if (!archivo) return;
+		$('[data-foto-texto]').textContent = 'Revelando…';
+		try {
+			const blob = await prepararFoto(archivo);
+			if (fotoUrl) URL.revokeObjectURL(fotoUrl);
+			fotoBlob = blob;
+			fotoUrl = URL.createObjectURL(blob);
+			botonFoto.classList.add('con-foto');
+			$('[data-foto-texto]').textContent = '✓ Foto grapada · Cambiar';
+			quitar.hidden = false;
+			pintarPrevia();
+			void habla('papeles', '¿Esa es su mejor foto? Bueno, vale. Se la grapo al expediente.');
+		} catch {
+			quitarFoto();
+			void habla('denegado', 'Esa imagen no la puedo leer. Pruebe con otra foto.');
+		}
+	});
+	quitar.addEventListener('click', () => {
+		quitarFoto();
+		pintarPrevia();
+	});
 	let pintando: number | undefined;
 	formImpreso.addEventListener('input', () => {
 		clearTimeout(pintando);
@@ -1111,9 +1190,21 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 				frase: campoImpreso('frase').value.trim() || null,
 			});
 			guardarSesion({ clave, id: elegido.id, nombre: elegido.nombre });
+
+			// Ya está dado de alta: si la foto falla, no se le deniega nada, se le avisa
+			let final = cromo;
+			let fotoPerdida = false;
+			if (fotoBlob) {
+				void habla('aburrida', 'Grapando la foto al expediente…');
+				try {
+					final = usaBD() ? await subirFoto(fotoBlob) : { ...cromo, foto: fotoUrl };
+				} catch {
+					fotoPerdida = true;
+				}
+			}
 			void habla('aprobado', '¡Tramitado! Ha quedado usted dado de alta en el Trío Feliz.');
 			await sellar(formImpreso, true);
-			await entregar(cromo);
+			await entregar(final, fotoPerdida);
 		} catch (e) {
 			const codigo = e instanceof Error ? e.message : '';
 			error.textContent =
@@ -1166,11 +1257,16 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 	});
 
 	// ───── Entrega del carnet y sobre ─────
-	async function entregar(cromo: Cromo) {
+	async function entregar(cromo: Cromo, fotoPerdida = false) {
 		const propio = conFoto(cromo);
 		tramite('entrega');
 		pintarCromo($('[data-carnet] [data-cromo]'), propio);
-		void habla('saluda', 'Aquí tiene su carnet. Y un sobre de cromos, que hoy estamos generosos.');
+		void habla(
+			'saluda',
+			fotoPerdida
+				? 'Aquí tiene su carnet. La foto se nos ha traspapelado, lo siento: hable con los organizadores. Y tenga un sobre de cromos.'
+				: 'Aquí tiene su carnet. Y un sobre de cromos, que hoy estamos generosos.',
+		);
 		vibrar(30);
 
 		const { cromos } = await obtenerAlbum().catch(() => ({ cromos: [] as Cromo[] }));

@@ -82,3 +82,50 @@ export async function entrarConCodigo(pin: string, codigo: string): Promise<Entr
 	if (!hayBD) throw new Error('codigo');
 	return rpc<Entrada>('entrar_con_codigo', { pin: pin.trim(), codigo });
 }
+
+// ───────────── Foto del cromo ─────────────
+
+/** Proporción de la ilustración del cromo (ancho / alto, ver `.ilustracion` en Cromo.astro) */
+const PROPORCION_FOTO = 85.4 / 53.2;
+
+/**
+ * Prepara la foto que elige el invitado: la gira según el EXIF, la recorta a la proporción del cromo (centrada en
+ * horizontal y algo por encima del centro en vertical, que es donde suelen estar las caras) y la deja en 800 px
+ * de ancho. WebP si el navegador sabe hacerlo; si no (Safari), JPEG. Nunca sale de 1 MB.
+ */
+export async function prepararFoto(archivo: File): Promise<Blob> {
+	if (!archivo.type.startsWith('image/')) throw new Error('foto-tipo');
+	const imagen = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+	let ancho = imagen.width;
+	let alto = Math.round(ancho / PROPORCION_FOTO);
+	if (alto > imagen.height) {
+		alto = imagen.height;
+		ancho = Math.round(alto * PROPORCION_FOTO);
+	}
+	const x = Math.round((imagen.width - ancho) / 2);
+	const y = Math.round((imagen.height - alto) * 0.3);
+	const lienzo = document.createElement('canvas');
+	lienzo.width = Math.min(800, ancho);
+	lienzo.height = Math.round(lienzo.width / PROPORCION_FOTO);
+	lienzo.getContext('2d')!.drawImage(imagen, x, y, ancho, alto, 0, 0, lienzo.width, lienzo.height);
+	imagen.close();
+	const aBlob = (tipo: string, calidad: number) => new Promise<Blob | null>((r) => lienzo.toBlob(r, tipo, calidad));
+	let blob = await aBlob('image/webp', 0.82);
+	if (!blob || blob.type !== 'image/webp') blob = await aBlob('image/jpeg', 0.85);
+	if (!blob) throw new Error('foto-tipo');
+	if (blob.size > 1024 * 1024) blob = (await aBlob(blob.type, 0.6)) ?? blob;
+	return blob;
+}
+
+/**
+ * Sube la foto del cromo del invitado con sesión: pide una reserva (`pedir_subida_foto`), sube el archivo a
+ * Storage a esa ruta y la confirma (`guardar_foto`). Devuelve el cromo con la foto ya puesta.
+ * Errores: 'sesion', 'demasiados', 'foto' (no se pudo subir o confirmar).
+ */
+export async function subirFoto(blob: Blob): Promise<Cromo> {
+	const { ruta } = await rpcConClave<{ ruta: string }>('pedir_subida_foto');
+	const { supabase } = await import('../../lib/supabase');
+	const { error } = await supabase.storage.from('cromos').upload(ruta, blob, { contentType: blob.type, upsert: false });
+	if (error) throw new Error('foto');
+	return rpcConClave<Cromo>('guardar_foto', { ruta });
+}
