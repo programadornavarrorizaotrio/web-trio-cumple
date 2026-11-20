@@ -142,6 +142,13 @@ const campo =
 				<Button type="button" data-ajustar variante="borde" class="w-full text-granate">Aplicar puntos</Button>
 			</div>
 
+			<div data-ficha-foto class="space-y-2 border-t-2 border-granate/15 pt-4">
+				<h4 class="font-bold text-granate">Foto del cromo</h4>
+				<img data-ficha-foto-img alt="" class="aspect-[8/5] w-full rounded object-cover" />
+				<p class="text-xs text-tinta-suave">La subió al registrarse. Si no es apropiada, quítala: su cromo vuelve a la inicial.</p>
+				<Button type="button" data-quitar-foto variante="borde" class="w-full text-granate">Quitar foto</Button>
+			</div>
+
 			<div data-ficha-movil class="space-y-2 border-t-2 border-granate/15 pt-4">
 				<h4 class="font-bold text-granate">Nuevo móvil</h4>
 				<p class="text-xs text-tinta-suave">Cierra su sesión para que se vuelva a registrar (cambió de móvil o se registró otro por él). Conserva asistencia, equipo y puntos.</p>
@@ -156,6 +163,7 @@ const campo =
 	import * as admin from './datos';
 	import { usaBD } from '../../lib/rpc';
 	import { equipoPorId } from '../juegos/liga';
+	import { urlFoto } from '../cromos/datos';
 	import type { InvitadoAdmin } from './datos';
 
 	const raiz = document.querySelector<HTMLElement>('[data-admin]')!;
@@ -296,6 +304,7 @@ const campo =
 							: etiqueta('Sin responder', 'bg-crema-oscuro text-tinta-suave'),
 				);
 				if (i.equipo) etiquetas.append(etiqueta(`${equipoPorId(i.equipo).nombre} · ${i.puntos} pts`, 'bg-tinta/10 text-tinta'));
+				if (i.foto) etiquetas.append(etiqueta('Con foto', 'bg-tinta/10 text-tinta'));
 				if (i.alergias) etiquetas.append(etiqueta('Alergias', 'bg-granate text-amarillo'));
 				if (i.rol === 'admin') etiquetas.append(etiqueta('Admin', 'bg-granate-oscuro text-amarillo'));
 				if (!i.visible) etiquetas.append(etiqueta('Oculto', 'bg-tinta text-crema'));
@@ -330,6 +339,9 @@ const campo =
 		campoFicha('visible').checked = i?.visible ?? true;
 		$('[data-ficha-puntos]').hidden = !i?.equipo;
 		$('[data-ficha-movil]').hidden = !i?.registrado;
+		const foto = urlFoto(i?.foto ?? null);
+		$('[data-ficha-foto]').hidden = !foto;
+		if (foto) $<HTMLImageElement>('[data-ficha-foto-img]').src = foto;
 		ficha.showModal();
 	}
 
@@ -378,6 +390,22 @@ const campo =
 			ficha.close();
 			avisar(`${actual.nombre} tiene ahora ${r.puntos} puntos`);
 			caducar('resumen');
+			await pintarInvitados();
+		} catch (e) {
+			errorEnFicha(e);
+		} finally {
+			boton.disabled = false;
+		}
+	});
+
+	$('[data-quitar-foto]').addEventListener('click', async (ev) => {
+		const boton = ev.currentTarget as HTMLButtonElement;
+		if (!actual || !confirm(`¿Quitar la foto del cromo de ${actual.nombre}?`)) return;
+		boton.disabled = true;
+		try {
+			await admin.quitarFoto(actual.id);
+			ficha.close();
+			avisar(`Foto de ${actual.nombre} quitada`);
 			await pintarInvitados();
 		} catch (e) {
 			errorEnFicha(e);
