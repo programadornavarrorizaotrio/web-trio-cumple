@@ -134,7 +134,7 @@ export async function lanzar(id: MinijuegoId) {
 		dialogo.classList.toggle('fin-derrota', fin === 'derrota');
 		pantalla('final');
 		if (fin) {
-			q('[data-fin-texto]').textContent = fin === 'victoria' ? 'Victoria' : 'Derrota';
+			q('[data-fin-texto]').textContent = fin === 'victoria' ? 'VICTORIA' : 'DERROTA';
 			void banner.offsetWidth; // para que la animación arranque de nuevo en cada partida
 			banner.classList.add('anima');
 			navigator.vibrate?.(fin === 'victoria' ? [40, 60, 40, 60, 120] : [200, 80, 200]);

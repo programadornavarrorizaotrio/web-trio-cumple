@@ -4,7 +4,6 @@ import Button from '../common/Button.astro';
 import rana from '../../assets/mascota/saluda.png';
 import ladron from '../../assets/mascota/ladron.png';
 import crupier from '../../assets/mascota/crupier.png';
-import derrota from './lol/derrota.png';
 import FotosDemo from '../cromos/FotosDemo.astro';
 
 // Ventana a pantalla completa donde se juega un minijuego. La abre `lanzar(id)` de partida.ts
@@ -12,8 +11,6 @@ import FotosDemo from '../cromos/FotosDemo.astro';
 const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' });
 const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'webp' });
 const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: 'webp' });
-// Insignia oficial de "Defeat" del LoL (sin el humo, que se hace con CSS)
-const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: 'webp' });
 ---
 
 <dialog
@@ -51,24 +48,48 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 		<div data-pantalla="final" hidden class="w-full text-center">
 			<!-- Victoria / Derrota al estilo del LoL (lo decide `desenlace` en partida.ts) -->
 			<div data-fin-lol hidden class="lol-fin">
-				<svg class="lol-fin-aro" viewBox="0 0 200 200" aria-hidden="true">
-					<circle cx="100" cy="100" r="94" class="grueso"></circle>
-					<circle cx="100" cy="100" r="84" class="fino"></circle>
-					<path d="M100 2 L106 12 L100 22 L94 12 Z M100 178 L106 188 L100 198 L94 188 Z M2 100 L12 94 L22 100 L12 106 Z M178 100 L188 94 L198 100 L188 106 Z"></path>
-				</svg>
-				<svg class="lol-fin-blason" viewBox="0 0 120 90" aria-hidden="true">
-					<path class="alas" d="M60 70 L8 34 L30 36 L4 14 L38 26 L34 6 L60 40 L86 6 L82 26 L116 14 L90 36 L112 34 Z"></path>
-					<path class="escudo" d="M60 20 L82 32 L82 56 L60 80 L38 56 L38 32 Z"></path>
-					<path class="gema" d="M60 34 L70 48 L60 64 L50 48 Z"></path>
-				</svg>
-				<p data-fin-texto class="lol-fin-texto">Victoria</p>
-				<svg class="lol-fin-base" viewBox="0 0 300 16" aria-hidden="true">
-					<path d="M0 8 H128 M172 8 H300"></path>
-					<path class="rombo" d="M150 0 L162 8 L150 16 L138 8 Z"></path>
-				</svg>
-				<!-- Derrota: la insignia del LoL con humo rojo animado detrás -->
 				<div class="lol-fin-humo" aria-hidden="true"><i></i><i></i><i></i></div>
-				<img class="lol-fin-imagen" src={derrotaSrc} alt="Derrota" width="577" height="307" decoding="async" />
+				<!-- Placa ornamentada: marco con relieve y puntas de corona, panel oscuro con vetas y letras doradas -->
+				<svg class="lol-fin-placa" viewBox="0 0 400 200" role="img" aria-labelledby="fin-texto">
+					<defs>
+						<path id="fin-forma" d="M14 100 Q40 92 50 64 Q68 50 100 54 L150 54 Q166 46 176 28 L200 4 L224 28 Q234 46 250 54 L300 54 Q332 50 350 64 Q360 92 386 100 Q360 108 350 136 Q332 150 300 146 L250 146 Q234 154 224 172 L200 196 L176 172 Q166 154 150 146 L100 146 Q68 150 50 136 Q40 108 14 100 Z"></path>
+						<path id="fin-puas" d="M146 56 L128 26 L170 46 Z M254 56 L272 26 L230 46 Z M146 144 L128 174 L170 154 Z M254 144 L272 174 L230 154 Z M60 66 L36 50 L74 58 Z M340 66 L364 50 L326 58 Z M60 134 L36 150 L74 142 Z M340 134 L364 150 L326 142 Z"></path>
+						<linearGradient id="fin-marco" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="0" class="m1"></stop>
+							<stop offset="0.5" class="m2"></stop>
+							<stop offset="1" class="m3"></stop>
+						</linearGradient>
+						<radialGradient id="fin-panel" cx="50%" cy="40%" r="70%">
+							<stop offset="0" class="p1"></stop>
+							<stop offset="1" class="p2"></stop>
+						</radialGradient>
+						<linearGradient id="fin-letras" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="0" stop-color="#fff7dc"></stop>
+							<stop offset="0.45" stop-color="#f2c97e"></stop>
+							<stop offset="0.56" stop-color="#c98b45"></stop>
+							<stop offset="1" stop-color="#7a4a1e"></stop>
+						</linearGradient>
+						<linearGradient id="fin-reflejo" x1="0" x2="1">
+							<stop offset="0" stop-color="#fff" stop-opacity="0"></stop>
+							<stop offset="0.5" stop-color="#fff" stop-opacity="0.95"></stop>
+							<stop offset="1" stop-color="#fff" stop-opacity="0"></stop>
+						</linearGradient>
+						<clipPath id="fin-recorte"><use href="#fin-texto"></use></clipPath>
+					</defs>
+					<use href="#fin-puas" class="marco"></use>
+					<use href="#fin-forma" class="marco"></use>
+					<use href="#fin-forma" class="bisel" transform="translate(200 100) scale(0.9) translate(-200 -100)"></use>
+					<use href="#fin-forma" class="panel" transform="translate(200 100) scale(0.8 0.74) translate(-200 -100)"></use>
+					<g class="vetas">
+						<path d="M120 70 L138 88 L132 104 L150 122"></path>
+						<path d="M268 132 L252 114 L262 96 L246 78"></path>
+						<path d="M200 46 L194 60 L204 70"></path>
+						<path d="M86 108 L104 112 L112 126"></path>
+						<path d="M316 90 L298 86 L292 74"></path>
+					</g>
+					<text id="fin-texto" data-fin-texto x="200" y="119" text-anchor="middle" textLength="236" lengthAdjust="spacingAndGlyphs">VICTORIA</text>
+					<rect class="reflejo" x="-90" y="60" width="70" height="80" fill="url(#fin-reflejo)" clip-path="url(#fin-recorte)"></rect>
+				</svg>
 			</div>
 			<p data-fin-cabecera class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">Partida terminada</p>
 			<p class="rotulo mt-3 text-7xl text-amarillo"><span data-final-puntos>0</span></p>
@@ -588,15 +609,29 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 	}
 
 	/* === Victoria / Derrota (LoL) === */
-	[data-partida].fin-victoria,
-	[data-partida].fin-derrota {
-		--lol-oro: #c8aa6e;
-		--lol-oro-claro: #f0e6d2;
-		--lol-azul: #0ac8b9;
+	/* Placa ornamentada al estilo del final de partida del LoL: dorada y azul si ganas, bronce y roja si pierdes */
+	[data-partida].fin-victoria {
+		--m1: #fff3c4;
+		--m2: #c8aa6e;
+		--m3: #5a3c14;
+		--p1: #134672;
+		--p2: #040f1e;
+		--veta: #0ac8b9;
+		--brillo: rgb(10 200 185 / 0.55);
+		--humo1: rgb(140 230 255 / 0.75);
+		--humo2: rgb(20 140 220 / 0.42);
 		background: radial-gradient(ellipse at 50% 30%, #0a2a3a 0%, #0a1428 45%, #010a13 100%);
 	}
 	[data-partida].fin-derrota {
-		--lol-azul: #c8473a;
+		--m1: #ffc8a0;
+		--m2: #b4532a;
+		--m3: #4a160c;
+		--p1: #5e2518;
+		--p2: #1c0705;
+		--veta: #d8432c;
+		--brillo: rgb(255 80 40 / 0.55);
+		--humo1: rgb(255 150 110 / 0.85);
+		--humo2: rgb(220 60 35 / 0.45);
 		background: radial-gradient(ellipse at 50% 30%, #3a1414 0%, #1a0d10 50%, #070304 100%);
 	}
 	.lol-fin {
@@ -611,140 +646,67 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 	.lol-fin::before {
 		grid-area: 1 / 1;
 	}
-	.lol-fin-aro {
-		width: 13.5rem;
-		fill: var(--lol-oro);
-		opacity: 0.55;
+	.lol-fin-placa {
+		width: min(21rem, 94%);
+		overflow: visible;
+		filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 14px var(--brillo));
 	}
-	.lol-fin-aro circle {
-		fill: none;
-		stroke: var(--lol-oro);
+	.lol-fin-placa .m1 {
+		stop-color: var(--m1);
 	}
-	.lol-fin-aro .grueso {
-		stroke-width: 2.5;
-		stroke-dasharray: 60 14 6 14;
+	.lol-fin-placa .m2 {
+		stop-color: var(--m2);
 	}
-	.lol-fin-aro .fino {
-		stroke: var(--lol-azul);
-		stroke-width: 1;
-		stroke-dasharray: 2 6;
+	.lol-fin-placa .m3 {
+		stop-color: var(--m3);
 	}
-	.lol-fin-blason {
-		width: 7rem;
-		margin-bottom: 7.5rem;
-		filter: drop-shadow(0 0 10px var(--lol-azul));
+	.lol-fin-placa .p1 {
+		stop-color: var(--p1);
 	}
-	.lol-fin-blason .alas {
-		fill: #0a1428;
-		stroke: var(--lol-oro);
-		stroke-width: 2;
+	.lol-fin-placa .p2 {
+		stop-color: var(--p2);
+	}
+	.lol-fin-placa .marco {
+		fill: url(#fin-marco);
+		stroke: #1e0a04;
+		stroke-width: 3;
 		stroke-linejoin: round;
 	}
-	.lol-fin-blason .escudo {
-		fill: #091e2b;
-		stroke: var(--lol-oro-claro);
-		stroke-width: 2.5;
+	.lol-fin-placa .bisel {
+		fill: none;
+		stroke: var(--m1);
+		stroke-width: 2;
+		stroke-linejoin: round;
+		opacity: 0.55;
 	}
-	.lol-fin-blason .gema {
-		fill: var(--lol-azul);
+	.lol-fin-placa .panel {
+		fill: url(#fin-panel);
+		stroke: var(--m3);
+		stroke-width: 3;
+		stroke-linejoin: round;
 	}
-	.lol-fin-texto {
-		position: relative;
-		overflow: hidden;
-		padding-inline: 0.5rem;
-		/* Dorado de arriba abajo, como el rótulo del LoL, con un reflejo encima que cruza al entrar */
-		background-image:
-			linear-gradient(105deg, transparent 42%, rgb(255 255 255 / 0.95) 50%, transparent 58%),
-			linear-gradient(180deg, #fff8e6 0%, var(--lol-oro-claro) 35%, var(--lol-oro) 60%, #785a28 100%);
-		background-size:
-			300% 100%,
-			100% 100%;
-		background-position:
-			100% 0,
-			0 0;
-		background-repeat: no-repeat;
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		font-family: var(--font-rotulo);
-		font-size: clamp(2.6rem, 14vw, 3.6rem);
-		font-weight: 900;
-		letter-spacing: 0.08em;
-		line-height: 1;
-		text-transform: uppercase;
-		filter: drop-shadow(0 2px 0 #3c2a10) drop-shadow(0 0 16px rgb(200 170 110 / 0.55));
+	.lol-fin-placa .vetas {
+		fill: none;
+		stroke: var(--veta);
+		stroke-width: 1.6;
+		stroke-linecap: round;
+		opacity: 0.55;
 	}
-	.fin-derrota .lol-fin-texto {
-		background-image:
-			linear-gradient(transparent, transparent),
-			linear-gradient(180deg, #f3e2dc 0%, #c9b3ad 40%, #8a6f69 70%, #3d2b28 100%);
-		filter: drop-shadow(0 2px 0 #1a0a08) drop-shadow(0 0 16px rgb(200 71 58 / 0.6));
+	.lol-fin-placa text {
+		fill: url(#fin-letras);
+		stroke: #2a1405;
+		stroke-width: 1.6;
+		paint-order: stroke;
+		font-family: 'Cinzel', 'Trajan Pro', Georgia, 'Times New Roman', serif;
+		font-size: 56px;
+		font-weight: 700;
 	}
-	.lol-fin-base {
-		width: 16rem;
-		margin-top: 5.2rem;
-		fill: var(--lol-azul);
-		stroke: var(--lol-oro);
-		stroke-width: 1.5;
+	.lol-fin-placa .reflejo {
+		transform: translateX(0);
 	}
 
-	/* Entrada: el aro y el blasón aparecen, el rótulo cae de golpe con un destello y luego sale lo demás */
-	.lol-fin.anima .lol-fin-aro {
-		animation:
-			lol-aro-entra 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both,
-			lol-gira 24s linear 0.8s infinite;
-	}
-	.lol-fin.anima .lol-fin-blason {
-		animation: lol-blason 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.15s both;
-	}
-	.lol-fin.anima .lol-fin-texto {
-		animation:
-			lol-rotulo 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.35s both,
-			lol-brillo 1.1s ease-in-out 0.95s both;
-	}
-	.lol-fin.anima .lol-fin-base {
-		animation: lol-base 0.6s ease-out 0.55s both;
-	}
-	/* Fogonazo detrás al caer el rótulo */
-	.lol-fin.anima::before {
-		content: '';
-		width: 18rem;
-		height: 18rem;
-		border-radius: 50%;
-		background: radial-gradient(circle, rgb(240 230 210 / 0.75), color-mix(in srgb, var(--lol-azul) 35%, transparent) 40%, transparent 70%);
-		opacity: 0;
-		animation: lol-destello 1s ease-out 0.4s;
-	}
-	/* Derrota: el rótulo cae pesado y tiembla, y el aro se apaga */
-	.fin-derrota .lol-fin.anima .lol-fin-texto {
-		animation:
-			lol-rotulo-derrota 0.7s cubic-bezier(0.5, 0, 0.75, 0) 0.35s both,
-			lol-tiembla 0.35s ease-in-out 1.05s;
-	}
-	.fin-derrota .lol-fin.anima .lol-fin-aro {
-		animation:
-			lol-aro-entra 0.8s ease-out both,
-			lol-apaga 1.2s ease-in 0.8s forwards;
-	}
-	/* Derrota con la insignia oficial: cae con peso, rebota, tiembla y se queda latiendo entre humo rojo */
-	.lol-fin-imagen,
+	/* Humo de colores detrás de la placa */
 	.lol-fin-humo {
-		display: none;
-	}
-	.fin-derrota .lol-fin-aro,
-	.fin-derrota .lol-fin-blason,
-	.fin-derrota .lol-fin-texto,
-	.fin-derrota .lol-fin-base {
-		display: none;
-	}
-	.fin-derrota .lol-fin-imagen {
-		display: block;
-		width: min(19rem, 90%);
-		height: auto;
-		filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 14px rgb(255 80 40 / 0.35));
-	}
-	.fin-derrota .lol-fin-humo {
-		display: block;
 		position: relative;
 		width: 21rem;
 		height: 15rem;
@@ -757,41 +719,78 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 		height: 6rem;
 		margin: -3rem 0 0 -7rem;
 		border-radius: 50%;
-		background: radial-gradient(closest-side, rgb(255 140 100 / 0.6), rgb(200 50 30 / 0.3) 55%, transparent);
+		background: radial-gradient(closest-side, var(--humo1), var(--humo2) 55%, transparent);
 		filter: blur(12px);
 	}
 	.lol-fin-humo i:nth-child(1) {
-		translate: 0 -4.2rem;
+		translate: 0 -4.4rem;
 	}
 	.lol-fin-humo i:nth-child(2) {
-		translate: 0 4.2rem;
+		translate: 0 4.4rem;
 	}
 	.lol-fin-humo i:nth-child(3) {
-		width: 19rem;
-		height: 9rem;
-		margin: -4.5rem 0 0 -9.5rem;
-		background: radial-gradient(closest-side, rgb(220 60 40 / 0.35), transparent);
+		width: 20rem;
+		height: 10rem;
+		margin: -5rem 0 0 -10rem;
+		background: radial-gradient(closest-side, var(--humo2), transparent);
 	}
-	.fin-derrota .lol-fin.anima .lol-fin-imagen {
+
+	/* Entrada. Victoria: la placa llega de golpe desde grande con un fogonazo y la cruza un reflejo.
+	   Derrota: cae con peso, rebota y tiembla. En las dos se queda latiendo entre el humo. */
+	.lol-fin.anima .lol-fin-placa {
 		animation:
-			lol-insignia-cae 0.75s cubic-bezier(0.5, 0, 0.6, 1) 0.3s both,
+			lol-placa-entra 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.3s both,
+			lol-placa-late 2.6s ease-in-out 1.5s infinite;
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-placa {
+		animation:
+			lol-placa-cae 0.75s cubic-bezier(0.5, 0, 0.6, 1) 0.3s both,
 			lol-tiembla 0.35s ease-in-out 1.05s,
-			lol-insignia-late 2.6s ease-in-out 1.6s infinite;
+			lol-placa-late 2.6s ease-in-out 1.6s infinite;
 	}
-	.fin-derrota .lol-fin.anima .lol-fin-humo {
-		animation: lol-humo-entra 0.9s ease-out 0.7s both;
+	.lol-fin.anima .reflejo {
+		animation: lol-reflejo 1.1s ease-in-out 1s both;
 	}
-	.fin-derrota .lol-fin.anima .lol-fin-humo i {
+	.fin-derrota .lol-fin.anima .reflejo {
+		display: none;
+	}
+	.lol-fin.anima .lol-fin-humo {
+		animation: lol-humo-entra 0.9s ease-out 0.6s both;
+	}
+	.lol-fin.anima .lol-fin-humo i {
 		animation: lol-humo 3.4s ease-in-out 1.2s infinite alternate;
 	}
-	.fin-derrota .lol-fin.anima .lol-fin-humo i:nth-child(2) {
+	.lol-fin.anima .lol-fin-humo i:nth-child(2) {
 		animation-duration: 4.1s;
 		animation-delay: 1.5s;
 	}
-	.fin-derrota .lol-fin.anima .lol-fin-humo i:nth-child(3) {
+	.lol-fin.anima .lol-fin-humo i:nth-child(3) {
 		animation-duration: 5s;
 	}
-	@keyframes lol-insignia-cae {
+	/* Fogonazo detrás al llegar la placa */
+	.lol-fin.anima::before {
+		content: '';
+		width: 18rem;
+		height: 18rem;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgb(255 245 225 / 0.8), var(--humo2) 40%, transparent 70%);
+		opacity: 0;
+		animation: lol-destello 1s ease-out 0.4s;
+	}
+	.con-lol > :not(.lol-fin) {
+		animation: lol-resto 0.5s ease-out 1.2s both;
+	}
+	.con-lol [data-fin-cabecera] {
+		display: none;
+	}
+
+	@keyframes lol-placa-entra {
+		from {
+			opacity: 0;
+			transform: scale(2.3);
+		}
+	}
+	@keyframes lol-placa-cae {
 		0% {
 			opacity: 0;
 			transform: translateY(-90px) scale(1.35);
@@ -806,9 +805,24 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 			transform: none;
 		}
 	}
-	@keyframes lol-insignia-late {
+	@keyframes lol-placa-late {
 		50% {
-			filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 26px rgb(255 80 40 / 0.7));
+			filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 28px var(--brillo));
+		}
+	}
+	@keyframes lol-reflejo {
+		to {
+			transform: translateX(560px);
+		}
+	}
+	@keyframes lol-tiembla {
+		20%,
+		60% {
+			transform: translateX(-5px) rotate(-1deg);
+		}
+		40%,
+		80% {
+			transform: translateX(5px) rotate(1deg);
 		}
 	}
 	@keyframes lol-humo-entra {
@@ -825,77 +839,6 @@ const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: '
 		to {
 			transform: scale(1.12) rotate(5deg);
 			opacity: 1;
-		}
-	}
-
-	.con-lol > :not(.lol-fin) {
-		animation: lol-resto 0.5s ease-out 1.2s both;
-	}
-	.con-lol [data-fin-cabecera] {
-		display: none;
-	}
-
-	@keyframes lol-aro-entra {
-		from {
-			opacity: 0;
-			transform: scale(0.4) rotate(-90deg);
-		}
-	}
-	@keyframes lol-gira {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-	@keyframes lol-blason {
-		from {
-			opacity: 0;
-			transform: translateY(18px) scale(0.6);
-		}
-	}
-	@keyframes lol-rotulo {
-		from {
-			opacity: 0;
-			transform: scale(2.6);
-			letter-spacing: 0.5em;
-		}
-	}
-	@keyframes lol-rotulo-derrota {
-		from {
-			opacity: 0;
-			transform: translateY(-60px) scale(1.15);
-		}
-	}
-	@keyframes lol-tiembla {
-		20%,
-		60% {
-			transform: translateX(-5px) rotate(-1deg);
-		}
-		40%,
-		80% {
-			transform: translateX(5px) rotate(1deg);
-		}
-	}
-	@keyframes lol-apaga {
-		to {
-			opacity: 0.18;
-		}
-	}
-	@keyframes lol-brillo {
-		from {
-			background-position:
-				100% 0,
-				0 0;
-		}
-		to {
-			background-position:
-				0% 0,
-				0 0;
-		}
-	}
-	@keyframes lol-base {
-		from {
-			opacity: 0;
-			transform: scaleX(0.1);
 		}
 	}
 	@keyframes lol-destello {
