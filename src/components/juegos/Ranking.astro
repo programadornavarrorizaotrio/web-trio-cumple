@@ -608,7 +608,7 @@ const campeones = Object.fromEntries(
 				nexo.append(vida);
 				texto.append(nombre, el('span', 'rk-equipo-sub', `${equipo.campeon.nombre} · ${miembros} ${miembros === 1 ? 'jugador' : 'jugadores'}`), nexo);
 				const pts = el('span', 'rk-equipo-puntos', String(puntos));
-				pts.append(el('small', '', 'PTS'));
+				pts.append(el('small', '', 'LP'));
 				li.append(img(IMG.campeones[equipo.id].icono, 'rk-equipo-icono'), texto, pts);
 				return li;
 			}),

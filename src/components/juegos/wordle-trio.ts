@@ -9,7 +9,7 @@ import { hoy, modoPrueba, type Rango } from './liga';
 import type { Resultado } from './partida';
 
 export const instrucciones =
-	'Adivina la palabra del día en seis intentos. Verde: la letra está en su sitio. Amarillo: está, pero en otro sitio. Gris: no está. Cuanto antes la saques, más puntos.';
+	'Adivina la palabra del día en seis intentos. Verde: la letra está en su sitio. Amarillo: está, pero en otro sitio. Gris: no está. Cuanto antes la saques, más LP.';
 
 type Pista = 'ok' | 'casi' | 'no';
 
@@ -188,7 +188,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 		function pintarHud() {
 			const usados = estado.intentos.length;
 			marcador.textContent = `Intento ${Math.min(usados + 1, estado.maxIntentos)}/${estado.maxIntentos}`;
-			premio.textContent = estado.terminada ? '' : `${puntosPorIntento(usados + 1)} pts`;
+			premio.textContent = estado.terminada ? '' : `${puntosPorIntento(usados + 1)} LP`;
 		}
 
 		function avisar(texto: string) {
@@ -304,9 +304,9 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 			if (motor.servidor) {
 				const registrada =
 					estado.puntos !== undefined && estado.rango ? { puntos: estado.puntos, rango: estado.rango, subeDeRango: Boolean(estado.subeDeRango) } : undefined;
-				return { puntos: estado.puntos ?? 0, detalle, registrada, aMedias: !registrada };
+				return { puntos: estado.puntos ?? 0, detalle, registrada, aMedias: !registrada, victoria: estado.acertada };
 			}
-			return { puntos: estado.acertada ? puntosPorIntento(usados) : 0, detalle };
+			return { puntos: estado.acertada ? puntosPorIntento(usados) : 0, detalle, victoria: estado.acertada };
 		}
 
 		function acabar() {
