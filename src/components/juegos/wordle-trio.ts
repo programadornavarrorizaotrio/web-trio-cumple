@@ -304,9 +304,9 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 			if (motor.servidor) {
 				const registrada =
 					estado.puntos !== undefined && estado.rango ? { puntos: estado.puntos, rango: estado.rango, subeDeRango: Boolean(estado.subeDeRango) } : undefined;
-				return { puntos: estado.puntos ?? 0, detalle, registrada, aMedias: !registrada };
+				return { puntos: estado.puntos ?? 0, detalle, registrada, aMedias: !registrada, victoria: estado.acertada };
 			}
-			return { puntos: estado.acertada ? puntosPorIntento(usados) : 0, detalle };
+			return { puntos: estado.acertada ? puntosPorIntento(usados) : 0, detalle, victoria: estado.acertada };
 		}
 
 		function acabar() {

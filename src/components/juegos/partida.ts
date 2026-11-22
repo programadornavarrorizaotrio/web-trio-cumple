@@ -9,6 +9,8 @@ export interface Resultado {
 	detalle?: string;
 	/** El servidor ya ha apuntado la partida (juegos que corrige el servidor, como el Wordle): no se llama a registrarPartida */
 	registrada?: { puntos: number; rango: Rango; subeDeRango: boolean };
+	/** Si es victoria o derrota (pantalla del LoL). Si el juego no lo dice, lo decide `desenlace`. */
+	victoria?: boolean;
 	/** No hay nada que apuntar: la partida queda guardada a medias en el servidor o no se ha podido jugar */
 	aMedias?: boolean;
 }
@@ -41,7 +43,19 @@ const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	'wordle-trio': () => import('./wordle-trio'),
 };
 
-export const hayJuego = (id: string): id is MinijuegoId => id in modulos;
+/**
+ * Victoria o derrota al estilo del LoL en la pantalla final. En los de habilidad, victoria con la mitad del
+ * máximo o más (salvo que el juego lo diga, como el Wordle: acertar es ganar). En el casino, según si la
+ * sesión deja puntos o los quita; si queda igual, no sale nada. Tampoco si la partida no se pudo guardar.
+ */
+function desenlace(info: (typeof MINIJUEGOS)[number], resultado: Resultado, puntos: number, aviso: string): 'victoria' | 'derrota' | null {
+	if (aviso) return null;
+	if (resultado.victoria !== undefined) return resultado.victoria ? 'victoria' : 'derrota';
+	if (info.libre) return puntos > 0 ? 'victoria' : puntos < 0 ? 'derrota' : null;
+	return puntos >= info.maxPuntos / 2 ? 'victoria' : 'derrota';
+}
+
+export const hayJuego =(id: string): id is MinijuegoId => id in modulos;
 
 export async function lanzar(id: MinijuegoId) {
 	const dialogo = document.querySelector<HTMLDialogElement>('[data-partida]')!;
@@ -56,6 +70,7 @@ export async function lanzar(id: MinijuegoId) {
 	q('[data-instrucciones]').textContent = juego.instrucciones;
 	q('[data-limite]').textContent = info.libre ? 'Apuestas tus puntos · juega cuando quieras' : `Hasta ${info.maxPuntos} puntos · un intento al día`;
 	pantalla('intro');
+	dialogo.classList.remove('fin-victoria', 'fin-derrota');
 	dialogo.showModal();
 
 	// Cerrar la ventana antes de empezar no gasta el intento; cerrarla jugando, sí
@@ -109,6 +124,20 @@ export async function lanzar(id: MinijuegoId) {
 					: 'puntos para tu equipo';
 		q('[data-final-detalle]').textContent = aviso || (resultado.detalle ?? '');
 		q('[data-final-subida]').textContent = subida;
+
+		const fin = desenlace(info, resultado, puntos, aviso);
+		const banner = q('[data-fin-lol]');
+		banner.hidden = !fin;
+		banner.classList.remove('anima');
+		q('[data-pantalla="final"]').classList.toggle('con-lol', Boolean(fin));
+		dialogo.classList.toggle('fin-victoria', fin === 'victoria');
+		dialogo.classList.toggle('fin-derrota', fin === 'derrota');
 		pantalla('final');
+		if (fin) {
+			q('[data-fin-texto]').textContent = fin === 'victoria' ? 'Victoria' : 'Derrota';
+			void banner.offsetWidth; // para que la animación arranque de nuevo en cada partida
+			banner.classList.add('anima');
+			navigator.vibrate?.(fin === 'victoria' ? [40, 60, 40, 60, 120] : [200, 80, 200]);
+		}
 	};
 }
