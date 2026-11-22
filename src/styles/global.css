@@ -266,6 +266,25 @@
 	box-shadow: 0 1px 0 0 #24496f;
 }
 
+/* Registro: sede electrónica del "Gobierno del Trío" (solo /registro). Mantiene los colores del estanco para el
+ * cromo y el sobre; lo propio de la oficina está en Registro.astro. Aquí, el pie de web oficial. */
+:root[data-tema='sepe'] footer[data-barra] {
+	background: #17222e;
+	padding-top: 1.6rem;
+	font-family: 'Archivo Variable', Arial, sans-serif;
+	font-size: 0.72rem;
+	line-height: 1.7;
+	color: #b9c4d0;
+}
+/* Franja roja y amarilla arriba, como la de la cabecera */
+:root[data-tema='sepe'] footer[data-barra]::before {
+	content: '';
+	position: absolute;
+	inset: 0 0 auto;
+	height: 5px;
+	background: linear-gradient(#c8102e 0 25%, #f1bf00 25% 75%, #c8102e 75%);
+}
+
 /* === Paleta de la charca (Trioland) ===
  * No es un tema de página: se activa con la clase .selva en el contenedor que la use
  * (portada y escena del trío de la home). Las secciones oscuras de la charca leen estas variables.
