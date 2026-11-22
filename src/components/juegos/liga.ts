@@ -127,7 +127,7 @@ export const MINIJUEGOS: Minijuego[] = [
 	{ id: 'blackjack', titulo: 'Blackjack', descripcion: 'Apuesta puntos y acércate a 21 sin pasarte, más que la banca.', maxPuntos: 0, recurso: 'Casino', numero: null, libre: true, disponible: true },
 	{ id: 'adivina-cromo', titulo: 'Adivina el cromo', descripcion: 'Una foto muy difuminada que se va aclarando: acierta quién es.', maxPuntos: 30, recurso: 'Tabaco', numero: 9, disponible: true },
 	{ id: 'conga-catan', titulo: 'La conga de Catan', descripcion: 'Guía a la rana: cada cosa que comes suma a un invitado a la conga. Esquiva al diablillo.', maxPuntos: 30, recurso: 'Cebada', numero: 5, disponible: true },
-	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza', numero: 10, disponible: false },
+	{ id: 'wordle-trio', titulo: 'Wordle del trío', descripcion: 'Adivina la palabra del día en pocos intentos.', maxPuntos: 30, recurso: 'Cerveza', numero: 10, disponible: true },
 ];
 
 // ───────────────────────── Estado simulado ─────────────────────────
@@ -375,7 +375,8 @@ export async function tirarDados(): Promise<ResultadoTirada> {
  * RPC `registrar_partida(clave, minijuego, puntos)`. El navegador manda los puntos que calcula el minijuego y el
  * servidor los acota al máximo del juego. Falla con 'sin-equipo', con 'no-asignado' si hoy no le ha tocado ese
  * juego con los dados, con 'ya-jugado' si ya lo jugó hoy y con 'liga-cerrada'.
- * TODO: en los juegos con respuesta (adivina el cromo, wordle) que corrija el servidor.
+ * El Wordle no pasa por aquí: lo corrige y lo apunta el servidor (ver wordle-trio.ts).
+ * TODO: que el servidor corrija también adivina el cromo.
  */
 export async function registrarPartida(minijuego: MinijuegoId, puntos: number): Promise<{ puntos: number; rango: Rango; subeDeRango: boolean }> {
 	if (modoPrueba()) {

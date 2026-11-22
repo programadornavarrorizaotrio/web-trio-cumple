@@ -1,12 +1,16 @@
 // Lanzador común de minijuegos: pantalla de instrucciones → partida → resultado.
 // Cada minijuego es un módulo que exporta `instrucciones` y `jugar`; aquí solo se registra cuál es cuál.
-import { registrarPartida, modoPrueba, type MinijuegoId, MINIJUEGOS } from './liga';
+import { registrarPartida, modoPrueba, type MinijuegoId, type Rango, MINIJUEGOS } from './liga';
 
 export interface Resultado {
 	/** Puntos de la partida (la liga los acota al máximo del minijuego) */
 	puntos: number;
 	/** Línea de resumen para la pantalla final, p. ej. "23 ranas" */
 	detalle?: string;
+	/** El servidor ya ha apuntado la partida (juegos que corrige el servidor, como el Wordle): no se llama a registrarPartida */
+	registrada?: { puntos: number; rango: Rango; subeDeRango: boolean };
+	/** No hay nada que apuntar: la partida queda guardada a medias en el servidor o no se ha podido jugar */
+	aMedias?: boolean;
 }
 
 export interface Contexto {
@@ -34,6 +38,7 @@ const modulos: Partial<Record<MinijuegoId, () => Promise<Minijuego>>> = {
 	blackjack: () => import('./blackjack'),
 	'adivina-cromo': () => import('./adivina-cromo'),
 	'conga-catan': () => import('./conga-catan'),
+	'wordle-trio': () => import('./wordle-trio'),
 };
 
 export const hayJuego = (id: string): id is MinijuegoId => id in modulos;
@@ -66,8 +71,13 @@ export async function lanzar(id: MinijuegoId) {
 		let subida = '';
 		let aviso = '';
 		let puntos = resultado.puntos;
+		// Cerrado a medias sin nada que apuntar (el Wordle se retoma al volver)
+		if (resultado.aMedias) return;
 		// Los de casino ya han ido apuntando cada apuesta en la liga: aquí solo se resume la sesión
-		if (!info.libre) {
+		if (resultado.registrada) {
+			puntos = resultado.registrada.puntos;
+			if (resultado.registrada.subeDeRango) subida = `¡Subes a ${resultado.registrada.rango.nombre}!`;
+		} else if (!info.libre) {
 			try {
 				const r = await registrarPartida(id, resultado.puntos);
 				puntos = r.puntos;

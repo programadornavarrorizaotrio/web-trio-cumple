@@ -563,6 +563,136 @@ const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: '
 		color: #fff;
 	}
 
+	/* === Wordle del trío === */
+	.wdl-hud {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 0.75rem;
+		color: var(--color-amarillo);
+		font-size: 1.1rem;
+		font-weight: 900;
+		text-transform: uppercase;
+	}
+	.wdl-rejilla {
+		/* Casillas cuadradas de hasta 3.4rem que caben en el ancho con hasta 8 letras */
+		display: grid;
+		gap: 0.35rem;
+		margin-inline: auto;
+		max-width: calc(var(--n) * 3.4rem + (var(--n) - 1) * 0.35rem);
+	}
+	.wdl-fila {
+		display: grid;
+		grid-template-columns: repeat(var(--n), 1fr);
+		gap: 0.35rem;
+	}
+	.wdl-casilla {
+		display: grid;
+		aspect-ratio: 1;
+		place-items: center;
+		border: 3px solid rgb(255 255 255 / 0.18);
+		border-radius: 0.45rem;
+		color: var(--color-crema);
+		font-size: clamp(1.1rem, 6vw, 1.8rem);
+		font-weight: 900;
+		text-transform: uppercase;
+		user-select: none;
+	}
+	.wdl-casilla.llena {
+		border-color: var(--color-amarillo-claro);
+		animation: wdl-pop 0.1s ease-out;
+	}
+	.wdl-casilla[data-pista] {
+		border-color: transparent;
+		color: #fff;
+	}
+	.wdl-casilla[data-pista='ok'],
+	.wdl-tecla[data-pista='ok'] {
+		background: #3f8f36;
+	}
+	.wdl-casilla[data-pista='casi'],
+	.wdl-tecla[data-pista='casi'] {
+		background: #c9971c;
+	}
+	.wdl-casilla[data-pista='no'],
+	.wdl-tecla[data-pista='no'] {
+		background: #4a3b3b;
+	}
+	.wdl-casilla.volteo {
+		animation: wdl-volteo 0.52s ease-in-out both;
+	}
+	.wdl-fila.sacude {
+		animation: wdl-sacude 0.35s;
+	}
+	.wdl-aviso {
+		min-height: 1.75rem;
+		margin-block: 0.6rem;
+		color: var(--color-amarillo);
+		font-weight: 900;
+		text-align: center;
+		opacity: 0;
+		transition: opacity 0.2s;
+	}
+	.wdl-aviso.visible {
+		opacity: 1;
+	}
+	.wdl-teclado {
+		display: grid;
+		gap: 0.4rem;
+		touch-action: manipulation;
+	}
+	.wdl-teclas {
+		display: flex;
+		gap: 0.25rem;
+	}
+	.wdl-tecla {
+		flex: 1;
+		min-width: 0;
+		height: 3.25rem;
+		padding: 0;
+		border-radius: 0.4rem;
+		background: rgb(255 255 255 / 0.16);
+		color: #fff;
+		font-size: 1.05rem;
+		font-weight: 900;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		user-select: none;
+	}
+	.wdl-tecla.ancha {
+		flex: 1.6;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+	}
+	.wdl-tecla:active {
+		transform: scale(0.94);
+	}
+	@keyframes wdl-pop {
+		50% {
+			transform: scale(1.08);
+		}
+	}
+	@keyframes wdl-volteo {
+		50% {
+			transform: rotateX(90deg);
+		}
+	}
+	@keyframes wdl-sacude {
+		20%,
+		60% {
+			transform: translateX(-6px);
+		}
+		40%,
+		80% {
+			transform: translateX(6px);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.wdl-casilla,
+		.wdl-fila {
+			animation: none !important;
+		}
+	}
+
 	/* === La conga de Catan === */
 	.conga-lienzo {
 		display: block;
