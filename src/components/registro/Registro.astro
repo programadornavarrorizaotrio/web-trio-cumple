@@ -1484,7 +1484,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		abrir.addEventListener(
 			'click',
 			async () => {
-				await abrirSobre(todos, { propio: propio.id });
+				await abrirSobre(todos, { propio: propio.id, destinatario: propio.nombre });
 				abrir.hidden = true;
 				$('[data-entrar]').hidden = false;
 			},
