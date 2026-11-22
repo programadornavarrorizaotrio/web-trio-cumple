@@ -543,7 +543,7 @@ const fondos = await Promise.all(
 		background: linear-gradient(180deg, #5b8fd0 0%, #9ccfe6 38%, #ffe6b0 74%, #ffc08e 100%);
 	}
 	/* Foto de fondo: al abrir la ficha se abre en círculo desde detrás del chibi con un destello, luego
-	   se acerca despacio. Al girar el chibi se desplaza al lado contrario (--giro, de -1 a 1). */
+	   se acerca despacio (siempre más grande que el hueco, así nunca deja bordes vacíos). */
 	.mini-foto {
 		position: absolute;
 		inset: 0;
@@ -552,14 +552,12 @@ const fondos = await Promise.all(
 	}
 	.mini-foto img {
 		position: absolute;
-		top: 0;
-		left: -10%;
-		width: 120%;
-		height: 106%;
+		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
 		object-fit: cover;
 		transform-origin: 50% 25%;
-		translate: calc(var(--giro, 0) * -14px) 0;
-		transition: translate 0.25s ease-out;
 	}
 	/* Halo de luz en el borde del portal y sombra suave arriba para que se lean los botones */
 	.mini-foto::before,
@@ -1011,14 +1009,4 @@ const fondos = await Promise.all(
 		document.addEventListener('click', cerrar);
 		document.addEventListener('keydown', (ev) => ev.key === 'Escape' && cerrar());
 	}
-
-	// Ficha: al girar el chibi, la foto del fondo se desplaza al lado contrario (sensación de profundidad)
-	document.querySelectorAll<HTMLDialogElement>('dialog.ficha-charca').forEach((hoja) => {
-		const visor = hoja.querySelector<HTMLElement & { getCameraOrbit?: () => { theta: number } }>('model-viewer');
-		const foto = hoja.querySelector<HTMLElement>('.mini-foto img');
-		visor?.addEventListener('camera-change', () => {
-			const theta = visor.getCameraOrbit?.().theta;
-			if (foto && theta !== undefined) foto.style.setProperty('--giro', Math.sin(theta).toFixed(3));
-		});
-	});
 </script>
