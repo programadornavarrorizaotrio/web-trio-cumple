@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import trio from '../../data/trio.json';
 import saluda from '../../assets/mascota/saluda.png';
 import Hoja from '../common/Hoja.astro';
@@ -18,6 +18,16 @@ const sitios: [number, number, number, number][] = [
 ];
 // Cámara fija algo girada hacia el centro
 const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
+
+// Foto de fondo de cada ficha: la de la que sale el chibi (`fondo`) o, si no hay, su foto (`foto`)
+const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
+type Persona = (typeof trio)[number] & { fondo?: string; encuadreFondo?: string };
+const fondos = await Promise.all(
+	(trio as Persona[]).map(async (p) => ({
+		src: (await getImage({ src: fotos[`../../assets/trio/${p.fondo ?? p.foto}`].default, width: 800, format: 'webp' })).src,
+		encuadre: p.encuadreFondo ?? p.encuadre,
+	})),
+);
 ---
 
 <section id="trio" class="fase selva" aria-labelledby="trio-titulo">
@@ -121,9 +131,13 @@ const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
 </section>
 
 {
-	trio.map((p) => (
+	trio.map((p, i) => (
 		<Hoja id={`ficha-${p.slug}`} titulo={`ficha-${p.slug}-nombre`} asaClara class="ficha-charca selva">
 			<div class="mini">
+				<!-- La foto de verdad detrás del chibi: se abre como un portal y se mueve al girarlo -->
+				<div class="mini-foto" aria-hidden="true">
+					<img src={fondos[i].src} alt="" loading="lazy" decoding="async" style={`object-position: ${fondos[i].encuadre}`} />
+				</div>
 				<div class="mini-agua"></div>
 				<Nenufar class="mini-nenufar" />
 				<model-viewer
@@ -528,6 +542,80 @@ const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
 		overflow: hidden;
 		background: linear-gradient(180deg, #5b8fd0 0%, #9ccfe6 38%, #ffe6b0 74%, #ffc08e 100%);
 	}
+	/* Foto de fondo: al abrir la ficha se abre en círculo desde detrás del chibi con un destello, luego
+	   se acerca despacio. Al girar el chibi se desplaza al lado contrario (--giro, de -1 a 1). */
+	.mini-foto {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		clip-path: circle(140% at 50% 62%);
+	}
+	.mini-foto img {
+		position: absolute;
+		top: 0;
+		left: -10%;
+		width: 120%;
+		height: 106%;
+		object-fit: cover;
+		transform-origin: 50% 25%;
+		translate: calc(var(--giro, 0) * -14px) 0;
+		transition: translate 0.25s ease-out;
+	}
+	/* Halo de luz en el borde del portal y sombra suave arriba para que se lean los botones */
+	.mini-foto::before,
+	.mini-foto::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+	.mini-foto::before {
+		z-index: 1;
+		background: linear-gradient(180deg, rgb(6 20 16 / 0.35) 0%, transparent 30%, transparent 70%, rgb(6 53 58 / 0.5) 100%);
+	}
+	.mini-foto::after {
+		z-index: 2;
+		background: radial-gradient(circle at 50% 62%, rgb(255 250 225 / 0.95) 0%, rgb(255 230 160 / 0.5) 25%, transparent 55%);
+		opacity: 0;
+	}
+	:global(dialog[open]) .mini-foto {
+		animation: foto-portal 0.9s cubic-bezier(0.25, 0.8, 0.3, 1) both;
+	}
+	:global(dialog[open]) .mini-foto img {
+		animation: foto-acerca 14s ease-out both;
+	}
+	:global(dialog[open]) .mini-foto::after {
+		animation: foto-destello 1.1s ease-out 0.1s both;
+	}
+	@keyframes foto-portal {
+		from {
+			clip-path: circle(0% at 50% 62%);
+		}
+	}
+	@keyframes foto-acerca {
+		from {
+			scale: 1.18;
+		}
+		to {
+			scale: 1.04;
+		}
+	}
+	@keyframes foto-destello {
+		25% {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+			transform: scale(1.6);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.mini-foto,
+		.mini-foto img,
+		.mini-foto::after {
+			animation: none !important;
+		}
+	}
 	.mini-agua {
 		position: absolute;
 		inset: auto 0 0;
@@ -923,4 +1011,14 @@ const orbitas = ['28deg 80deg auto', '0deg 78deg auto', '-28deg 80deg auto'];
 		document.addEventListener('click', cerrar);
 		document.addEventListener('keydown', (ev) => ev.key === 'Escape' && cerrar());
 	}
+
+	// Ficha: al girar el chibi, la foto del fondo se desplaza al lado contrario (sensación de profundidad)
+	document.querySelectorAll<HTMLDialogElement>('dialog.ficha-charca').forEach((hoja) => {
+		const visor = hoja.querySelector<HTMLElement & { getCameraOrbit?: () => { theta: number } }>('model-viewer');
+		const foto = hoja.querySelector<HTMLElement>('.mini-foto img');
+		visor?.addEventListener('camera-change', () => {
+			const theta = visor.getCameraOrbit?.().theta;
+			if (foto && theta !== undefined) foto.style.setProperty('--giro', Math.sin(theta).toFixed(3));
+		});
+	});
 </script>
