@@ -11,7 +11,7 @@ import { conSigno, crearBanca, crearCrupier, crearFichas, crearMesa, el, esperar
 import type { Contexto, Resultado } from './partida';
 
 export const instrucciones =
-	'Elige cuántos puntos apuestas y a qué, y gira. Si aciertas cobras: 1 a 1 en color y par/impar, 2 a 1 en las docenas y 35 a 1 en un número. Si sale el 67, la banca se lo queda todo, salvo que hayas apostado al 67.';
+	'Elige cuántos LP apuestas y a qué, y gira. Si aciertas cobras: 1 a 1 en color y par/impar, 2 a 1 en las docenas y 35 a 1 en un número. Si sale el 67, la banca se lo queda todo, salvo que hayas apostado al 67.';
 
 // La casilla de la banca: el 67 ocupa el sitio del 0 de la ruleta europea
 const BANCA = 67;
@@ -44,7 +44,7 @@ const APUESTAS: Apuesta[] = [
 ];
 
 const MENSAJES_ERROR: Record<string, string> = {
-	'sin-puntos': 'No tienes tantos puntos para apostar',
+	'sin-puntos': 'No tienes tantos LP para apostar',
 	'liga-cerrada': 'La liga ya ha terminado: el casino está cerrado',
 	'sin-equipo': 'Elige equipo antes de apostar',
 };
@@ -140,7 +140,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			if (girando) return;
 			resultado.className = 'ruleta-resultado';
 			if (apostado === 0) {
-				resultado.textContent = 'No te quedan puntos para apostar';
+				resultado.textContent = 'No te quedan LP para apostar';
 				return;
 			}
 			resultado.textContent = !apuesta
