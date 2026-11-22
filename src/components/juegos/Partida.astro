@@ -4,6 +4,7 @@ import Button from '../common/Button.astro';
 import rana from '../../assets/mascota/saluda.png';
 import ladron from '../../assets/mascota/ladron.png';
 import crupier from '../../assets/mascota/crupier.png';
+import derrota from './lol/derrota.png';
 import FotosDemo from '../cromos/FotosDemo.astro';
 
 // Ventana a pantalla completa donde se juega un minijuego. La abre `lanzar(id)` de partida.ts
@@ -11,6 +12,8 @@ import FotosDemo from '../cromos/FotosDemo.astro';
 const { src: ranaSrc } = await getImage({ src: rana, width: 240, format: 'webp' });
 const { src: ladronSrc } = await getImage({ src: ladron, width: 320, format: 'webp' });
 const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: 'webp' });
+// Insignia oficial de "Defeat" del LoL (sin el humo, que se hace con CSS)
+const { src: derrotaSrc } = await getImage({ src: derrota, width: 600, format: 'webp' });
 ---
 
 <dialog
@@ -63,6 +66,9 @@ const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: '
 					<path d="M0 8 H128 M172 8 H300"></path>
 					<path class="rombo" d="M150 0 L162 8 L150 16 L138 8 Z"></path>
 				</svg>
+				<!-- Derrota: la insignia del LoL con humo rojo animado detrás -->
+				<div class="lol-fin-humo" aria-hidden="true"><i></i><i></i><i></i></div>
+				<img class="lol-fin-imagen" src={derrotaSrc} alt="Derrota" width="577" height="307" decoding="async" />
 			</div>
 			<p data-fin-cabecera class="text-sm font-bold uppercase tracking-[0.3em] text-amarillo-claro">Partida terminada</p>
 			<p class="rotulo mt-3 text-7xl text-amarillo"><span data-final-puntos>0</span></p>
@@ -720,6 +726,108 @@ const { src: crupierSrc } = await getImage({ src: crupier, width: 480, format: '
 			lol-aro-entra 0.8s ease-out both,
 			lol-apaga 1.2s ease-in 0.8s forwards;
 	}
+	/* Derrota con la insignia oficial: cae con peso, rebota, tiembla y se queda latiendo entre humo rojo */
+	.lol-fin-imagen,
+	.lol-fin-humo {
+		display: none;
+	}
+	.fin-derrota .lol-fin-aro,
+	.fin-derrota .lol-fin-blason,
+	.fin-derrota .lol-fin-texto,
+	.fin-derrota .lol-fin-base {
+		display: none;
+	}
+	.fin-derrota .lol-fin-imagen {
+		display: block;
+		width: min(19rem, 90%);
+		height: auto;
+		filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 14px rgb(255 80 40 / 0.35));
+	}
+	.fin-derrota .lol-fin-humo {
+		display: block;
+		position: relative;
+		width: 21rem;
+		height: 15rem;
+	}
+	.lol-fin-humo i {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 14rem;
+		height: 6rem;
+		margin: -3rem 0 0 -7rem;
+		border-radius: 50%;
+		background: radial-gradient(closest-side, rgb(255 140 100 / 0.6), rgb(200 50 30 / 0.3) 55%, transparent);
+		filter: blur(12px);
+	}
+	.lol-fin-humo i:nth-child(1) {
+		translate: 0 -4.2rem;
+	}
+	.lol-fin-humo i:nth-child(2) {
+		translate: 0 4.2rem;
+	}
+	.lol-fin-humo i:nth-child(3) {
+		width: 19rem;
+		height: 9rem;
+		margin: -4.5rem 0 0 -9.5rem;
+		background: radial-gradient(closest-side, rgb(220 60 40 / 0.35), transparent);
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-imagen {
+		animation:
+			lol-insignia-cae 0.75s cubic-bezier(0.5, 0, 0.6, 1) 0.3s both,
+			lol-tiembla 0.35s ease-in-out 1.05s,
+			lol-insignia-late 2.6s ease-in-out 1.6s infinite;
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-humo {
+		animation: lol-humo-entra 0.9s ease-out 0.7s both;
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-humo i {
+		animation: lol-humo 3.4s ease-in-out 1.2s infinite alternate;
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-humo i:nth-child(2) {
+		animation-duration: 4.1s;
+		animation-delay: 1.5s;
+	}
+	.fin-derrota .lol-fin.anima .lol-fin-humo i:nth-child(3) {
+		animation-duration: 5s;
+	}
+	@keyframes lol-insignia-cae {
+		0% {
+			opacity: 0;
+			transform: translateY(-90px) scale(1.35);
+		}
+		55% {
+			opacity: 1;
+		}
+		75% {
+			transform: translateY(6px) scale(0.97);
+		}
+		100% {
+			transform: none;
+		}
+	}
+	@keyframes lol-insignia-late {
+		50% {
+			filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.6)) drop-shadow(0 0 26px rgb(255 80 40 / 0.7));
+		}
+	}
+	@keyframes lol-humo-entra {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
+	}
+	@keyframes lol-humo {
+		from {
+			transform: scale(0.9) rotate(-4deg);
+			opacity: 0.7;
+		}
+		to {
+			transform: scale(1.12) rotate(5deg);
+			opacity: 1;
+		}
+	}
+
 	.con-lol > :not(.lol-fin) {
 		animation: lol-resto 0.5s ease-out 1.2s both;
 	}
