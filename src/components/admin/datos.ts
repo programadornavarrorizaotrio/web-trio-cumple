@@ -23,6 +23,8 @@ export interface InvitadoAdmin {
 	nombre: string;
 	apodo: string | null;
 	frase: string | null;
+	/** Ruta de su foto en el bucket `cromos` (ver `urlFoto`), o null */
+	foto: string | null;
 	rol: 'invitado' | 'admin';
 	especial: boolean;
 	visible: boolean;
@@ -79,6 +81,9 @@ export const guardarInvitado = (datos: { id: string | null; nombre: string; nume
 
 /** Cierra sus sesiones para que se vuelva a registrar (cambió de móvil). Conserva asistencia, equipo y puntos. */
 export const nuevoMovil = (invitadoId: string) => rpcConClave<void>('admin_nuevo_movil', { invitado_id: invitadoId });
+
+/** Quita la foto de su cromo (vuelve a la inicial). Error: 'no-existe'. */
+export const quitarFoto = (invitadoId: string) => rpcConClave<void>('admin_quitar_foto', { invitado_id: invitadoId });
 
 /** Errores: 'datos', 'sin-equipo'. */
 export const ajustarPuntos = (invitadoId: string, puntos: number, motivo: string) =>
