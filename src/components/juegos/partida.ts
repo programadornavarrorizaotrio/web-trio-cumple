@@ -68,7 +68,7 @@ export async function lanzar(id: MinijuegoId) {
 
 	q('[data-titulo]').textContent = info.titulo;
 	q('[data-instrucciones]').textContent = juego.instrucciones;
-	q('[data-limite]').textContent = info.libre ? 'Apuestas tus puntos · juega cuando quieras' : `Hasta ${info.maxPuntos} puntos · un intento al día`;
+	q('[data-limite]').textContent = info.libre ? 'Apuestas tus LP · juega cuando quieras' : `Hasta ${info.maxPuntos} LP · un intento al día`;
 	pantalla('intro');
 	dialogo.classList.remove('fin-victoria', 'fin-derrota');
 	dialogo.showModal();
@@ -115,13 +115,13 @@ export async function lanzar(id: MinijuegoId) {
 		q('[data-final-puntos]').textContent = info.libre && puntos > 0 ? `+${puntos}` : String(puntos);
 		q('[data-final-etiqueta]').textContent = info.libre
 			? modoPrueba()
-				? 'puntos en esta sesión (modo prueba: no cuentan)'
-				: 'puntos en esta sesión'
+				? 'LP en esta sesión (modo prueba: no cuentan)'
+				: 'LP en esta sesión'
 			: modoPrueba()
-				? 'puntos (modo prueba: no suman)'
+				? 'LP (modo prueba: no suman)'
 				: puntos < 0
-					? 'puntos que te quita el diablillo'
-					: 'puntos para tu equipo';
+					? 'LP que te quita el diablillo'
+					: 'LP para tu equipo';
 		q('[data-final-detalle]').textContent = aviso || (resultado.detalle ?? '');
 		q('[data-final-subida]').textContent = subida;
 
