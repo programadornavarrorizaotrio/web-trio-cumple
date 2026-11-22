@@ -379,7 +379,7 @@ export async function abrirTirada(opciones: { tiradaActual: number; tiradasMax: 
 				{ duration: 450, easing: 'ease-out' },
 			);
 		}
-		mensaje.textContent = perdidos > 0 ? `¡El diablillo! Te quita ${perdidos} puntos` : '¡El diablillo! Por suerte no tenías nada que perder';
+		mensaje.textContent = perdidos > 0 ? `¡El diablillo! Te quita ${perdidos} LP` : '¡El diablillo! Por suerte no tenías nada que perder';
 		if (ladronSrc) {
 			const img = el('img', 'tirada-diablillo');
 			img.src = ladronSrc;

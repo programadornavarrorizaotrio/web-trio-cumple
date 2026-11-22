@@ -24,7 +24,7 @@ export function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: Contex
 		const relleno = document.createElement('i');
 		barra.append(relleno);
 		const marcador = document.createElement('output');
-		marcador.textContent = '0 pts';
+		marcador.textContent = '0 LP';
 		hud.append(barra, marcador);
 
 		const campo = document.createElement('div');
@@ -87,7 +87,7 @@ export function jugar(area: HTMLElement, senal: AbortSignal, { ranaSrc }: Contex
 				const valor = b.classList.contains('dorada') ? 3 : 1;
 				puntos += valor;
 				golpes++;
-				marcador.textContent = `${Math.min(MAX, puntos)} pts`;
+				marcador.textContent = `${Math.min(MAX, puntos)} LP`;
 				navigator.vibrate?.(25);
 				clearTimeout(bajadas.get(b));
 				b.classList.add('golpeada');
