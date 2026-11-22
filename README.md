@@ -108,7 +108,7 @@ invitados             id uuid PK, numero (orden en el álbum), nombre, foto_path
 sesiones              invitado_id, hash (de la clave), creada_en, usada_en, revocada_en   ← una por móvil
 confirmaciones        invitado_id PK, asiste, acompanantes, alergias, updated_at
 
-minijuegos            id PK, titulo, max_puntos, numero (ficha del hexágono), libre, disponible
+minijuegos            id PK, titulo, max_puntos, numero (ficha del hexágono), libre, disponible, servidor (los puntúa el servidor)
 rangos                nombre PK, desde, emblema
 premios               id PK, titulo, descripcion, requisito jsonb, orden, activo
 liga_jugadores        invitado_id PK, equipo ('pencho' | 'fran' | 'juan'), elegido_en
@@ -119,6 +119,7 @@ premios_codigos       (invitado_id, premio_id) PK, codigo, entregado_en
 codigos_acceso        hash PK, invitado_id, caduca_en, usado_en   ← entrar en otro dispositivo
 
 wordle_palabras       id, palabra (MAYÚSCULAS, 4–8 letras), dia (cuando sale), orden
+wordle_partidas       (invitado_id, dia) PK, intentos text[], terminada   ← el Wordle lo corrige el servidor
 admin_registro        admin_id, accion, detalle, created_at   ← qué ha tocado cada admin
 ```
 
@@ -136,6 +137,7 @@ Reglas de la base de datos:
 - RLS activado en **todas** las tablas desde la migración que las crea, sin políticas: el navegador solo llama a RPC.
 - Lo interno (comprobar la clave, el PIN, sumar puntos…) va en el esquema **`privado`**, que la API no expone. Las **vistas del panel** también (`privado.v_asistentes`, `v_alergias`, `v_liga_ranking`, `v_liga_premios`): una vista en `public` saldría por la API saltándose RLS.
 - Supabase da permiso a `anon` en cada tabla y función nueva de `public`: **cada migración termina quitándolos** y dando `execute` solo a sus RPC (ver el final de `…_liga.sql`).
+- **Wordle**: `wordle_estado` y `wordle_probar` corrigen en el servidor (el navegador no ve la palabra hasta el final) y apuntan los puntos: 30, 25, 20, 15, 10 o 5 según el intento, 0 si no se acierta. Si no quedan palabras en `wordle_palabras`, el 10 de los dados vuelve a tirar.
 - Los puntos de la liga son la suma de `liga_movimientos`: para corregir a alguien se mete un movimiento `ajuste`, nunca se edita el histórico. Lo que va al azar (dados, ruleta, cartas) lo calcula el servidor.
 - **PIN**: solo se guarda su hash. Se cambia desde `/admin` (o a mano: `insert into ajustes … privado.hash('<pin>')`). El de `seed.sql` (1234) es solo de desarrollo.
 - **Resetear a un invitado** (cambió de móvil): "Nuevo móvil" en `/admin` (`admin_nuevo_movil`): cierra sus sesiones y conserva asistencia, equipo y puntos.
