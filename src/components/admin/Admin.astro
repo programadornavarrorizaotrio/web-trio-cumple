@@ -3,12 +3,12 @@
 // en sí no tiene datos, y sin sesión de admin el servidor no devuelve nada.
 import Button from '../common/Button.astro';
 
+// Barra de abajo. El Wordle, los ajustes y el PIN van dentro de Liga: se tocan poco.
 const pestanas = [
-	{ id: 'resumen', texto: 'Resumen' },
-	{ id: 'invitados', texto: 'Invitados' },
-	{ id: 'premios', texto: 'Premios' },
-	{ id: 'liga', texto: 'Liga' },
-	{ id: 'wordle', texto: 'Wordle' },
+	{ id: 'inicio', texto: 'Inicio', icono: '🏠' },
+	{ id: 'invitados', texto: 'Invitados', icono: '👥' },
+	{ id: 'premios', texto: 'Premios', icono: '🎁' },
+	{ id: 'liga', texto: 'Liga', icono: '🏆' },
 ];
 const campo =
 	'mt-1 block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-3 py-2.5 text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none';
@@ -17,57 +17,58 @@ const campo =
 <div data-admin class="text-tinta">
 	<p data-admin-estado class="rounded-lg bg-crema-oscuro p-5 text-center font-bold text-tinta-suave">Cargando…</p>
 
-	<div data-admin-panel hidden>
-		<nav class="sticky top-0 z-10 -mx-4 mb-5 flex gap-1 overflow-x-auto bg-crema px-4 py-2 [scrollbar-width:none]" aria-label="Secciones del admin">
-			{
-				pestanas.map((p, i) => (
-					<button
-						type="button"
-						data-pestana={p.id}
-						aria-pressed={i === 0 ? 'true' : 'false'}
-						class="shrink-0 rounded-full border-2 border-granate/20 px-4 py-1.5 text-sm font-black uppercase tracking-wider text-granate aria-pressed:border-granate aria-pressed:bg-granate aria-pressed:text-amarillo"
-					>
-						{p.texto}
-					</button>
-				))
-			}
-		</nav>
-
-		<p data-aviso hidden role="status" class="mb-4 rounded border-2 px-3 py-2 text-sm font-bold"></p>
-
-		<!-- Resumen -->
-		<section data-vista="resumen" class="space-y-5">
-			<div data-cifras class="grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+	<div data-admin-panel hidden class="pb-24">
+		<!-- Inicio: lo que más se hace, a mano, y el estado de la fiesta de un vistazo -->
+		<section data-vista="inicio" class="space-y-6">
+			<div class="grid grid-cols-2 gap-3">
+				<button type="button" data-ir="premios" data-enfocar="codigo" class="rounded-xl bg-granate p-4 text-left text-amarillo shadow-chapa active:translate-y-0.5">
+					<span class="block text-3xl" aria-hidden="true">🎁</span>
+					<span class="mt-2 block text-lg font-black leading-tight">Canjear premio</span>
+					<span class="mt-0.5 block text-xs font-bold text-amarillo-claro/80">Con el código del invitado</span>
+				</button>
+				<button type="button" data-ir="invitados" data-enfocar="filtro" class="rounded-xl bg-amarillo p-4 text-left text-granate-oscuro shadow-chapa-amarillo active:translate-y-0.5">
+					<span class="block text-3xl" aria-hidden="true">🔎</span>
+					<span class="mt-2 block text-lg font-black leading-tight">Buscar invitado</span>
+					<span class="mt-0.5 block text-xs font-bold text-granate/70">Ver o corregir su ficha</span>
+				</button>
+			</div>
+			<div>
+				<h3 class="text-lg text-granate">La fiesta</h3>
+				<p class="text-xs text-tinta-suave">Toca una cifra para ver quiénes son.</p>
+				<div data-cifras class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4"></div>
+			</div>
 			<div>
 				<h3 class="text-lg text-granate">Equipos</h3>
 				<ul data-equipos class="mt-2 space-y-1.5"></ul>
-			</div>
-			<div>
-				<h3 class="text-lg text-granate">Alergias e intolerancias</h3>
-				<ul data-alergias class="mt-2 space-y-1.5 text-sm"></ul>
 			</div>
 		</section>
 
 		<!-- Invitados -->
 		<section data-vista="invitados" hidden class="space-y-3">
 			<div class="flex gap-2">
-				<input data-filtro type="search" placeholder="Buscar invitado…" autocomplete="off" class={campo + ' mt-0'} />
+				<input data-filtro type="search" placeholder="Buscar por nombre o apodo…" autocomplete="off" class={campo + ' mt-0'} />
 				<Button type="button" data-nuevo-invitado class="shrink-0">Añadir</Button>
 			</div>
-			<p data-cuenta-invitados class="text-xs text-tinta-suave"></p>
+			<div data-filtros class="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]"></div>
 			<ul data-lista-invitados class="space-y-2"></ul>
 		</section>
 
 		<!-- Premios -->
 		<section data-vista="premios" hidden class="space-y-6">
-			<form data-form-codigo class="rounded-lg bg-white p-4 shadow-chapa">
-				<h3 class="text-lg text-granate">Canjear un premio</h3>
+			<form data-form-codigo class="rounded-xl bg-white p-4 shadow-chapa">
+				<h3 class="text-xl text-granate">Canjear un premio</h3>
 				<p class="mt-1 text-sm text-tinta-suave">Escribe el código que te enseña el invitado en su móvil.</p>
-				<div class="mt-3 flex gap-2">
-					<input name="codigo" required placeholder="A1B2C3-D4E5F6" autocomplete="off" autocapitalize="characters" class={campo + ' mt-0 font-mono uppercase'} />
-					<Button type="submit" class="shrink-0">Buscar</Button>
-				</div>
-				<div data-resultado-codigo hidden class="mt-4 rounded border-2 border-granate/20 p-3"></div>
+				<input
+					name="codigo"
+					required
+					placeholder="A1B2C3-D4E5F6"
+					autocomplete="off"
+					autocapitalize="characters"
+					spellcheck="false"
+					class={campo + ' mt-3 text-center font-mono text-2xl font-bold uppercase tracking-widest'}
+				/>
+				<Button type="submit" tamano="lg" class="mt-3 w-full">Buscar código</Button>
+				<div data-resultado-codigo hidden class="mt-4"></div>
 			</form>
 			<div>
 				<h3 class="text-lg text-granate">Premios</h3>
@@ -76,16 +77,24 @@ const campo =
 			</div>
 		</section>
 
-		<!-- Liga -->
+		<!-- Liga: Wordle, ajustes y PIN (lo que se toca de vez en cuando) -->
 		<section data-vista="liga" hidden class="space-y-6">
-			<form data-form-ajustes class="space-y-4 rounded-lg bg-white p-4 shadow-chapa">
+			<form data-form-wordle class="space-y-3 rounded-xl bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">Palabras del Wordle <span data-cuenta-wordle class="text-sm text-tinta-suave"></span></h3>
+				<p class="text-sm text-tinta-suave">Sale una al día, en orden. De 4 a 8 letras; las tildes se quitan y la Ñ vale.</p>
+				<ul data-lista-wordle class="flex flex-wrap gap-2"></ul>
+				<textarea name="palabras" rows="3" required placeholder={'Una por línea o separadas por comas\nRANA, CAÑAS, TRIO'} class={campo + ' font-mono uppercase placeholder:normal-case'}></textarea>
+				<Button type="submit" class="w-full">Añadir palabras</Button>
+			</form>
+
+			<form data-form-ajustes class="space-y-4 rounded-xl bg-white p-4 shadow-chapa">
 				<h3 class="text-lg text-granate">Ajustes de la liga</h3>
 				<div class="grid grid-cols-2 gap-3">
-					<label class="text-sm font-bold">Tiradas entre semana<input name="tiradasEntreSemana" type="number" min="0" max="10" required class={campo} /></label>
-					<label class="text-sm font-bold">Tiradas en finde<input name="tiradasFinDeSemana" type="number" min="0" max="10" required class={campo} /></label>
+					<label class="text-sm font-bold">Tiradas entre semana<input name="tiradasEntreSemana" type="number" inputmode="numeric" min="0" max="10" required class={campo} /></label>
+					<label class="text-sm font-bold">Tiradas en finde<input name="tiradasFinDeSemana" type="number" inputmode="numeric" min="0" max="10" required class={campo} /></label>
 				</div>
 				<label class="block text-sm font-bold"
-					>Puntos que quita el diablillo<input name="penalizacionDiablo" type="number" min="0" max="100" required class={campo} /></label
+					>LP que quita el diablillo<input name="penalizacionDiablo" type="number" inputmode="numeric" min="0" max="100" required class={campo} /></label
 				>
 				<label class="block text-sm font-bold"
 					>Cierre de la liga<input name="cierreLiga" type="datetime-local" required class={campo} />
@@ -94,7 +103,7 @@ const campo =
 				<Button type="submit" class="w-full">Guardar ajustes</Button>
 			</form>
 
-			<form data-form-pin class="space-y-3 rounded-lg bg-white p-4 shadow-chapa">
+			<form data-form-pin class="space-y-3 rounded-xl bg-white p-4 shadow-chapa">
 				<h3 class="text-lg text-granate">PIN de la fiesta</h3>
 				<p class="text-sm text-tinta-suave">El código que va en el mensaje de WhatsApp para registrarse. Al cambiarlo, el anterior deja de valer (quien ya está registrado sigue dentro).</p>
 				<input name="pin" required minlength="4" maxlength="20" autocomplete="off" placeholder="Nuevo PIN" class={campo} />
@@ -102,20 +111,34 @@ const campo =
 			</form>
 		</section>
 
-		<!-- Wordle -->
-		<section data-vista="wordle" hidden class="space-y-5">
-			<form data-form-wordle class="space-y-3 rounded-lg bg-white p-4 shadow-chapa">
-				<h3 class="text-lg text-granate">Añadir palabras</h3>
-				<p class="text-sm text-tinta-suave">Una por línea (o separadas por comas), de 4 a 8 letras. Las tildes se quitan; la Ñ vale. Sale una al día, en orden.</p>
-				<textarea name="palabras" rows="4" required placeholder={'RANA\nCAÑAS\nTRIO'} class={campo + ' font-mono uppercase'}></textarea>
-				<Button type="submit" class="w-full">Añadir</Button>
-			</form>
-			<div>
-				<h3 class="text-lg text-granate">Lista <span data-cuenta-wordle class="text-sm text-tinta-suave"></span></h3>
-				<ul data-lista-wordle class="mt-2 flex flex-wrap gap-2"></ul>
+		<!-- Barra de abajo, al alcance del pulgar -->
+		<nav class="fixed inset-x-0 bottom-0 z-20 border-t-2 border-granate/15 bg-crema/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Secciones del admin">
+			<div class="mx-auto flex max-w-xl">
+				{
+					pestanas.map((p, i) => (
+						<button
+							type="button"
+							data-pestana={p.id}
+							aria-pressed={i === 0 ? 'true' : 'false'}
+							class="flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.7rem] font-black uppercase tracking-wider text-tinta-suave aria-pressed:text-granate"
+						>
+							<span class="grid h-8 w-12 place-items-center rounded-full text-xl" data-icono aria-hidden="true">{p.icono}</span>
+							{p.texto}
+						</button>
+					))
+				}
 			</div>
-		</section>
+		</nav>
 	</div>
+
+	<!-- Avisos: flotan encima de la barra para que se vean aunque hayas bajado -->
+	<p
+		data-aviso
+		hidden
+		role="status"
+		class="fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-md rounded-lg border-2 px-4 py-3 text-sm font-bold shadow-chapa"
+	>
+	</p>
 
 	<!-- Ficha de un invitado -->
 	<dialog data-ficha class="m-auto w-[min(100%-2rem,28rem)] rounded-lg bg-crema p-0 text-tinta backdrop:bg-tinta/60">
@@ -134,12 +157,13 @@ const campo =
 			<Button type="submit" class="w-full">Guardar</Button>
 
 			<div data-ficha-puntos class="space-y-2 border-t-2 border-granate/15 pt-4">
-				<h4 class="font-bold text-granate">Ajustar puntos de la liga</h4>
+				<h4 class="font-bold text-granate">Corregir sus LP</h4>
+				<p class="text-xs text-tinta-suave">Solo para arreglar errores (se le cortó una partida, algo salió mal). Queda apuntado quién lo hizo y por qué.</p>
 				<div class="flex gap-2">
 					<input name="puntos" type="number" min="-500" max="500" placeholder="+10 / −5" class={campo + ' mt-0 w-28'} />
-					<input name="motivo" maxlength="140" placeholder="Motivo (ganó el karaoke…)" class={campo + ' mt-0'} />
+					<input name="motivo" maxlength="140" placeholder="Motivo (se le cortó la partida…)" class={campo + ' mt-0'} />
 				</div>
-				<Button type="button" data-ajustar variante="borde" class="w-full text-granate">Aplicar puntos</Button>
+				<Button type="button" data-ajustar variante="borde" class="w-full text-granate">Aplicar corrección</Button>
 			</div>
 
 			<div data-ficha-foto class="space-y-2 border-t-2 border-granate/15 pt-4">
@@ -180,11 +204,11 @@ const campo =
 
 	let temporizador: number | undefined;
 	function avisar(texto: string, bien = true) {
-		aviso.textContent = texto;
-		aviso.className = `mb-4 rounded border-2 px-3 py-2 text-sm font-bold ${bien ? 'border-green-700 bg-green-50 text-green-800' : 'border-granate bg-granate/10 text-granate'}`;
+		aviso.textContent = (bien ? '✓ ' : '⚠ ') + texto;
+		aviso.classList.toggle('aviso-mal', !bien);
 		aviso.hidden = false;
 		clearTimeout(temporizador);
-		temporizador = window.setTimeout(() => (aviso.hidden = true), 4000);
+		temporizador = window.setTimeout(() => (aviso.hidden = true), bien ? 3500 : 6000);
 	}
 
 	/** Ejecuta una acción con el botón bloqueado y avisa del resultado */
@@ -203,45 +227,66 @@ const campo =
 	// ── Pestañas ──
 	const cargadas = new Set<string>();
 	const cargar: Record<string, () => Promise<void>> = {
-		resumen: pintarResumen,
+		inicio: pintarResumen,
 		invitados: pintarInvitados,
 		premios: pintarPremios,
-		liga: pintarAjustes,
-		wordle: pintarWordle,
+		liga: async () => {
+			await Promise.all([pintarAjustes(), pintarWordle()]);
+		},
 	};
 	async function abrir(id: string) {
 		raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pestana === id)));
 		raiz.querySelectorAll<HTMLElement>('[data-vista]').forEach((v) => (v.hidden = v.dataset.vista !== id));
+		window.scrollTo({ top: raiz.getBoundingClientRect().top + window.scrollY - 16 });
 		if (!cargadas.has(id)) {
 			cargadas.add(id);
 			await cargar[id]().catch((e) => avisar(admin.mensajeError(e), false));
 		}
 	}
 	raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.addEventListener('click', () => void abrir(b.dataset.pestana!)));
+
+	/** Atajos del inicio: abren una pestaña y, si toca, filtran la lista o ponen el cursor en un campo */
+	async function ir(destino: string, filtroInicial?: string, enfocar?: string) {
+		if (filtroInicial) {
+			filtroRapido = filtroInicial;
+			filtro.value = '';
+		}
+		await abrir(destino);
+		if (destino === 'invitados') filtrar();
+		if (enfocar === 'codigo') $<HTMLInputElement>('[data-form-codigo] [name="codigo"]').focus();
+		if (enfocar === 'filtro') filtro.focus();
+	}
+	raiz.querySelectorAll<HTMLButtonElement>('[data-ir]').forEach((b) => b.addEventListener('click', () => void ir(b.dataset.ir!, undefined, b.dataset.enfocar)));
 	/** Tras un cambio, lo que dependa de él se vuelve a cargar al abrir su pestaña */
 	const caducar = (...ids: string[]) => ids.forEach((id) => cargadas.delete(id));
 
 	// ── Resumen ──
 	async function pintarResumen() {
 		const r = await admin.resumen();
-		const cifra = (valor: string | number, texto: string) => {
-			const d = el('div', 'min-w-0 rounded-lg bg-white p-3 text-center shadow-chapa');
+		/** Una cifra; si lleva destino, se puede tocar y lleva a la lista ya filtrada */
+		const cifra = (valor: string | number, texto: string, destino?: { pestana: string; filtro?: string }) => {
+			const d = el(destino ? 'button' : 'div', 'min-w-0 rounded-lg bg-white p-3 text-center shadow-chapa');
 			const grande = typeof valor === 'number' || valor.length <= 5;
 			d.append(
 				el('p', `rotulo ${grande ? 'text-3xl' : 'py-1 text-xl'} truncate text-granate`, String(valor)),
-				el('p', 'text-xs font-bold uppercase tracking-wider text-tinta-suave', texto),
+				el('p', 'text-xs font-bold uppercase tracking-wider text-tinta-suave', texto + (destino ? ' ›' : '')),
 			);
+			if (d instanceof HTMLButtonElement) {
+				d.type = 'button';
+				d.classList.add('active:bg-amarillo-claro');
+				d.addEventListener('click', () => void ir(destino!.pestana, destino!.filtro));
+			}
 			return d;
 		};
 		$('[data-cifras]').replaceChildren(
-			cifra(`${r.registrados}/${r.invitados}`, 'registrados'),
-			cifra(r.vienen, 'vienen'),
+			cifra(r.vienen, 'vienen', { pestana: 'invitados', filtro: 'vienen' }),
 			cifra(r.personas, 'personas en total'),
-			cifra(r.noVienen, 'no vienen'),
-			cifra(r.invitados - r.vienen - r.noVienen, 'sin responder'),
-			cifra(r.jugadores, 'en la liga'),
-			cifra(r.premiosPorEntregar, 'premios por entregar'),
-			cifra(r.ligaCerrada ? 'Cerrada' : 'Abierta', 'liga'),
+			cifra(r.invitados - r.vienen - r.noVienen, 'sin responder', { pestana: 'invitados', filtro: 'sin-responder' }),
+			cifra(r.noVienen, 'no vienen', { pestana: 'invitados', filtro: 'no-vienen' }),
+			cifra(r.alergias.length, 'con alergias', { pestana: 'invitados', filtro: 'alergias' }),
+			cifra(`${r.registrados}/${r.invitados}`, 'registrados', { pestana: 'invitados', filtro: 'sin-registrar' }),
+			cifra(r.premiosPorEntregar, 'premios por entregar', { pestana: 'premios' }),
+			cifra(r.ligaCerrada ? 'Cerrada' : `${r.jugadores} jug.`, r.ligaCerrada ? 'liga' : 'en la liga', { pestana: 'liga' }),
 		);
 		$('[data-equipos]').replaceChildren(
 			...[...r.equipos]
@@ -252,18 +297,9 @@ const campo =
 					const punto = el('span', 'mr-2 inline-block rounded-full');
 					Object.assign(punto.style, { background: equipoPorId(e.equipo).color, width: '0.75rem', height: '0.75rem' });
 					nombre.append(punto, equipoPorId(e.equipo).nombre);
-					li.append(nombre, el('span', 'text-sm text-tinta-suave', `${e.puntos} pts · ${e.miembros} ${e.miembros === 1 ? 'jugador' : 'jugadores'}`));
+					li.append(nombre, el('span', 'text-sm text-tinta-suave', `${e.puntos} LP · ${e.miembros} ${e.miembros === 1 ? 'jugador' : 'jugadores'}`));
 					return li;
 				}),
-		);
-		$('[data-alergias]').replaceChildren(
-			...(r.alergias.length
-				? r.alergias.map((a) => {
-						const li = el('li', 'rounded bg-white px-3 py-2');
-						li.append(el('b', '', a.nombre + ': '), a.alergias);
-						return li;
-					})
-				: [el('li', 'text-tinta-suave', 'Nadie ha dicho nada todavía.')]),
 		);
 	}
 
@@ -281,38 +317,83 @@ const campo =
 		return el('span', `rounded-full px-2 py-0.5 text-[0.7rem] font-black uppercase tracking-wider ${clase}`, texto);
 	}
 
+	// Filtros rápidos de la lista (chips con cuántos hay en cada uno)
+	const FILTROS: { id: string; texto: string; cumple: (i: InvitadoAdmin) => boolean }[] = [
+		{ id: 'todos', texto: 'Todos', cumple: (i) => i.visible },
+		{ id: 'vienen', texto: 'Vienen', cumple: (i) => i.visible && i.asiste === true },
+		{ id: 'sin-responder', texto: 'Sin responder', cumple: (i) => i.visible && i.asiste === null },
+		{ id: 'no-vienen', texto: 'No vienen', cumple: (i) => i.visible && i.asiste === false },
+		{ id: 'alergias', texto: 'Alergias', cumple: (i) => !!i.alergias },
+		{ id: 'sin-registrar', texto: 'Sin registrar', cumple: (i) => i.visible && !i.registrado },
+		{ id: 'ocultos', texto: 'Ocultos', cumple: (i) => !i.visible },
+	];
+	let filtroRapido = 'todos';
+
+	function pintarFiltros() {
+		$('[data-filtros]').replaceChildren(
+			...FILTROS.map((f) => {
+				const b = el('button', 'shrink-0 rounded-full border-2 border-granate/20 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-wider text-granate aria-pressed:border-granate aria-pressed:bg-granate aria-pressed:text-amarillo');
+				b.type = 'button';
+				b.setAttribute('aria-pressed', String(f.id === filtroRapido));
+				b.append(f.texto, el('span', 'ml-1.5 opacity-70', String(lista.filter(f.cumple).length)));
+				b.addEventListener('click', () => {
+					filtroRapido = f.id;
+					filtrar();
+				});
+				return b;
+			}),
+		);
+	}
+
+	/** Miniatura: su foto del cromo o la inicial */
+	function miniatura(i: InvitadoAdmin) {
+		const foto = urlFoto(i.foto);
+		if (foto) {
+			const img = el('img', 'size-11 shrink-0 rounded-full object-cover');
+			img.src = foto;
+			img.alt = '';
+			img.loading = 'lazy';
+			return img;
+		}
+		return el('span', 'grid size-11 shrink-0 place-items-center rounded-full bg-crema-oscuro text-lg font-black text-granate', i.nombre.trim().charAt(0).toUpperCase());
+	}
+
 	function filtrar() {
 		const q = normalizar(filtro.value.trim());
-		const visibles = lista.filter((i) => !q || normalizar(`${i.nombre} ${i.apodo ?? ''}`).includes(q));
-		const vienen = lista.filter((i) => i.asiste).length;
-		$('[data-cuenta-invitados]').textContent = `${lista.length} invitados · ${lista.filter((i) => i.registrado).length} registrados · ${vienen} vienen`;
+		const condicion = FILTROS.find((f) => f.id === filtroRapido)!.cumple;
+		// Al buscar por nombre se busca en todos (también ocultos), para no perder a nadie
+		const visibles = lista.filter((i) => (q ? normalizar(`${i.nombre} ${i.apodo ?? ''}`).includes(q) : condicion(i)));
+		pintarFiltros();
 		$('[data-lista-invitados]').replaceChildren(
-			...visibles.map((i) => {
-				const li = el('li');
-				const b = el('button', 'block w-full rounded-lg bg-white px-3 py-2.5 text-left shadow-chapa active:bg-amarillo-claro');
-				b.type = 'button';
-				const linea = el('p', 'flex items-baseline gap-2');
-				linea.append(el('span', 'w-7 shrink-0 text-right font-mono text-xs text-tinta-suave', `#${i.numero}`), el('span', 'min-w-0 truncate font-bold', i.nombre));
-				if (i.apodo) linea.append(el('span', 'min-w-0 truncate text-sm text-tinta-suave', `«${i.apodo}»`));
-				const etiquetas = el('p', 'mt-1.5 flex flex-wrap gap-1 pl-9');
-				etiquetas.append(
-					i.registrado ? etiqueta('Registrado', 'bg-green-100 text-green-800') : etiqueta('Sin registrar', 'bg-crema-oscuro text-tinta-suave'),
-					i.asiste === true
-						? etiqueta(i.acompanantes ? `Viene +${i.acompanantes}` : 'Viene', 'bg-amarillo-claro text-granate-oscuro')
-						: i.asiste === false
-							? etiqueta('No viene', 'bg-granate/10 text-granate')
-							: etiqueta('Sin responder', 'bg-crema-oscuro text-tinta-suave'),
-				);
-				if (i.equipo) etiquetas.append(etiqueta(`${equipoPorId(i.equipo).nombre} · ${i.puntos} pts`, 'bg-tinta/10 text-tinta'));
-				if (i.foto) etiquetas.append(etiqueta('Con foto', 'bg-tinta/10 text-tinta'));
-				if (i.alergias) etiquetas.append(etiqueta('Alergias', 'bg-granate text-amarillo'));
-				if (i.rol === 'admin') etiquetas.append(etiqueta('Admin', 'bg-granate-oscuro text-amarillo'));
-				if (!i.visible) etiquetas.append(etiqueta('Oculto', 'bg-tinta text-crema'));
-				b.append(linea, etiquetas);
-				b.addEventListener('click', () => abrirFicha(i));
-				li.append(b);
-				return li;
-			}),
+			...(visibles.length
+				? visibles.map((i) => {
+						const li = el('li');
+						const b = el('button', 'flex w-full items-center gap-3 rounded-lg bg-white px-3 py-2.5 text-left shadow-chapa active:bg-amarillo-claro');
+						b.type = 'button';
+						const texto = el('span', 'min-w-0 flex-1');
+						const linea = el('span', 'flex items-baseline gap-2');
+						linea.append(el('span', 'min-w-0 truncate font-bold', i.nombre));
+						if (i.apodo) linea.append(el('span', 'min-w-0 truncate text-sm text-tinta-suave', `«${i.apodo}»`));
+						const etiquetas = el('span', 'mt-1 flex flex-wrap gap-1');
+						etiquetas.append(
+							i.asiste === true
+								? etiqueta(i.acompanantes ? `Viene +${i.acompanantes}` : 'Viene', 'bg-green-100 text-green-800')
+								: i.asiste === false
+									? etiqueta('No viene', 'bg-granate/10 text-granate')
+									: etiqueta('Sin responder', 'bg-crema-oscuro text-tinta-suave'),
+						);
+						if (!i.registrado) etiquetas.append(etiqueta('Sin registrar', 'bg-crema-oscuro text-tinta-suave'));
+						if (i.equipo) etiquetas.append(etiqueta(`${equipoPorId(i.equipo).nombre} · ${i.puntos} LP`, 'bg-tinta/10 text-tinta'));
+						if (i.rol === 'admin') etiquetas.append(etiqueta('Admin', 'bg-granate-oscuro text-amarillo'));
+						if (!i.visible) etiquetas.append(etiqueta('Oculto', 'bg-tinta text-crema'));
+						texto.append(linea, etiquetas);
+						if (i.alergias) texto.append(el('span', 'mt-1 block text-xs font-bold text-granate', `⚠ ${i.alergias}`));
+						b.append(miniatura(i), texto, el('span', 'shrink-0 text-xl text-tinta-suave', '›'));
+						b.addEventListener('click', () => abrirFicha(i));
+						li.append(b);
+						return li;
+					})
+				: [el('li', 'rounded-lg bg-crema-oscuro p-4 text-center text-sm text-tinta-suave', q ? 'Nadie con ese nombre.' : 'Nadie en este grupo.')]),
 		);
 	}
 	filtro.addEventListener('input', filtrar);
@@ -368,7 +449,7 @@ const campo =
 			});
 			ficha.close();
 			avisar(actual ? 'Invitado guardado' : 'Invitado añadido');
-			caducar('resumen');
+			caducar('inicio');
 			await pintarInvitados();
 		} catch (e) {
 			errorEnFicha(e);
@@ -383,13 +464,13 @@ const campo =
 		const puntos = Number(campoFicha('puntos').value);
 		const motivo = campoFicha('motivo').value.trim();
 		if (!puntos || !motivo) return errorEnFicha(new Error('datos'));
-		if (!confirm(`¿${puntos > 0 ? 'Sumar' : 'Quitar'} ${Math.abs(puntos)} puntos a ${actual.nombre}?`)) return;
+		if (!confirm(`¿${puntos > 0 ? 'Sumar' : 'Quitar'} ${Math.abs(puntos)} LP a ${actual.nombre}?`)) return;
 		boton.disabled = true;
 		try {
 			const r = await admin.ajustarPuntos(actual.id, puntos, motivo);
 			ficha.close();
-			avisar(`${actual.nombre} tiene ahora ${r.puntos} puntos`);
-			caducar('resumen');
+			avisar(`${actual.nombre} tiene ahora ${r.puntos} LP`);
+			caducar('inicio');
 			await pintarInvitados();
 		} catch (e) {
 			errorEnFicha(e);
@@ -422,7 +503,7 @@ const campo =
 			await admin.nuevoMovil(actual.id);
 			ficha.close();
 			avisar(`${actual.nombre} ya se puede registrar otra vez`);
-			caducar('resumen');
+			caducar('inicio');
 			await pintarInvitados();
 		} catch (e) {
 			errorEnFicha(e);
@@ -439,12 +520,14 @@ const campo =
 		const codigo = String(new FormData(form).get('codigo') ?? '');
 		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
 			resultadoCodigo.hidden = true;
-			const c = await admin.buscarCodigo(codigo);
-			const titulo = el('p', 'font-bold text-granate', c.premio);
-			const quien = el('p', 'text-sm', `${c.nombre}${c.apodo ? ` («${c.apodo}»)` : ''} · ${c.codigo}`);
+			const c = await admin.buscarCodigo(codigo.trim().toUpperCase());
+			// Tarjeta grande: de quién es y qué premio, en verde si se puede entregar y en rojo si ya se entregó
+			resultadoCodigo.className = `mt-4 rounded-xl border-4 p-4 text-center ${c.entregado ? 'border-granate bg-granate/10' : 'border-green-700 bg-green-50'}`;
+			const titulo = el('p', 'rotulo text-2xl text-granate', c.premio);
+			const quien = el('p', 'mt-1 text-lg font-bold', `${c.nombre}${c.apodo ? ` «${c.apodo}»` : ''}`);
 			const pie = c.entregado
-				? el('p', 'mt-2 text-sm font-bold text-tinta-suave', `Ya entregado${c.entregadoEn ? ` el ${new Date(c.entregadoEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`)
-				: el('button', 'mt-3 w-full rounded-sm bg-granate px-4 py-2.5 text-sm font-black uppercase tracking-wider text-amarillo', 'Marcar como entregado');
+				? el('p', 'mt-3 rounded bg-granate px-3 py-2 text-sm font-black uppercase tracking-wider text-amarillo', `Ya entregado${c.entregadoEn ? ` el ${new Date(c.entregadoEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}` : ''} · no lo des otra vez`)
+				: el('button', 'mt-4 w-full rounded-lg bg-green-700 px-4 py-4 text-lg font-black uppercase tracking-wider text-white active:bg-green-800', '✓ Entregar');
 			if (pie instanceof HTMLButtonElement) {
 				pie.type = 'button';
 				pie.addEventListener('click', () =>
@@ -452,7 +535,7 @@ const campo =
 						await admin.entregarPremio(c.codigo);
 						resultadoCodigo.hidden = true;
 						form.reset();
-						caducar('resumen', 'premios');
+						caducar('inicio', 'premios');
 						await pintarPremios();
 						cargadas.add('premios');
 						return `Entregado: ${c.premio} a ${c.nombre}`;
@@ -535,7 +618,7 @@ const campo =
 				penalizacionDiablo: Number(campoAjuste('penalizacionDiablo').value),
 				cierreLiga: new Date(campoAjuste('cierreLiga').value).toISOString(),
 			});
-			caducar('resumen');
+			caducar('inicio');
 			return 'Ajustes guardados';
 		});
 	});
@@ -565,6 +648,7 @@ const campo =
 						const borrar = el('button', 'ml-1 size-7 rounded text-lg leading-none text-granate disabled:opacity-30', '×');
 						borrar.type = 'button';
 						borrar.setAttribute('aria-label', `Borrar ${w.palabra}`);
+						borrar.disabled = !!w.dia; // las que ya han salido no se pueden borrar
 						borrar.addEventListener('click', () =>
 							accion(borrar, async () => {
 								await admin.borrarWordle(w.id);
@@ -601,7 +685,7 @@ const campo =
 		}
 		try {
 			await pintarResumen();
-			cargadas.add('resumen');
+			cargadas.add('inicio');
 			estado.hidden = true;
 			$('[data-admin-panel]').hidden = false;
 		} catch (e) {
@@ -616,3 +700,21 @@ const campo =
 	}
 	void arrancar();
 </script>
+
+<style>
+	/* Pestaña activa de la barra de abajo: el icono con fondo */
+	[data-pestana][aria-pressed='true'] [data-icono] {
+		background: var(--color-amarillo-claro);
+	}
+	/* Aviso flotante: verde si ha ido bien, granate si no */
+	[data-aviso] {
+		border-color: #15803d;
+		background: #f0fdf4;
+		color: #166534;
+	}
+	[data-aviso].aviso-mal {
+		border-color: var(--color-granate);
+		background: #fdf0f1;
+		color: var(--color-granate);
+	}
+</style>
