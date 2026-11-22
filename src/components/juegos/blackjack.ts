@@ -12,14 +12,14 @@ import { conSigno, crearBanca, crearCrupier, crearFichas, crearMesa, el, esperar
 import type { Contexto, Resultado } from './partida';
 
 export const instrucciones =
-	'Elige cuántos puntos apuestas y reparte. Acércate a 21 sin pasarte y por encima de la banca. Puedes pedir carta, plantarte o doblar. El blackjack paga 3 a 2 y la banca se planta con 17.';
+	'Elige cuántos LP apuestas y reparte. Acércate a 21 sin pasarte y por encima de la banca. Puedes pedir carta, plantarte o doblar. El blackjack paga 3 a 2 y la banca se planta con 17.';
 
 const ROJOS = new Set(['♥', '♦']);
 
 const PAUSA_CARTA = 650;
 
 const MENSAJES_ERROR: Record<string, string> = {
-	'sin-puntos': 'No tienes tantos puntos para apostar',
+	'sin-puntos': 'No tienes tantos LP para apostar',
 	'liga-cerrada': 'La liga ya ha terminado: el casino está cerrado',
 	'sin-equipo': 'Elige equipo antes de apostar',
 };
@@ -117,7 +117,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			const sinPuntos = fichas.valor() === 0;
 			if (sinPuntos) {
 				mensaje.className = 'ruleta-resultado';
-				mensaje.textContent = 'No te quedan puntos para apostar';
+				mensaje.textContent = 'No te quedan LP para apostar';
 			}
 			acciones.replaceChildren(...(sinPuntos ? [] : [boton(manos ? 'Repartir otra vez' : 'Repartir', () => void repartir())]), boton('Salir del casino', terminar, true));
 		}

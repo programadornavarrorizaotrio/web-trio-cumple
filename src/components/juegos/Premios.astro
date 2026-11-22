@@ -46,7 +46,7 @@ const camino = [...rangos].reverse(); // Challenger arriba
 								{r.nombre}
 								<span class="rd-aqui">Estás aquí</span>
 							</p>
-							<p class="rd-desde">{r.desde === 0 ? 'Punto de partida' : `Desde ${r.desde} puntos`}</p>
+							<p class="rd-desde">{r.desde === 0 ? 'Punto de partida' : `Desde ${r.desde} LP`}</p>
 							<div data-rd-premio />
 						</div>
 					</li>
@@ -459,10 +459,10 @@ const camino = [...rangos].reverse(); // Challenger arriba
 			const nodoActual = hoja.querySelector<HTMLImageElement>(`[data-rango="${actual}"] img`)!;
 			q<HTMLImageElement>('[data-rd-yo-emblema]').src = nodoActual.src;
 			q('[data-rd-yo-rango]').textContent = estado.rango.nombre;
-			q('[data-rd-yo-puntos]').textContent = `${estado.puntos} pts · puesto ${estado.puesto}`;
+			q('[data-rd-yo-puntos]').textContent = `${estado.puntos} LP · puesto ${estado.puesto}`;
 			q('[data-rd-yo-relleno]').style.width = `${pct}%`;
 			q('[data-rd-yo-relleno]').parentElement!.setAttribute('aria-valuenow', String(pct));
-			q('[data-rd-yo-falta]').textContent = sig ? `${sig.desde - estado.puntos} puntos para ${sig.nombre}` : '¡Eres Challenger!';
+			q('[data-rd-yo-falta]').textContent = sig ? `${sig.desde - estado.puntos} LP para ${sig.nombre}` : '¡Eres Challenger!';
 		}
 
 		// El camino: lo alcanzado brilla; el tramo que sale de tu rango se llena según lo que llevas hacia el siguiente.
