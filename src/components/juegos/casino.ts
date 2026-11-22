@@ -24,7 +24,7 @@ export function crearBanca(): Banca {
 	const caja = el('p', 'casino-banca');
 	const valor = el('strong', '', '0');
 	const nota = el('small', '');
-	caja.append('Tus puntos: ', valor, nota);
+	caja.append('Tus LP: ', valor, nota);
 	return {
 		el: caja,
 		poner(puntos, prueba) {
@@ -78,7 +78,7 @@ export interface Fichas {
 export function crearFichas(): Fichas {
 	const caja = el('div', 'casino-fichas');
 	caja.setAttribute('role', 'group');
-	caja.setAttribute('aria-label', 'Puntos a apostar');
+	caja.setAttribute('aria-label', 'LP a apostar');
 	let elegida = 0;
 	let banca = 0;
 	let bloqueadas = false;

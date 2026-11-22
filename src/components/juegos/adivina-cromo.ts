@@ -6,7 +6,7 @@ import type { Cromo } from '../cromos/tipos';
 import { MINIJUEGOS } from './liga';
 import type { Resultado } from './partida';
 
-export const instrucciones = 'Una foto muy difuminada se va aclarando: elige quién es. Cuanto antes aciertes, más puntos.';
+export const instrucciones = 'Una foto muy difuminada se va aclarando: elige quién es. Cuanto antes aciertes, más LP.';
 
 const MAX_RONDAS = 5;
 const MAX = MINIJUEGOS.find((m) => m.id === 'adivina-cromo')!.maxPuntos;
@@ -40,7 +40,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 	return new Promise((resolve) => {
 		const hud = el('div', 'adv-hud');
 		const marcadorRonda = el('span', '');
-		const marcadorPuntos = el('span', '', '0 pts');
+		const marcadorPuntos = el('span', '', '0 LP');
 		hud.append(marcadorRonda, marcadorPuntos);
 
 		const marco = el('div', 'adv-marco');
@@ -73,7 +73,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 			const cromo = rondas[ronda];
 			contestada = false;
 			marcadorRonda.textContent = `Ronda ${ronda + 1}/${rondas.length}`;
-			marcadorPuntos.textContent = `${Math.round(puntos)} pts`;
+			marcadorPuntos.textContent = `${Math.round(puntos)} LP`;
 			quien.textContent = '';
 			quien.hidden = true;
 
@@ -107,7 +107,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal): Promise<Resu
 				puntos += porRonda * (1 - (1 - SUELO) * f);
 				aciertos++;
 			}
-			marcadorPuntos.textContent = `${Math.round(puntos)} pts`;
+			marcadorPuntos.textContent = `${Math.round(puntos)} LP`;
 			navigator.vibrate?.(acierto ? 25 : [60, 40, 60]);
 
 			// Se enseña la foto entera y se marca la buena y, si falló, la elegida
