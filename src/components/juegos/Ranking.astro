@@ -1,5 +1,6 @@
 ---
 import Hoja from '../common/Hoja.astro';
+import Cromo from '../cromos/Cromo.astro';
 import { EQUIPOS, RANGOS } from './liga';
 import { emblema, icono, splash } from './lol/imagenes';
 
@@ -64,6 +65,14 @@ const campeones = Object.fromEntries(
 	<img data-ascenso-emblema class="rk-ascenso-emblema" src={emblemas[RANGOS[0].nombre].grande} alt="" width="240" height="240" />
 	<h3 id="rk-ascenso-titulo" data-ascenso-rango class="rk-ascenso-rango"></h3>
 	<p class="rk-ascenso-texto">Has subido de rango</p>
+	<!-- Si el rango trae carta nueva, asoma de un sobre: el resto se descubre en Participantes -->
+	<a data-ascenso-carta hidden href="/participantes" class="rk-carta">
+		<div class="rk-carta-hueco" aria-hidden="true"><Cromo /></div>
+		<div class="rk-carta-sobre">
+			<span data-ascenso-carta-titulo class="rk-carta-titulo"></span>
+			<span class="rk-carta-abrir">Abrir mi sobre →</span>
+		</div>
+	</a>
 	<form method="dialog">
 		<button class="rk-cerrar rk-continuar">Continuar</button>
 	</form>
@@ -480,6 +489,64 @@ const campeones = Object.fromEntries(
 		margin-top: 2rem;
 		animation: rk-aparecer 0.5s 1.4s both;
 	}
+	/* Carta nueva asomando del sobre */
+	.rk-ascenso.con-carta .rk-ascenso-emblema {
+		width: 9rem;
+		height: 9rem;
+	}
+	.rk-ascenso.con-carta .rk-continuar {
+		margin-top: 1.25rem;
+	}
+	.rk-carta {
+		display: block;
+		width: 13.5rem;
+		margin-top: 1.25rem;
+		color: #3b2a12;
+		text-decoration: none;
+		filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.5));
+		animation: rk-aparecer 0.5s 1.3s both;
+	}
+	.rk-carta[hidden] {
+		display: none;
+	}
+	.rk-carta-hueco {
+		height: 9rem;
+		padding-inline: 1rem;
+		overflow: hidden;
+	}
+	.rk-carta-hueco .cromo {
+		animation: rk-carta-sube 1.1s cubic-bezier(0.2, 0.9, 0.3, 1.1) 1.7s both;
+	}
+	.rk-carta-sobre {
+		position: relative;
+		display: grid;
+		place-content: center;
+		gap: 0.15rem;
+		height: 4.75rem;
+		border-radius: 0.25rem 0.25rem 0.5rem 0.5rem;
+		border-top: 3px solid #b8945f;
+		background:
+			linear-gradient(to top right, transparent 49.4%, rgb(0 0 0 / 0.12) 50%, transparent 50.6%) left / 50% 100% no-repeat,
+			linear-gradient(to top left, transparent 49.4%, rgb(0 0 0 / 0.12) 50%, transparent 50.6%) right / 50% 100% no-repeat,
+			linear-gradient(#e2c596, #cfac78);
+		text-align: center;
+	}
+	.rk-carta-titulo {
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+	.rk-carta-abrir {
+		font-size: 1rem;
+		font-weight: 900;
+	}
+	.rk-carta:active .rk-carta-sobre {
+		filter: brightness(0.95);
+	}
+	@keyframes rk-carta-sube {
+		from {
+			transform: translateY(100%);
+		}
+	}
 	@keyframes rk-emblema {
 		from {
 			opacity: 0;
@@ -514,6 +581,11 @@ const campeones = Object.fromEntries(
 
 <script>
 	import { estadoLiga, ranking, marcadorEquipos, equipoPorId, RANGOS, type FilaRanking, type Rango } from './liga';
+	import { ACABADOS, misAcabados } from '../cromos/acabados';
+	import { obtenerAlbum } from '../cromos/datos';
+	import { pintarCromo } from '../cromos/pintar';
+	import type { Cromo } from '../cromos/tipos';
+	import { invitadoActual } from '../registro/sesion';
 
 	const hoja = document.getElementById('hoja-ranking') as HTMLDialogElement;
 	const ascenso = document.getElementById('rk-ascenso') as HTMLDialogElement;
@@ -644,7 +716,22 @@ const campeones = Object.fromEntries(
 	// ───── Ascenso: al subir de rango, la pantalla del emblema nuevo ─────
 	const CLAVE_VISTO = 'trio-rango-visto';
 
-	function mostrarAscenso(rango: Rango) {
+	/** Su carta con la versión que acaba de desbloquear por rango (la más alta), o null si no hay ninguna sin estrenar */
+	async function cartaNueva(): Promise<Cromo | null> {
+		const acabado = (await misAcabados()).flatMap((c) => (!c.oculto && c.rango && c.nuevo ? [c.id] : [])).at(-1);
+		if (!acabado) return null;
+		const yo = (await obtenerAlbum()).cromos.find((c) => c.id === invitadoActual()?.id);
+		return yo ? { ...yo, acabado } : null;
+	}
+
+	function mostrarAscenso(rango: Rango, carta: Cromo | null) {
+		const sobre = ascenso.querySelector<HTMLElement>('[data-ascenso-carta]')!;
+		sobre.hidden = !carta;
+		ascenso.classList.toggle('con-carta', !!carta);
+		if (carta) {
+			pintarCromo(sobre.querySelector('[data-cromo]')!, carta, undefined, { animar: false });
+			sobre.querySelector('[data-ascenso-carta-titulo]')!.textContent = `Tu carta: ${ACABADOS[carta.acabado!].titulo}`;
+		}
 		ascenso.querySelector<HTMLImageElement>('[data-ascenso-emblema]')!.src = IMG.emblemas[rango.nombre].grande;
 		ascenso.querySelector('[data-ascenso-rango]')!.textContent = rango.nombre;
 		if (ascenso.open) ascenso.close();
@@ -665,7 +752,10 @@ const campeones = Object.fromEntries(
 		} catch {
 			return; // sin almacenamiento no sabemos de dónde vienes
 		}
-		if (visto !== null && actual > visto) mostrarAscenso(estado.rango);
+		if (visto === null || actual <= visto) return;
+		// La carta no puede retrasar el ascenso: si tarda o falla, sale sin ella
+		const tope = new Promise<null>((r) => setTimeout(() => r(null), 2000));
+		mostrarAscenso(estado.rango, await Promise.race([cartaNueva().catch(() => null), tope]));
 	}
 
 	void comprobarAscenso();
