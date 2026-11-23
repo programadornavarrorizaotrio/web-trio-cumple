@@ -184,7 +184,7 @@
 	user-select: none;
 }
 
-/* Oculto hasta la primera vez que pasas o pulsas */
+/* Oculto hasta que la foto se ve en pantalla (data-visto) */
 .rv-foco {
 	visibility: hidden;
 	opacity: 0;
@@ -305,6 +305,14 @@
 	from {
 		width: 0;
 		padding-inline: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-visto] .rv-foco,
+	[data-visto] .rv-foco::before,
+	[data-visto] .rv-foco-texto {
+		animation: none;
 	}
 }
 
