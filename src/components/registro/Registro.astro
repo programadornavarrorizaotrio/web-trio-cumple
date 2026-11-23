@@ -1,7 +1,7 @@
 ---
 // Registro como una oficina del SEPE: coges número (siempre el A-067), esperas tu turno y en la ventanilla 3 la
 // rana funcionaria te pide la cita previa (el PIN de la fiesta), te busca en el sistema y te hace rellenar el
-// Modelo 067 (apodo y frase del cromo). Sello de APROBADO, te entrega tu cromo y abres el sobre del álbum.
+// Modelo 067 (apodo y frase del cromo). Sello de APROBADO, te entrega tu cromo y abres la oferta de empleo (el sobre del álbum).
 // Quien ya se registró en otro dispositivo pide un "duplicado" con el código que saca desde allí.
 // La asistencia NO se pregunta aquí: se confirma después en la portada.
 import { getImage } from 'astro:assets';
@@ -239,7 +239,7 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		<div data-tramite="entrega" hidden class="entrega">
 			<p class="papel-cab">Resolución favorable</p>
 			<div data-carnet class="carnet"><Cromo /></div>
-			<button type="button" data-abrir-sobre class="boton boton-sobre">Abrir el sobre del álbum</button>
+			<button type="button" data-abrir-sobre class="boton boton-sobre">Abrir la oferta de empleo</button>
 			<a data-entrar href="/" hidden class="boton">Entrar a la fiesta</a>
 			<p class="nota centrada">Y no olvide confirmar si viene en la portada: hay plazo.</p>
 		</div>
@@ -1472,8 +1472,8 @@ const hoy = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short' }).format(new 
 		void habla(
 			'saluda',
 			fotoPerdida
-				? 'Aquí tiene su carnet. La foto se nos ha traspapelado, lo siento: hable con los organizadores. Y tenga un sobre de cromos.'
-				: 'Aquí tiene su carnet. Y un sobre de cromos, que hoy estamos generosos.',
+				? 'Aquí tiene su carnet. La foto se nos ha traspapelado, lo siento: hable con los organizadores. Y tenga, una oferta de empleo.'
+				: 'Aquí tiene su carnet. Y una oferta de empleo, que hoy estamos generosos.',
 		);
 		vibrar(30);
 

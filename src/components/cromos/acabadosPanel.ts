@@ -138,12 +138,11 @@ export async function montarAcabados({ yo, probar, puesto }: Opciones) {
 		await abrirSobre(
 			nuevos.map((acabado) => ({ ...yo, acabado })),
 			{
-				titulo: nuevos.length === 1 ? 'Su carta ha cambiado' : 'Sus cartas han cambiado',
-				destinatario: yo.nombre,
+				variante: 'cartas',
 				final: {
 					titulo: nuevos.length === 1 ? ACABADOS[nuevos[0]].titulo : 'Versiones nuevas',
 					unidad: nuevos.length === 1 ? 'versión nueva' : 'versiones nuevas',
-					texto: `Ya ${nuevos.length === 1 ? 'la' : 'las'} tiene en «Tu carta». Elija con cuál quiere salir en el álbum.`,
+					texto: `Ya ${nuevos.length === 1 ? 'la' : 'las'} tienes en «Tu carta». Elige con cuál quieres salir en el álbum.`,
 				},
 			},
 		);
