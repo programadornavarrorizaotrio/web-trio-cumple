@@ -123,6 +123,8 @@ wordle_palabras       id, palabra (MAYÚSCULAS, 4–8 letras), dia (cuando sale)
 wordle_partidas       (invitado_id, dia) PK, intentos text[], terminada   ← el Wordle lo corrige el servidor
 rana_mensajes         id, texto, pose, destino (todos | sin-responder | vienen | equipo | invitado), equipo, invitado_id, autor_id, caduca_en, callado_en
 rana_vistos           (mensaje_id, invitado_id) PK, visto_en   ← quién ha cerrado cada mensaje
+acabados              id PK, orden, rango (null: easter egg)   ← versiones especiales del cromo
+invitado_acabados     (invitado_id, acabado) PK, conseguido_en, visto_en, puesto
 admin_registro        admin_id, accion, detalle, created_at   ← qué ha tocado cada admin
 ```
 
@@ -155,6 +157,7 @@ Para los tres cumpleañeros (`invitados.rol = 'admin'`). **No hay cuentas aparte
 - `admin_ajustar_puntos` (movimiento `ajuste` con motivo), `admin_ajustes` / `admin_guardar_ajustes` (tiradas, diablillo, cierre de la liga), `admin_cambiar_pin`.
 - `admin_wordle`, `admin_anadir_wordle`, `admin_borrar_wordle`: las palabras del Wordle del trío.
 - `admin_rana`, `admin_rana_decir`, `admin_rana_callar`: lo que dice la rana en la web (a todos, a un grupo o a una persona). Los invitados lo reciben con `escuchar_rana` y lo cierran con `rana_vista`.
+- `admin_acabados`, `admin_guardar_palabra`: la palabra secreta del álbum y cuántos tienen cada acabado.
 
 Pensado para crecer (aún sin hacer):
 - **Más cosas en el admin**: lo editable (minijuegos, rangos, premios, `ajustes`) ya vive en tablas; cada pantalla nueva es una RPC `admin_*` más.
