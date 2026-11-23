@@ -2,6 +2,7 @@
 // Admin de los organizadores. Todo se pinta en el navegador con las RPC `admin_*` (ver datos.ts): la página
 // en sí no tiene datos, y sin sesión de admin el servidor no devuelve nada.
 import Button from '../common/Button.astro';
+import AdminRana from './AdminRana.astro';
 
 // Barra de abajo. El Wordle, los ajustes y el PIN van dentro de Liga: se tocan poco.
 const pestanas = [
@@ -9,6 +10,7 @@ const pestanas = [
 	{ id: 'invitados', texto: 'Invitados', icono: '👥' },
 	{ id: 'premios', texto: 'Premios', icono: '🎁' },
 	{ id: 'liga', texto: 'Liga', icono: '🏆' },
+	{ id: 'rana', texto: 'Rana', icono: '🐸' },
 ];
 const campo =
 	'mt-1 block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-3 py-2.5 text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none';
@@ -111,6 +113,9 @@ const campo =
 			</form>
 		</section>
 
+		<!-- Rana: lo que dice la mascota en la web -->
+		<AdminRana />
+
 		<!-- Barra de abajo, al alcance del pulgar -->
 		<nav class="fixed inset-x-0 bottom-0 z-20 border-t-2 border-granate/15 bg-crema/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Secciones del admin">
 			<div class="mx-auto flex max-w-xl">
@@ -156,6 +161,10 @@ const campo =
 			<label class="flex items-center gap-2 text-sm font-bold"><input name="visible" type="checkbox" class="size-5 accent-granate" /> Visible (si no, no sale al buscar ni en el álbum)</label>
 			<Button type="submit" class="w-full">Guardar</Button>
 
+			<div data-ficha-rana class="border-t-2 border-granate/15 pt-4">
+				<Button type="button" data-decirle variante="borde" class="w-full text-granate">🐸 Que la rana le diga algo</Button>
+			</div>
+
 			<div data-ficha-puntos class="space-y-2 border-t-2 border-granate/15 pt-4">
 				<h4 class="font-bold text-granate">Corregir sus LP</h4>
 				<p class="text-xs text-tinta-suave">Solo para arreglar errores (se le cortó una partida, algo salió mal). Queda apuntado quién lo hizo y por qué.</p>
@@ -188,6 +197,7 @@ const campo =
 	import { usaBD } from '../../lib/rpc';
 	import { equipoPorId } from '../juegos/liga';
 	import { urlFoto } from '../cromos/datos';
+	import { montarRana } from './rana';
 	import type { InvitadoAdmin } from './datos';
 
 	const raiz = document.querySelector<HTMLElement>('[data-admin]')!;
@@ -224,6 +234,8 @@ const campo =
 		}
 	}
 
+	const rana = montarRana(raiz, { avisar, accion });
+
 	// ── Pestañas ──
 	const cargadas = new Set<string>();
 	const cargar: Record<string, () => Promise<void>> = {
@@ -233,11 +245,14 @@ const campo =
 		liga: async () => {
 			await Promise.all([pintarAjustes(), pintarWordle()]);
 		},
+		rana: () => rana.pintar(),
 	};
 	async function abrir(id: string) {
 		raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pestana === id)));
 		raiz.querySelectorAll<HTMLElement>('[data-vista]').forEach((v) => (v.hidden = v.dataset.vista !== id));
-		window.scrollTo({ top: raiz.getBoundingClientRect().top + window.scrollY - 16 });
+		// Al principio de la sección, sin que la tape la cabecera fija
+		const cabecera = document.querySelector<HTMLElement>('header[data-barra]')?.offsetHeight ?? 0;
+		window.scrollTo({ top: raiz.getBoundingClientRect().top + window.scrollY - cabecera - 16 });
 		if (!cargadas.has(id)) {
 			cargadas.add(id);
 			await cargar[id]().catch((e) => avisar(admin.mensajeError(e), false));
@@ -420,6 +435,7 @@ const campo =
 		campoFicha('visible').checked = i?.visible ?? true;
 		$('[data-ficha-puntos]').hidden = !i?.equipo;
 		$('[data-ficha-movil]').hidden = !i?.registrado;
+		$('[data-ficha-rana]').hidden = !i?.registrado || !i.visible;
 		const foto = urlFoto(i?.foto ?? null);
 		$('[data-ficha-foto]').hidden = !foto;
 		if (foto) $<HTMLImageElement>('[data-ficha-foto-img]').src = foto;
@@ -433,6 +449,13 @@ const campo =
 
 	$('[data-nuevo-invitado]').addEventListener('click', () => abrirFicha(null));
 	$('[data-cerrar-ficha]').addEventListener('click', () => ficha.close());
+	$('[data-decirle]').addEventListener('click', async () => {
+		if (!actual) return;
+		const { id } = actual;
+		ficha.close();
+		await abrir('rana');
+		rana.para(id);
+	});
 
 	formFicha.addEventListener('submit', async (ev) => {
 		ev.preventDefault();
