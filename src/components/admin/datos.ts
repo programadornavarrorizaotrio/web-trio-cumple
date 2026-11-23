@@ -2,6 +2,7 @@
 // fallan con 'sesion' si no hay clave válida y con 'no-admin' si el invitado no es organizador.
 import { rpcConClave } from '../../lib/rpc';
 import type { EquipoId } from '../juegos/liga';
+import type { AcabadoId } from '../cromos/acabados';
 
 export interface Resumen {
 	invitados: number;
@@ -141,6 +142,17 @@ export const ranaDecir = (m: { texto: string; pose: string; destino: DestinoRana
 	rpcConClave<number>('admin_rana_decir', { texto: m.texto, pose: m.pose, destino: m.destino, equipo: m.equipo, invitado_id: m.invitadoId, horas: m.horas });
 /** Error: 'no-existe'. */
 export const ranaCallar = (mensaje: number) => rpcConClave<void>('admin_rana_callar', { mensaje });
+
+// ── Acabados del cromo (supabase/migrations/…_acabados.sql) ──
+export interface AcabadosAdmin {
+	/** La palabra secreta del álbum, o null si no hay */
+	palabra: string | null;
+	conseguidos: { id: AcabadoId; cuantos: number }[];
+}
+
+export const acabados = () => rpcConClave<AcabadosAdmin>('admin_acabados');
+/** Vacía: quita el easter egg. Error: 'datos' (de 3 a 40 letras). */
+export const guardarPalabra = (palabra: string) => rpcConClave<void>('admin_guardar_palabra', { palabra });
 
 /** Mensaje para los errores de las RPC */
 export function mensajeError(e: unknown): string {

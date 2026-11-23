@@ -1,0 +1,200 @@
+---
+// "Tu carta": los acabados que ha conseguido el invitado, los que le faltan y cuál luce en el álbum.
+// Lo rellena `montarAcabados()` de acabadosPanel.ts; sin cromo propio se queda escondido.
+import { getImage } from 'astro:assets';
+import Button from '../common/Button.astro';
+import { POSES } from '../rana/poses';
+import './acabados.css';
+import '../rana/rana.css';
+
+// La rana del acertijo: sus poses según lo cerca que esté lo que escriben
+const poses = Object.fromEntries(
+	await Promise.all(POSES.map(async (p) => [p.id, (await getImage({ src: p.imagen, width: 280, format: 'webp' })).src])),
+);
+---
+
+<section data-acabados hidden class="acabados" aria-labelledby="acabados-titulo">
+	<div class="acabados-cabecera">
+		<h3 id="acabados-titulo">Tu carta</h3>
+		<p data-ac-cuenta class="acabados-cuenta"></p>
+	</div>
+	<ul data-ac-lista class="acabados-lista" aria-label="Versiones de tu carta"></ul>
+	<div class="acabados-detalle">
+		<p data-ac-texto class="acabados-texto"></p>
+		<Button type="button" variante="granate" data-ac-llevar class="shrink-0">Llevar esta</Button>
+	</div>
+	<p data-ac-aviso role="status" class="acabados-aviso"></p>
+
+	<!-- La palabra secreta: la rana insinúa que hay algo y reacciona a cada intento -->
+	<form data-ac-palabra data-poses={JSON.stringify(poses)} hidden class="acabados-palabra">
+		<div data-ac-rana class="rana-habla acabados-rana">
+			<div class="rana-cuerpo"><img data-ac-rana-img src={poses.saluda} alt="" /></div>
+			<div class="rana-bocadillo"><p data-ac-rana-texto role="status"></p></div>
+		</div>
+		<div class="acabados-decir">
+			<input name="palabra" required maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Dile algo a la rana…" aria-label="Dile algo a la rana" />
+			<button type="submit">Decir</button>
+		</div>
+	</form>
+</section>
+
+<style is:global>
+	.acabados {
+		margin-bottom: 1.5rem;
+		border-radius: 1rem;
+		background: #fff;
+		padding: 0.9rem 1rem 1rem;
+		box-shadow:
+			0 0 0 3px #1d1d1f,
+			0 6px 18px rgb(0 0 0 / 0.12);
+	}
+	.acabados[hidden] {
+		display: none;
+	}
+	.acabados-cabecera {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+	.acabados-cabecera h3 {
+		font-size: 1.2rem;
+		color: #e3350d;
+	}
+	.acabados-cuenta {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #6b6b6b;
+	}
+	.acabados-lista {
+		display: flex;
+		gap: 0.6rem;
+		margin: 0.6rem -1rem 0;
+		padding: 0.3rem 1rem 0.5rem;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.acabados-lista li {
+		flex: none;
+		width: 4.6rem;
+		text-align: center;
+	}
+	.muestra-boton {
+		display: block;
+		width: 100%;
+		border-radius: 0.5rem;
+	}
+	.muestra-boton[aria-pressed='true'] .muestra {
+		outline: 3px solid #e3350d;
+		outline-offset: 2px;
+	}
+	/* Carta en pequeño: marco, foto y la capa del acabado */
+	.muestra {
+		container-type: inline-size;
+		position: relative;
+		display: block;
+		aspect-ratio: 63 / 88;
+		overflow: hidden;
+		border-radius: 0.4rem;
+		background: linear-gradient(160deg, #eceef0, #cfd2d6 45%, #e4e6e9 70%, #c6c9cd);
+		padding: 6%;
+		box-shadow: 0 2px 6px rgb(0 0 0 / 0.18);
+	}
+	.muestra-foto {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		border-radius: 0.2rem;
+		background: #f8cf3f;
+		object-fit: cover;
+		font-size: 1.6rem;
+		font-weight: 900;
+		color: #1d1d1f;
+	}
+	.muestra-falta {
+		display: grid;
+		place-items: center;
+		background: #dcdcdc;
+		color: #9a9a9a;
+		font-size: 1.5rem;
+		font-weight: 900;
+	}
+	.muestra-nombre {
+		display: block;
+		margin-top: 0.35rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		line-height: 1.15;
+		color: #1d1d1f;
+	}
+	.muestra-nombre.falta-nombre {
+		color: #8a8a8a;
+	}
+	.acabados-detalle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-height: 3rem;
+	}
+	.acabados-texto {
+		font-size: 0.85rem;
+		line-height: 1.3;
+		color: #444;
+	}
+	.acabados-detalle [data-ac-llevar][hidden] {
+		display: none;
+	}
+	.acabados-palabra {
+		margin-top: 0.75rem;
+		border-top: 1.5px dashed #ddd;
+	}
+	.acabados-palabra[hidden] {
+		display: none;
+	}
+	/* La misma rana que se asoma en la web, pero detrás de su cuadro de texto */
+	.acabados-rana.rana-habla {
+		position: relative;
+		left: auto;
+		z-index: auto;
+		max-width: 100%;
+		min-height: 6.9rem;
+		padding-top: 0.75rem;
+	}
+	.acabados-rana .rana-bocadillo {
+		margin-bottom: 1.9rem;
+		max-width: calc(100% - 7.6rem);
+	}
+	.acabados-decir {
+		position: relative;
+		display: flex;
+		gap: 0.5rem;
+	}
+	.acabados-palabra input {
+		min-width: 0;
+		flex: 1;
+		border-radius: 9999px;
+		background: #f3f3f3;
+		padding: 0.6rem 1rem;
+		font-size: 1rem;
+	}
+	.acabados-palabra button {
+		border-radius: 9999px;
+		background: #1d1d1f;
+		padding: 0.6rem 1.1rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #fff;
+	}
+	.acabados-palabra button:disabled {
+		opacity: 0.5;
+	}
+	.acabados-aviso {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #e3350d;
+	}
+	.acabados-aviso:not(:empty) {
+		margin-top: 0.5rem;
+	}
+</style>

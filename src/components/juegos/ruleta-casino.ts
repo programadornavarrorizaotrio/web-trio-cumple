@@ -223,7 +223,6 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			neto += ganancia;
 			giros++;
 			if (acierta) aciertos++;
-			document.dispatchEvent(new CustomEvent('liga:cambio'));
 
 			// La rueda gira hasta dejar la casilla ganadora bajo la marca de arriba, siempre hacia delante
 			const paso = 360 / ORDEN.length;
@@ -232,13 +231,15 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			void lienzo.offsetWidth;
 			lienzo.style.transform = `rotate(${rotacion}deg)`;
 			await esperar(DURACION_GIRO);
+			// Se avisa al parar (si no, el ascenso saldría antes que el número) y, si ha ganado, con un momento para celebrarlo
+			window.setTimeout(() => document.dispatchEvent(new CustomEvent('liga:cambio')), acierta ? 1800 : 0);
 			if (terminada) return;
 
 			const color = colorDe(ganador);
 			let texto = `Salió el ${ganador} ${color}. `;
 			let clase = 'mal';
 			if (ganador === BANCA && acierta) {
-				texto = `¡Salió el 67 y apostaste al 67! ${conSigno(ganancia)}`;
+				texto = `¡Salió el 67 y apostaste al 67! ${conSigno(ganancia)}${inicial.prueba ? '' : '. Mira tu carta en Participantes'}`;
 				clase = 'bien';
 				crupier.decir('¡Six seven, six seven!');
 			} else if (ganador === BANCA) {
