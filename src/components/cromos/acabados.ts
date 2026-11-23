@@ -49,16 +49,23 @@ export const acabadoDemo = () => leerDemo().puesto;
 
 // ── RPC ──
 
+export interface MisAcabados {
+	casillas: CasillaAcabado[];
+	/** Si los organizadores han puesto palabra secreta */
+	hayPalabra: boolean;
+}
+
 /** RPC `mis_acabados(clave)`: la colección, en orden */
-export async function misAcabados(): Promise<CasillaAcabado[]> {
-	if (usaBD()) return (await rpcConClave<CasillaAcabado[] | null>('mis_acabados')) ?? [];
+export async function misAcabados(): Promise<MisAcabados> {
+	if (usaBD()) return rpcConClave<MisAcabados>('mis_acabados');
 	const d = leerDemo();
-	return (Object.keys(ACABADOS) as AcabadoId[]).map((id) => {
+	const casillas = (Object.keys(ACABADOS) as AcabadoId[]).map((id): CasillaAcabado => {
 		const conseguido = d.conseguidos.includes(id);
 		const rango = RANGO_DEMO[id];
 		if (!rango && !conseguido) return { oculto: true };
 		return { id, rango: rango?.[0] ?? null, desde: rango?.[1] ?? null, conseguido, nuevo: conseguido && !d.vistos.includes(id), puesto: d.puesto === id };
 	});
+	return { casillas, hayPalabra: true };
 }
 
 /** RPC `acabados_vistos(clave)`: ya ha abierto el sobre de los nuevos */
@@ -79,9 +86,10 @@ export async function tocarNenufar(): Promise<boolean> {
 	return usaBD() ? rpcConClave<boolean>('tocar_nenufar') : darDemo('empapado');
 }
 
-/** RPC `decir_palabra(clave, palabra)`: easter egg de la palabra secreta. Devuelve si es la primera vez. Error: 'palabra'. */
+/** RPC `decir_palabra(clave, palabra)`: easter egg de la palabra secreta. Devuelve si es la primera vez.
+ *  Errores: 'palabra' (no es) y 'casi' (se parece mucho). */
 export async function decirPalabra(palabra: string): Promise<boolean> {
 	if (usaBD()) return rpcConClave<boolean>('decir_palabra', { palabra });
-	if (palabra.trim().toLowerCase() !== 'croac') throw new Error('palabra');
+	if (palabra.trim().toLowerCase() !== 'croac') throw new Error(palabra.trim().toLowerCase().startsWith('cro') ? 'casi' : 'palabra');
 	return darDemo('fantasma');
 }

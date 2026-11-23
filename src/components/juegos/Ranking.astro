@@ -718,7 +718,7 @@ const campeones = Object.fromEntries(
 
 	/** Su carta con la versión que acaba de desbloquear por rango (la más alta), o null si no hay ninguna sin estrenar */
 	async function cartaNueva(): Promise<Cromo | null> {
-		const acabado = (await misAcabados()).flatMap((c) => (!c.oculto && c.rango && c.nuevo ? [c.id] : [])).at(-1);
+		const acabado = (await misAcabados()).casillas.flatMap((c) => (!c.oculto && c.rango && c.nuevo ? [c.id] : [])).at(-1);
 		if (!acabado) return null;
 		const yo = (await obtenerAlbum()).cromos.find((c) => c.id === invitadoActual()?.id);
 		return yo ? { ...yo, acabado } : null;

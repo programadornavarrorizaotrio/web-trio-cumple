@@ -13,7 +13,15 @@ interface Opciones {
 	puesto: (acabado: AcabadoId | null) => void;
 }
 
-const ESPERA_CARTEL = 'Un momento…';
+/** Lo que dice la rana del acertijo. Nunca repite la misma dos veces seguidas. */
+const RANA = {
+	inicio: ['Está claro que aquí hay algo oculto…'],
+	no: ['Sigue pensando.', 'Frío, frío.', 'Eso no es.', 'Ni de lejos.', '¿Me estás vacilando?', 'Pregúntale a otro, anda.', 'Está claro que hay algo oculto. Pero no es eso.', 'Dale otra vuelta.'],
+	casi: ['Casi…', '¡Uy! Casi, casi.', 'Caliente, caliente.', 'Por un pelo de rana.'],
+	si: ['¡Shhh! Ahora lo sabemos los dos.'],
+	repetida: ['Eso ya me lo habías dicho.'],
+	fallo: ['Se me ha ido la conexión a la charca. Prueba otra vez.'],
+};
 
 export async function montarAcabados({ yo, probar, puesto }: Opciones) {
 	const raiz = document.querySelector<HTMLElement>('[data-acabados]');
@@ -24,9 +32,12 @@ export async function montarAcabados({ yo, probar, puesto }: Opciones) {
 	const llevar = $<HTMLButtonElement>('[data-ac-llevar]');
 	const aviso = $('[data-ac-aviso]');
 
+	const formPalabra = $<HTMLFormElement>('[data-ac-palabra]');
+
 	let casillas: CasillaAcabado[];
+	let hayPalabra: boolean;
 	try {
-		casillas = await misAcabados();
+		({ casillas, hayPalabra } = await misAcabados());
 	} catch {
 		return; // sin conexión: el álbum funciona igual, sin este apartado
 	}
@@ -107,6 +118,8 @@ export async function montarAcabados({ yo, probar, puesto }: Opciones) {
 		llevar.disabled = true;
 		llevar.textContent = 'La llevas';
 		raiz!.hidden = false;
+		// El acertijo, solo si hay palabra puesta y aún no la ha adivinado
+		formPalabra.hidden = !hayPalabra || casillas.some((c) => !c.oculto && c.id === 'fantasma' && c.conseguido);
 		// Que se vea en la fila la que lleva puesta
 		if (llevada) lista.scrollLeft = llevada.offsetLeft - lista.offsetLeft - (lista.clientWidth - llevada.offsetWidth) / 2;
 	}
@@ -150,24 +163,46 @@ export async function montarAcabados({ yo, probar, puesto }: Opciones) {
 		}
 	});
 
-	$<HTMLFormElement>('[data-ac-palabra]').addEventListener('submit', async (ev) => {
+	// ── La rana del acertijo ──
+	const rana = $('[data-ac-rana]');
+	const ranaImg = $<HTMLImageElement>('[data-ac-rana-img]');
+	const ranaTexto = $('[data-ac-rana-texto]');
+	const poses = JSON.parse(formPalabra.dataset.poses!) as Record<string, string>;
+	let ultima = '';
+	function ranaDice(que: keyof typeof RANA, pose: string) {
+		const opciones = RANA[que].filter((f) => f !== ultima || RANA[que].length === 1);
+		ultima = opciones[Math.floor(Math.random() * opciones.length)];
+		ranaTexto.textContent = ultima;
+		rana.dataset.pose = pose;
+		ranaImg.src = poses[pose];
+		rana.classList.remove('salta');
+		void rana.offsetWidth;
+		rana.classList.add('salta');
+	}
+	ranaTexto.textContent = RANA.inicio[0];
+
+	const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+	formPalabra.addEventListener('submit', async (ev) => {
 		ev.preventDefault();
-		const form = ev.currentTarget as HTMLFormElement;
-		const boton = form.querySelector('button')!;
-		const palabra = String(new FormData(form).get('palabra') ?? '');
+		const boton = formPalabra.querySelector('button')!;
+		const campo = formPalabra.elements.namedItem('palabra') as HTMLInputElement;
 		boton.disabled = true;
-		aviso.textContent = ESPERA_CARTEL;
 		try {
-			const primera = await decirPalabra(palabra);
-			form.reset();
-			aviso.textContent = primera ? '' : 'Eso ya lo habías dicho.';
-			if (primera) {
-				casillas = await misAcabados();
-				pintar();
-				await estrenar();
-			}
+			const primera = await decirPalabra(campo.value);
+			campo.value = '';
+			if (!primera) return ranaDice('repetida', 'saluda');
+			ranaDice('si', 'fiesta');
+			navigator.vibrate?.([30, 40, 80]);
+			await esperar(1600); // que se lea antes de que salga el sobre
+			({ casillas, hayPalabra } = await misAcabados());
+			pintar();
+			await estrenar();
 		} catch (e) {
-			aviso.textContent = e instanceof Error && e.message === 'palabra' ? 'No te entiendo.' : 'No se ha podido enviar. Comprueba la conexión.';
+			const codigo = e instanceof Error ? e.message : '';
+			if (codigo === 'casi') ranaDice('casi', 'prisa');
+			else if (codigo === 'palabra') ranaDice('no', 'triste');
+			else return ranaDice('fallo', 'triste');
+			campo.select();
 		} finally {
 			boton.disabled = false;
 		}
