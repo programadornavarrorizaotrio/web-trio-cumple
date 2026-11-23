@@ -115,6 +115,33 @@ export const anadirWordle = (palabras: string[]) => rpcConClave<number>('admin_a
 /** Errores: 'no-existe', 'ya-salio'. */
 export const borrarWordle = (id: number) => rpcConClave<void>('admin_borrar_wordle', { id });
 
+// ── La rana habla (supabase/migrations/…_rana.sql) ──
+export type DestinoRana = 'todos' | 'sin-responder' | 'vienen' | 'equipo' | 'invitado';
+
+export interface MensajeRanaAdmin {
+	id: number;
+	texto: string;
+	pose: string;
+	destino: DestinoRana;
+	equipo: EquipoId | null;
+	/** Nombre de la persona a la que va, si es para una sola */
+	invitado: string | null;
+	autor: string | null;
+	activo: boolean;
+	/** Fecha ISO, o null si dura hasta que se calle */
+	caducaEn: string | null;
+	creadoEn: string;
+	/** Cuántos le han dado a "Vale" */
+	vistos: number;
+}
+
+export const ranaMensajes = () => rpcConClave<MensajeRanaAdmin[]>('admin_rana');
+/** Errores: 'datos', 'no-existe'. */
+export const ranaDecir = (m: { texto: string; pose: string; destino: DestinoRana; equipo: EquipoId | null; invitadoId: string | null; horas: number | null }) =>
+	rpcConClave<number>('admin_rana_decir', { texto: m.texto, pose: m.pose, destino: m.destino, equipo: m.equipo, invitado_id: m.invitadoId, horas: m.horas });
+/** Error: 'no-existe'. */
+export const ranaCallar = (mensaje: number) => rpcConClave<void>('admin_rana_callar', { mensaje });
+
 /** Mensaje para los errores de las RPC */
 export function mensajeError(e: unknown): string {
 	const codigo = e instanceof Error ? e.message : '';

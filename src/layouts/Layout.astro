@@ -7,6 +7,7 @@ import '@fontsource/silkscreen/700.css';
 import '../styles/global.css';
 import Nav from '../components/common/Nav.astro';
 import OtroDispositivo from '../components/registro/OtroDispositivo.astro';
+import RanaHabla from '../components/rana/RanaHabla.astro';
 import { CLAVE_SESION, EXIGIR_REGISTRO } from '../components/registro/sesion';
 import { getImage } from 'astro:assets';
 import { imagenTema, temaDeRuta, TEMAS, type Tema } from './temas';
@@ -98,6 +99,9 @@ const base = Astro.site ?? Astro.url;
 			</p>
 			<div class="mt-2 text-xs"><OtroDispositivo /></div>
 		</footer>
+
+		<!-- Los mensajes de los organizadores, en boca de la rana (en el registro y el admin, no) -->
+		{!publica && tema !== 'admin' && <RanaHabla />}
 
 		<script>
 			import { leerSesion, borrarSesion, EXIGIR_REGISTRO } from '../components/registro/sesion';

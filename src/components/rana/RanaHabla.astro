@@ -1,0 +1,117 @@
+---
+// La rana se asoma por la esquina de abajo y dice lo que los organizadores han escrito en /admin. Sale en todas
+// las páginas salvo el registro y el admin (lo pone el Layout). Al darle a "Vale" pasa al siguiente mensaje o se
+// zambulle, y ese ya no le sale más a esa persona. Solo con base de datos y sesión real.
+import { getImage } from 'astro:assets';
+import { POSES } from './poses';
+import './rana.css';
+
+const imagenes = Object.fromEntries(
+	await Promise.all(POSES.map(async (p) => [p.id, (await getImage({ src: p.imagen, width: 280, format: 'webp' })).src])),
+);
+---
+
+<aside data-rana-habla data-poses={JSON.stringify(imagenes)} hidden class="rana-habla" aria-label="Mensaje de la rana">
+	<div class="rana-cuerpo" data-rana-cuerpo><img data-rana-img alt="" /></div>
+	<div class="rana-bocadillo">
+		<p data-rana-texto role="status"></p>
+		<div class="rana-pie">
+			<span class="rana-cuenta" data-rana-cuenta></span>
+			<button type="button" class="rana-vale" data-rana-vale>Vale</button>
+		</div>
+	</div>
+</aside>
+
+<script>
+	import { usaBD } from '../../lib/rpc';
+	import { escucharRana, ranaVista, type MensajeRana } from './datos';
+
+	const rana = document.querySelector<HTMLElement>('[data-rana-habla]');
+
+	/** Con cada página se pregunta si hay algo nuevo; si no había nada, no se repite hasta pasado un minuto */
+	const CLAVE_NADA = 'trio-rana-nada';
+	const ESPERA = 60_000;
+	const preguntadoHacePoco = () => {
+		try {
+			return Date.now() - Number(sessionStorage.getItem(CLAVE_NADA) ?? 0) < ESPERA;
+		} catch {
+			return false;
+		}
+	};
+	const apuntarNada = () => {
+		try {
+			sessionStorage.setItem(CLAVE_NADA, String(Date.now()));
+		} catch {
+			// sin almacenamiento: se preguntará en la próxima página
+		}
+	};
+
+	if (rana && usaBD() && !preguntadoHacePoco()) {
+		const $ = <T extends HTMLElement = HTMLElement>(sel: string) => rana.querySelector<T>(sel)!;
+		const poses = JSON.parse(rana.dataset.poses!) as Record<string, string>;
+		const img = $<HTMLImageElement>('[data-rana-img]');
+		const texto = $('[data-rana-texto]');
+		const cuenta = $('[data-rana-cuenta]');
+		const vale = $<HTMLButtonElement>('[data-rana-vale]');
+		let cola: MensajeRana[] = [];
+		let i = 0;
+
+		function decir() {
+			const m = cola[i];
+			rana!.dataset.pose = m.pose;
+			img.src = poses[m.pose] ?? poses.saluda;
+			cuenta.textContent = cola.length > 1 ? `${i + 1} de ${cola.length}` : '';
+			vale.textContent = i + 1 < cola.length ? 'Siguiente' : 'Vale';
+			// Las palabras van saliendo una a una (el hueco ya está reservado, así el bocadillo no crece)
+			const retraso = i === 0 ? 0.7 : 0.1;
+			texto.replaceChildren(
+				...m.texto.split(/(\s+)/).map((trozo, k) => {
+					const s = document.createElement('span');
+					s.textContent = trozo;
+					s.className = 'rana-palabra';
+					s.style.animationDelay = `${retraso + k * 0.035}s`;
+					return s;
+				}),
+			);
+		}
+
+		/** Reinicia una animación de CSS puesta con una clase */
+		function animar(clase: string) {
+			rana!.classList.remove(clase);
+			void rana!.offsetWidth;
+			rana!.classList.add(clase);
+		}
+
+		vale.addEventListener('click', () => {
+			// Si no se pudo apuntar, le volverá a salir en la próxima visita
+			void ranaVista(cola[i].id).catch(() => {});
+			i++;
+			if (i < cola.length) {
+				rana.classList.remove('asoma');
+				decir();
+				return animar('salta');
+			}
+			apuntarNada();
+			rana.classList.remove('asoma', 'salta');
+			rana.classList.add('se-va');
+			window.setTimeout(() => (rana.hidden = true), 400);
+		});
+		// Al tocarla da un respingo
+		$('[data-rana-cuerpo]').addEventListener('click', () => {
+			rana.classList.remove('asoma');
+			animar('salta');
+		});
+
+		window.setTimeout(async () => {
+			try {
+				cola = (await escucharRana()) ?? [];
+			} catch {
+				return; // sin conexión, sesión caducada… la rana se calla
+			}
+			if (!cola.length) return apuntarNada();
+			rana.hidden = false;
+			decir();
+			animar('asoma');
+		}, 1200);
+	}
+</script>
