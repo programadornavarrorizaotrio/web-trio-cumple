@@ -1,6 +1,7 @@
 // Lanzador común de minijuegos: pantalla de instrucciones → partida → resultado.
 // Cada minijuego es un módulo que exporta `instrucciones` y `jugar`; aquí solo se registra cuál es cuál.
 import { registrarPartida, modoPrueba, type MinijuegoId, type Rango, MINIJUEGOS } from './liga';
+import { RANGOS_CON_ACABADO } from '../cromos/acabados';
 
 export interface Resultado {
 	/** Puntos de la partida (la liga los acota al máximo del minijuego) */
@@ -55,6 +56,9 @@ function desenlace(info: (typeof MINIJUEGOS)[number], resultado: Resultado, punt
 	return puntos >= info.maxPuntos / 2 ? 'victoria' : 'derrota';
 }
 
+/** Al llegar a ciertos rangos, el cromo estrena acabado (ver cromos/acabados.ts) */
+const textoSubida = (rango: string) => `¡Subes a ${rango}!${RANGOS_CON_ACABADO.includes(rango) ? ' Mira tu carta en Participantes.' : ''}`;
+
 export const hayJuego =(id: string): id is MinijuegoId => id in modulos;
 
 export async function lanzar(id: MinijuegoId) {
@@ -91,12 +95,12 @@ export async function lanzar(id: MinijuegoId) {
 		// Los de casino ya han ido apuntando cada apuesta en la liga: aquí solo se resume la sesión
 		if (resultado.registrada) {
 			puntos = resultado.registrada.puntos;
-			if (resultado.registrada.subeDeRango) subida = `¡Subes a ${resultado.registrada.rango.nombre}!`;
+			if (resultado.registrada.subeDeRango) subida = textoSubida(resultado.registrada.rango.nombre);
 		} else if (!info.libre) {
 			try {
 				const r = await registrarPartida(id, resultado.puntos);
 				puntos = r.puntos;
-				if (r.subeDeRango) subida = `¡Subes a ${r.rango.nombre}!`;
+				if (r.subeDeRango) subida = textoSubida(r.rango.nombre);
 			} catch (e) {
 				// El tablero ya comprueba antes de abrir si toca; si aun así falla, no suma y se avisa
 				const codigo = e instanceof Error ? e.message : '';

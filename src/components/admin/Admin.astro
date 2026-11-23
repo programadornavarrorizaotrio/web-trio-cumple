@@ -89,6 +89,17 @@ const campo =
 				<Button type="submit" class="w-full">Añadir palabras</Button>
 			</form>
 
+			<form data-form-palabra class="space-y-3 rounded-xl bg-white p-4 shadow-chapa">
+				<h3 class="text-lg text-granate">Palabra secreta</h3>
+				<p class="text-sm text-tinta-suave">Quien la escriba en Participantes, en «¿Tienes algo que decir?», se lleva la carta Fantasma. Da igual mayúsculas y tildes. Dad pistas con la rana.</p>
+				<input name="palabra" maxlength="40" autocomplete="off" placeholder="Sin palabra: no se puede conseguir" class={campo} />
+				<Button type="submit" class="w-full">Guardar palabra</Button>
+				<div>
+					<p class="text-sm font-bold">Quién tiene cada carta</p>
+					<ul data-lista-acabados class="mt-1.5 flex flex-wrap gap-1.5"></ul>
+				</div>
+			</form>
+
 			<form data-form-ajustes class="space-y-4 rounded-xl bg-white p-4 shadow-chapa">
 				<h3 class="text-lg text-granate">Ajustes de la liga</h3>
 				<div class="grid grid-cols-2 gap-3">
@@ -198,6 +209,7 @@ const campo =
 	import { equipoPorId } from '../juegos/liga';
 	import { urlFoto } from '../cromos/datos';
 	import { montarRana } from './rana';
+	import { ACABADOS } from '../cromos/acabados';
 	import type { InvitadoAdmin } from './datos';
 
 	const raiz = document.querySelector<HTMLElement>('[data-admin]')!;
@@ -243,7 +255,7 @@ const campo =
 		invitados: pintarInvitados,
 		premios: pintarPremios,
 		liga: async () => {
-			await Promise.all([pintarAjustes(), pintarWordle()]);
+			await Promise.all([pintarAjustes(), pintarWordle(), pintarAcabados()]);
 		},
 		rana: () => rana.pintar(),
 	};
@@ -655,6 +667,25 @@ const campo =
 			await admin.cambiarPin(pin);
 			form.reset();
 			return 'PIN cambiado. Acuérdate de ponerlo en el mensaje de invitación.';
+		});
+	});
+
+	// ── Acabados y palabra secreta ──
+	const formPalabra = $<HTMLFormElement>('[data-form-palabra]');
+	const campoPalabra = formPalabra.elements.namedItem('palabra') as HTMLInputElement;
+	async function pintarAcabados() {
+		const a = await admin.acabados();
+		campoPalabra.value = a.palabra ?? '';
+		$('[data-lista-acabados]').replaceChildren(
+			...a.conseguidos.map((c) => el('li', 'rounded-full bg-crema-oscuro px-3 py-1 text-xs font-bold', `${ACABADOS[c.id].titulo}: ${c.cuantos}`)),
+		);
+	}
+	formPalabra.addEventListener('submit', (ev) => {
+		ev.preventDefault();
+		void accion((ev as SubmitEvent).submitter as HTMLButtonElement, async () => {
+			const palabra = campoPalabra.value.trim();
+			await admin.guardarPalabra(palabra);
+			return palabra ? 'Palabra guardada' : 'Palabra quitada';
 		});
 	});
 

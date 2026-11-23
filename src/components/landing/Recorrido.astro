@@ -947,9 +947,21 @@ const luciernagas = [
 			});
 		}
 
-		async function caer(r: (typeof rondas)[number]) {
+		/** Lo que dice al volver. La tercera vez, si es la primera que lo consigue, se lleva el acabado empapado */
+		async function despedida(r: (typeof rondas)[number], tercera: boolean) {
+			if (!tercera) return r.vuelta;
+			try {
+				if (await tocarNenufar()) return 'Vale, tú ganas. Te he dejado un sobre en Participantes. Y ahora, aire.';
+			} catch {
+				// sin conexión o sin registrar: se queda en la broma
+			}
+			return r.vuelta;
+		}
+
+		async function caer(r: (typeof rondas)[number], tercera: boolean) {
 			ocupado = true;
 			decir(r.caida);
+			const vuelta = despedida(r, tercera);
 			hoja.animate(
 				[
 					{ transform: 'rotate(0)' },
@@ -975,7 +987,7 @@ const luciernagas = [
 			await espera(1500);
 
 			// Vuelve a subirse al nenúfar de un salto, empapada
-			decir(r.vuelta, 3800);
+			decir(await vuelta, tercera ? 6500 : 3800);
 			ranaEl.animate(
 				[
 					{ transform: 'translate(0, 5rem) scale(0.8)', opacity: 0, offset: 0 },
@@ -1006,8 +1018,9 @@ const luciernagas = [
 			}
 			toques = 0;
 			ronda++;
-			if (quieto) decir(r.vuelta, 3500);
-			else caer(r);
+			const tercera = ronda === rondas.length;
+			if (quieto) void despedida(r, tercera).then((t) => decir(t, tercera ? 6500 : 3500));
+			else caer(r, tercera);
 		}
 		huevo.addEventListener('click', tocar);
 		huevo.addEventListener('keydown', (e) => {
@@ -1022,6 +1035,7 @@ const luciernagas = [
 	// móvil; cuando B4 lo conecte a la BD no hay que cambiar nada aquí). Se actualiza al cargar y cada
 	// vez que la sección 3 vuelve a verse (por si ha confirmado más abajo, en la sección de asistencia).
 	import { obtenerAsistencia } from '../rsvp/datos';
+	import { tocarNenufar } from '../cromos/acabados';
 
 	const f2 = rec?.querySelector<HTMLElement>('.f2');
 	async function actualizarBocadillo() {

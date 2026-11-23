@@ -68,6 +68,8 @@ export function pintarCromo(raiz: HTMLElement, c: Cromo, total?: number, { anima
 	campo(raiz, 'resistencia').replaceChildren(...(tipo.resiste ? [energia(tipo.resiste), '−30'] : []));
 	campo(raiz, 'retirada').replaceChildren(...Array.from({ length: carta.retirada }, () => energia('incoloro')));
 	raiz.classList.toggle('es-especial', !!c.especial);
+	if (c.acabado) raiz.dataset.acabado = c.acabado;
+	else delete raiz.dataset.acabado;
 
 	// El nombre baja de tamaño si no cabe (después de pintar el "ex" y los PS)
 	ajustarTexto(campo(raiz, 'apodo'), 6.2, 3);

@@ -238,7 +238,7 @@ export async function jugar(area: HTMLElement, senal: AbortSignal, ctx: Contexto
 			let texto = `Salió el ${ganador} ${color}. `;
 			let clase = 'mal';
 			if (ganador === BANCA && acierta) {
-				texto = `¡Salió el 67 y apostaste al 67! ${conSigno(ganancia)}`;
+				texto = `¡Salió el 67 y apostaste al 67! ${conSigno(ganancia)}${inicial.prueba ? '' : '. Mira tu carta en Participantes'}`;
 				clase = 'bien';
 				crupier.decir('¡Six seven, six seven!');
 			} else if (ganador === BANCA) {
