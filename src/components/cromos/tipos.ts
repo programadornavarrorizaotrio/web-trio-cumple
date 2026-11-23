@@ -1,5 +1,7 @@
 // Contrato con la base de datos (tareas de B). Si cambia algo aquí, avisar a quien lleve `supabase/`.
 
+import type { AcabadoId } from './acabados';
+
 // Un cromo activado: invitado ya registrado.
 export interface Cromo {
 	id: string;
@@ -12,6 +14,8 @@ export interface Cromo {
 	foto: string | null;
 	/** Los tres cumpleañeros: cromo brillante */
 	especial?: boolean;
+	/** Versión especial que ha elegido lucir (ver acabados.ts) */
+	acabado?: AcabadoId | null;
 }
 
 // Lo que devuelve la RPC `listar_cromos(clave)`: solo los registrados, más el total de invitados

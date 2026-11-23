@@ -260,6 +260,35 @@
 	--shadow-chapa-amarillo: none;
 }
 
+/* Admin (/admin): solo lo usan los organizadores, así que nada de tema de fiesta. Una app sobria: fondo gris
+ * claro, azul marino de color principal, verde azulado para lo que se pulsa, letra del sistema y sombras suaves. */
+:root[data-tema='admin'] {
+	--color-granate: #1f2a44;
+	--color-granate-oscuro: #141c30;
+	--color-granate-claro: #e6eaf2;
+	--color-amarillo: #14b8a6;
+	--color-amarillo-claro: #ccf3ee;
+	--color-amarillo-oscuro: #0f8f81;
+	--color-crema: #f3f5f9;
+	--color-crema-oscuro: #e5e9f0;
+	--color-tinta: #111827;
+	--color-tinta-suave: #667085;
+	--color-extra: #14b8a6;
+	--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-rotulo: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--rotulo-ancho: 100%;
+	--rotulo-peso: 800;
+	--rotulo-mayusculas: none;
+	--rotulo-espaciado: -0.02em;
+	--rotulo-interlineado: 1.05;
+	--shadow-chapa: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.1);
+	--shadow-chapa-amarillo: 0 1px 2px rgb(16 24 40 / 0.08), 0 2px 6px rgb(20 184 166 / 0.25);
+}
+:root[data-tema='admin'] header[data-barra] {
+	background: var(--color-granate);
+	box-shadow: none;
+}
+
 /* Tuenti: cabecera plana con degradado suave y borde inferior oscuro */
 :root[data-tema='tuenti'] header[data-barra] {
 	background: linear-gradient(#4a7db4, #3b6ea5);

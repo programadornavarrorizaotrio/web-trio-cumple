@@ -1,3 +1,6 @@
+import { obtenerAlbum } from '../cromos/datos';
+import { rpcConClave, usaBD } from '../../lib/rpc';
+
 // Propuestas de canciones para quien no usa Spotify.
 // Contrato con la base de datos (tarea B7): RPC `proponer_cancion(clave, titulo, artista)`
 // y `mis_canciones(clave)`. El límite lo tiene que comprobar también la RPC.
@@ -32,29 +35,10 @@ export async function proponerCancion(cancion: Cancion): Promise<Cancion[]> {
 	return nueva;
 }
 
-// Grupos de invitados del cartel de /canciones: de dónde viene cada uno.
-export const GRUPOS = [
-	['cartageneros', 'Cartageneros'],
-	['bioquimicos', 'Bioquímicos'],
-	['popurri', 'Popurrí'],
-	['totaneros', 'Totaneros'],
-] as const;
-
-export type Grupo = (typeof GRUPOS)[number][0];
-
-export interface Confirmado {
-	nombre: string;
-	grupo: Grupo;
-}
-
-// Invitados que han confirmado asistencia, con su grupo (nombre corto, como en un cartel).
-// TODO(B): RPC `listar_confirmados(clave)` que devuelva solo los que han dicho que vienen, con su grupo.
-export async function obtenerConfirmados(): Promise<Confirmado[]> {
-	const demo: Record<Grupo, string[]> = {
-		cartageneros: ['Marta', 'Álvaro', 'Sergio', 'Dani', 'Rubén', 'Javi', 'Hugo'],
-		bioquimicos: ['Lucía', 'Paula', 'Irene', 'Andrea', 'Laura', 'Elena'],
-		popurri: ['Pablo', 'Marcos', 'Nerea', 'Carmen', 'Alba', 'Íñigo', 'Claudia', 'Víctor'],
-		totaneros: ['Sara', 'Adri', 'Noelia', 'Mario', 'Cris', 'Toni'],
-	};
-	return GRUPOS.flatMap(([grupo]) => demo[grupo].map((nombre) => ({ nombre, grupo })));
+// Nombres de los invitados que han confirmado que vienen, sin los tres cumpleañeros (salen con su foto).
+// RPC `listar_confirmados(clave)`. Sin registro en la base de datos, los confirmados del álbum de ejemplo.
+export async function obtenerConfirmados(): Promise<string[]> {
+	if (usaBD()) return rpcConClave<string[]>('listar_confirmados');
+	const { cromos } = await obtenerAlbum();
+	return cromos.filter((c) => !c.especial).map((c) => c.nombre);
 }

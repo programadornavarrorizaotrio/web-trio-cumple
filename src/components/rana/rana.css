@@ -1,0 +1,175 @@
+/* La rana que se asoma por la esquina con su bocadillo. Se usa en todas las páginas (RanaHabla.astro) y en la
+ * vista previa del admin (AdminRana.astro). Colores propios: se ve igual sea cual sea el tema de la página. */
+.rana-habla {
+	position: fixed;
+	left: max(0.25rem, env(safe-area-inset-left));
+	bottom: 0;
+	z-index: 60;
+	display: flex;
+	align-items: flex-end;
+	max-width: 100vw;
+	/* Solo se tocan la rana y el bocadillo: lo de debajo sigue funcionando */
+	pointer-events: none;
+}
+.rana-habla[hidden] {
+	display: none;
+}
+/* Ventana por la que se asoma: de cintura para abajo queda fuera de la pantalla */
+.rana-cuerpo {
+	flex: none;
+	width: 7rem;
+	height: 6.9rem;
+	overflow: hidden;
+	pointer-events: auto;
+}
+.rana-cuerpo img {
+	display: block;
+	width: 100%;
+	max-width: none;
+	height: auto;
+	filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
+}
+/* El diablillo viene recortado más estrecho que las demás: sin esto sale más grande */
+.rana-habla[data-pose='diablillo'] .rana-cuerpo img {
+	width: 84%;
+	margin-inline: auto;
+}
+.rana-bocadillo {
+	position: relative;
+	margin: 0 0.75rem calc(2.4rem + env(safe-area-inset-bottom)) 0.1rem;
+	width: max-content;
+	max-width: min(16rem, calc(100vw - 8.4rem));
+	border: 2px solid #0a2217;
+	border-radius: 1rem;
+	background: #fbf7e6;
+	color: #12402c;
+	padding: 0.65rem 0.8rem;
+	font-family: 'Archivo Variable', system-ui, sans-serif;
+	font-size: 0.92rem;
+	font-weight: 800;
+	line-height: 1.3;
+	text-align: left;
+	overflow-wrap: anywhere;
+	box-shadow: 0 4px 0 rgb(0 0 0 / 0.25);
+	transform-origin: 0 100%;
+	pointer-events: auto;
+}
+.rana-bocadillo::after {
+	content: '';
+	position: absolute;
+	left: -0.47rem;
+	bottom: 1rem;
+	width: 0.8rem;
+	height: 0.8rem;
+	border-left: 2px solid #0a2217;
+	border-bottom: 2px solid #0a2217;
+	background: #fbf7e6;
+	transform: rotate(45deg);
+}
+.rana-pie {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-top: 0.5rem;
+}
+.rana-cuenta {
+	font-size: 0.72rem;
+	opacity: 0.65;
+}
+.rana-vale {
+	display: inline-flex;
+	align-items: center;
+	margin-left: auto;
+	min-height: 2.5rem;
+	border-radius: 9999px;
+	background: #12402c;
+	color: #c6f26b;
+	padding: 0.35rem 1.1rem;
+	font-size: 0.82rem;
+	font-weight: 900;
+	cursor: pointer;
+}
+.rana-vale:active {
+	transform: scale(0.96);
+}
+.rana-vale:focus-visible {
+	outline: 3px solid #c6f26b;
+	outline-offset: 2px;
+}
+
+/* Entra de un salto, el bocadillo crece y las palabras van saliendo; al terminar se zambulle */
+.rana-habla.asoma .rana-cuerpo img {
+	animation: rana-sube 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.rana-habla.asoma .rana-bocadillo {
+	animation: rana-bocadillo 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.45s both;
+}
+.rana-habla .rana-palabra {
+	animation: rana-palabra 0.2s ease-out both;
+}
+.rana-habla.salta .rana-cuerpo img {
+	animation: rana-salta 0.4s ease-out;
+}
+.rana-habla.se-va .rana-cuerpo img {
+	animation: rana-baja 0.35s ease-in forwards;
+}
+.rana-habla.se-va .rana-bocadillo {
+	animation: rana-fuera 0.2s ease-in forwards;
+}
+@keyframes rana-sube {
+	from {
+		transform: translateY(105%);
+	}
+}
+@keyframes rana-baja {
+	to {
+		transform: translateY(105%);
+	}
+}
+@keyframes rana-salta {
+	40% {
+		transform: translateY(8%) scale(1.04, 0.94);
+	}
+}
+@keyframes rana-bocadillo {
+	from {
+		opacity: 0;
+		transform: scale(0.4);
+	}
+}
+@keyframes rana-fuera {
+	to {
+		opacity: 0;
+		transform: scale(0.6);
+	}
+}
+@keyframes rana-palabra {
+	from {
+		opacity: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.rana-habla .rana-cuerpo img,
+	.rana-habla .rana-bocadillo,
+	.rana-habla .rana-palabra {
+		animation: none !important;
+	}
+}
+
+/* Vista previa del admin: la misma rana, pero dentro de su recuadro */
+.rana-habla.rana-previa {
+	position: relative;
+	left: auto;
+	z-index: auto;
+	max-width: 100%;
+	min-height: 8.5rem;
+	overflow: hidden;
+	border-radius: 0.75rem;
+	background: linear-gradient(#bfe3f2, #8fd0c0);
+	padding: 0.75rem 0 0 0.25rem;
+}
+.rana-previa .rana-bocadillo {
+	margin-bottom: 1.6rem;
+	max-width: calc(100% - 8.2rem);
+}

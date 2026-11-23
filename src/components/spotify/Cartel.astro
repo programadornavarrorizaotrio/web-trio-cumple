@@ -5,72 +5,114 @@ import fiesta from '../../data/fiesta.json';
 import trio from '../../data/trio.json';
 import './riverland.css';
 
-// Cartel de festival en negro y rosa: título vertical en letra de píxel a todo lo alto, etiquetas de
-// sitio y año, y el line-up repartido en los tres momentos de la noche hasta el final del cartel, con
-// las fotos del trío (en rosa y negro) intercaladas. Los nombres son los de los invitados registrados
-// (llegan en el navegador desde el álbum); los cumpleañeros son cabezas de cartel de la noche.
+// Cartel de festival en negro y rosa: título vertical en letra de píxel a todo lo alto y line-up de la A a la Z
+// con los invitados que han confirmado (llegan en el navegador). No hay secciones: lo que parte la lista son las
+// fotos del trío, en rosa y negro, con sus recuadros de foco. Los cumpleañeros salen solo en foto, sin nombre.
 
 const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
 const foto = (archivo: string) => fotos[`../../assets/trio/${archivo}`].default;
 
-const zona = fiesta.zonaHoraria;
 const inicio = new Date(fiesta.inicio);
-const diaSemana = new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: zona }).format(inicio).toUpperCase();
-const diaMes = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', timeZone: zona }).format(inicio).toUpperCase();
-const anio = new Intl.DateTimeFormat('es-ES', { year: 'numeric', timeZone: zona }).format(inicio);
+const fecha = (opciones: Intl.DateTimeFormatOptions) =>
+	new Intl.DateTimeFormat('es-ES', { timeZone: fiesta.zonaHoraria, ...opciones }).format(inicio);
 
-// Los tres momentos y sus categorías. `data-hueco` es donde el script pone los nombres.
-const franjas = [
-	{ id: 'tarde', titulo: `${diaSemana} ${diaMes} · TARDE`, grupos: [{ tipo: 'En directo', hueco: 'tarde' }] },
-	{
-		id: 'noche',
-		titulo: `${diaSemana} ${diaMes} · NOCHE`,
-		grupos: [
-			{ tipo: 'Cabezas de cartel', hueco: 'cabezas' },
-			{ tipo: 'En directo', hueco: 'noche' },
-		],
-	},
-	{ id: 'after', titulo: 'AFTER · HASTA QUE CIERREN', grupos: [{ tipo: 'DJ sets', hueco: 'after' }] },
-];
+// Recuadros de foco de cada foto: punto de la imagen original (en fracciones) y, si lo lleva, lo que "detecta"
+type Foco = { punto: [number, number]; texto?: string };
+const focos: Record<string, Foco[]> = {
+	pencho: [
+		{ punto: [0.48, 0.5], texto: 'mirada.seductora.detectada' }, // un ojo
+		{ punto: [0.135, 0.635] }, // el otro
+	],
+	fran: [
+		{ punto: [0.565, 0.375], texto: 'nacionalidad.detectada' }, // la cara
+		{ punto: [0.26, 0.79] }, // el brazo
+	],
+	juan: [
+		{ punto: [0.43, 0.5], texto: 'mancha.detectada' }, // la camiseta
+		{ punto: [0.48, 0.14], texto: 'kalimotxo.detectado' }, // el vaso
+	],
+};
+
+// Fracciones x/y de un `object-position` ("top", "50% 62%")
+function fraccionesEncuadre(encuadre: string): [number, number] {
+	if (encuadre === 'top') return [0.5, 0];
+	const [x = 0.5, y = 0.5] = encuadre.split(/\s+/).map((t) => parseFloat(t) / 100);
+	return [x, y];
+}
+
+// Dónde cae el foco dentro de una ventana de proporción ASPECTO (ancho/alto) con object-fit: cover
+const ASPECTO = 4 / 5;
+function posicionFoco(img: ImageMetadata, encuadre: string, [fx, fy]: [number, number]) {
+	const escala = Math.max(ASPECTO / img.width, 1 / img.height);
+	const [w, h] = [img.width * escala, img.height * escala];
+	const [ex, ey] = fraccionesEncuadre(encuadre);
+	const recorta = (v: number) => Math.min(0.88, Math.max(0.12, v));
+	return [recorta(((ASPECTO - w) * ex + fx * w) / ASPECTO), recorta((1 - h) * ey + fy * h)];
+}
+
+// Las fotos en el orden del cartel: Pencho y Fran juntos, y Juan aparte
+const ventanas = trio.map((p) => ({
+	...p,
+	focos: focos[p.slug].map(({ punto, texto }, n) => {
+		const [x, y] = posicionFoco(foto(p.foto), p.encuadre, punto);
+		return {
+			texto: texto && `> ${texto}`,
+			// El texto se escribe hacia dentro de la foto para que no se corte en los bordes
+			clases: [x > 0.5 ? 'texto-izq' : 'texto-der', y > 0.7 ? 'texto-arriba' : 'texto-abajo'],
+			// Los siguientes recuadros aparecen con un poco de retraso
+			estilo: `left: ${(x * 100).toFixed(1)}%; top: ${(y * 100).toFixed(1)}%; --letras: ${(texto?.length ?? 0) + 2}; --retraso: ${n * 0.18}s`,
+		};
+	}),
+}));
+const grupos = [ventanas.slice(0, 2), ventanas.slice(2)];
 ---
 
-<section aria-label="Cartel del festival" class="cartel" data-cartel>
+<section aria-label="Cartel del festival" class="cartel rv" data-cartel>
 	<!-- Título vertical, a todo lo alto -->
 	<p class="titulo" aria-label="Trio Feliz">TRIO FELIZ</p>
 
 	<div class="contenido">
 		<div class="etiquetas">
-			<p class="tag">{fiesta.lugar.nombre.toUpperCase()}</p>
-			<p class="tag">{anio}</p>
+			<p class="tag">{fiesta.lugar.nombre}</p>
+			<p class="tag">{fecha({ year: 'numeric' })}</p>
 		</div>
 		<p class="tag tag-hueco">LINE UP A-Z</p>
 
+		<ul class="nombres" data-nombres aria-label="Invitados confirmados"></ul>
 		{
-			franjas.map((f, i) => (
+			grupos.map((grupo, i) => (
 				<>
-					<div class="franja">
-						<p class="franja-titulo">{f.titulo}</p>
-						{f.grupos.map((g) => (
-							<div class="grupo">
-								<p class="grupo-tipo">{g.tipo}</p>
-								<ul class="grupo-nombres" data-hueco={g.hueco} />
+					<div class="fotos">
+						{grupo.map((p) => (
+							<div class:list={['ventana rv-tarjeta', `ventana-${p.slug}`]} data-ventana>
+								<Image
+									src={foto(p.foto)}
+									alt={`${p.nombre}, cumpleañero`}
+									widths={[320, 640]}
+									sizes="(min-width: 40rem) 20rem, 50vw"
+									style={`object-position: ${p.encuadre}`}
+									draggable="false"
+								/>
+								{p.focos.map((f) => (
+									<span class="rv-foco foco" style={f.estilo} aria-hidden="true">
+										<span class="rv-punto -left-1.5 -top-1.5" />
+										{f.texto && <span class:list={['rv-foco-texto rv-mono', f.clases]}>{f.texto}</span>}
+									</span>
+								))}
 							</div>
 						))}
+						{/* La fecha, en el hueco que deja Fran al ir más abajo */}
+						{i === 0 && (
+							<p class="fecha">
+								{fecha({ weekday: 'long' })}
+								<strong>{fecha({ day: 'numeric' })}</strong>
+								{fecha({ month: 'long' })}
+							</p>
+						)}
+						<span class="nodo" aria-hidden="true" />
+						<span class="barra-ui" aria-hidden="true" />
 					</div>
-
-					{/* Fotos entre una franja y la siguiente */}
-					{i < franjas.length - 1 && (
-						<div class:list={['fotos', `fotos-${i + 1}`]} aria-hidden="true">
-							{(i === 0 ? trio.slice(0, 2) : trio.slice(2)).map((p, k) => (
-								<span class:list={['ventana', `ventana-${i + 1}-${k + 1}`]}>
-									<Image src={foto(p.foto)} alt="" widths={[320, 640]} sizes="60vw" style={`object-position: ${p.encuadre}`} />
-									{i === 0 && k === 1 && <span class="marco-ojo" />}
-								</span>
-							))}
-							<span class="nodo" style={i === 0 ? 'left: 4%; top: 10%' : 'left: 70%; top: 70%'} />
-							<span class="barra-ui" style={i === 0 ? 'left: 58%; top: 76%' : 'left: 6%; top: 18%'} />
-						</div>
-					)}
+					<ul class="nombres" data-nombres aria-label="Más invitados confirmados" />
 				</>
 			))
 		}
@@ -80,8 +122,8 @@ const franjas = [
 
 	<!-- Líneas discontinuas que cruzan el cartel -->
 	<svg class="rutas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-		<path d="M14 2 C 40 20, 95 10, 92 40 S 30 70, 60 98" />
-		<path d="M100 18 C 70 30, 20 35, 18 60 S 60 80, 40 100" />
+		<path d="M14 2 C 40 20, 95 10, 92 40 S 30 70, 60 98"></path>
+		<path d="M100 18 C 70 30, 20 35, 18 60 S 60 80, 40 100"></path>
 	</svg>
 </section>
 
@@ -101,32 +143,47 @@ const franjas = [
 </div>
 
 <script>
-	import { obtenerAlbum } from '../cromos/datos';
+	import { obtenerConfirmados } from './datos';
 
-	// Nombres de los invitados registrados, de la A a la Z: los cumpleañeros son cabezas de cartel
-	// y el resto se reparte a partes iguales entre tarde, noche y after.
 	const cartel = document.querySelector<HTMLElement>('[data-cartel]')!;
-	const hueco = (nombre: string) => cartel.querySelector<HTMLElement>(`[data-hueco="${nombre}"]`)!;
-	const pintar = (nombre: string, lista: string[]) =>
-		hueco(nombre).replaceChildren(
-			...(lista.length ? lista : ['POR ANUNCIAR']).map((n) => {
-				const li = document.createElement('li');
-				li.textContent = n;
-				return li;
+
+	// Los confirmados, de la A a la Z, en tres bloques separados por las fotos. Los bloques van de 4 en 4
+	// para que las filas (2 por fila en móvil, 4 en pantallas anchas) salgan completas.
+	const bloques = [...cartel.querySelectorAll<HTMLElement>('[data-nombres]')];
+	function pintar(nombres: string[]) {
+		const porBloque = Math.ceil(nombres.length / bloques.length / 4) * 4;
+		bloques.forEach((ul, i) => {
+			const lista = nombres.slice(i * porBloque, (i + 1) * porBloque);
+			ul.hidden = lista.length === 0;
+			ul.replaceChildren(
+				...lista.map((n) => {
+					const li = document.createElement('li');
+					li.textContent = n;
+					return li;
+				}),
+			);
+		});
+	}
+
+	obtenerConfirmados()
+		.then((nombres) => pintar(nombres.length ? nombres.sort((a, b) => a.localeCompare(b, 'es')) : ['Por anunciar']))
+		.catch(() => pintar(['No se ha podido cargar el line-up']));
+
+	// Los recuadros aparecen con glitch al llegar a la foto, una sola vez, y ya se quedan
+	const ventanas = [...cartel.querySelectorAll<HTMLElement>('[data-ventana]')];
+	const alVer = new IntersectionObserver(
+		(entradas) =>
+			entradas.forEach(({ isIntersecting, target }) => {
+				if (!isIntersecting) return;
+				target.setAttribute('data-visto', '');
+				alVer.unobserve(target);
 			}),
-		);
-
-	const { cromos } = await obtenerAlbum();
-	const az = (a: string, b: string) => a.localeCompare(b, 'es');
-	const nombre = (n: string) => n.toUpperCase();
-	const cabezas = cromos.filter((c) => c.especial).map((c) => nombre(c.nombre)).sort(az);
-	const resto = cromos.filter((c) => !c.especial).map((c) => nombre(c.nombre)).sort(az);
-	const tercio = Math.ceil(resto.length / 3);
-
-	pintar('cabezas', cabezas);
-	pintar('tarde', resto.slice(0, tercio));
-	pintar('noche', resto.slice(tercio, tercio * 2));
-	pintar('after', resto.slice(tercio * 2));
+		{ threshold: 0.6 },
+	);
+	ventanas.forEach((v) => {
+		alVer.observe(v);
+		v.addEventListener('contextmenu', (ev) => ev.preventDefault());
+	});
 
 	// Descargar el cartel como PNG. La librería se carga solo al pulsar (no va en el bundle).
 	const botonDescarga = document.querySelector<HTMLButtonElement>('[data-descargar]')!;
@@ -136,6 +193,9 @@ const franjas = [
 		botonDescarga.disabled = true;
 		botonDescarga.textContent = 'Preparando…';
 		errorDescarga.hidden = true;
+		// En la imagen salen todos los recuadros, ya quietos
+		ventanas.forEach((v) => v.setAttribute('data-visto', ''));
+		cartel.getAnimations({ subtree: true }).forEach((a) => a.finish());
 		try {
 			const url = 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm';
 			const { toBlob } = await import(/* @vite-ignore */ url);
@@ -213,123 +273,142 @@ const franjas = [
 		box-shadow: inset 0 0 0 2px var(--rosa);
 	}
 
-	.franja {
-		display: grid;
-		gap: 0.4rem;
-	}
-	.franja-titulo {
-		padding: 0.1em 0.4em;
-		background: var(--rosa);
-		color: #0b0b0b;
-		font-size: 0.78rem;
-		font-weight: 700;
-	}
-	.grupo {
-		display: grid;
-		grid-template-columns: 4.1rem 1fr;
-		gap: 0.4rem;
-		align-items: start;
-	}
-	.grupo-tipo {
-		padding-top: 0.15em;
-		font-size: 0.55rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		color: var(--rosa);
-		line-height: 1.2;
-	}
-	.grupo-nombres {
+	.nombres {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.1rem 0.6rem;
-		min-height: 1.2em;
-		font-size: 0.72rem;
+		gap: 0.25rem 0.9rem;
+		font-size: 0.85rem;
 		font-weight: 700;
-		line-height: 1.3;
+		line-height: 1.25;
 		text-transform: uppercase;
 	}
-	.grupo-nombres :global(li) {
+	.nombres[hidden] {
+		display: none;
+	}
+	.nombres :global(li) {
 		position: relative;
 		overflow-wrap: anywhere;
 	}
+	.nombres :global(li:only-child) {
+		grid-column: 1 / -1;
+	}
 	/* Punto separador entre columnas */
-	.grupo-nombres :global(li:nth-child(odd):not(:last-child))::after {
+	.nombres :global(li:nth-child(odd):not(:last-child))::after {
 		content: '·';
 		position: absolute;
-		right: -0.45rem;
-		color: #f5f5f5;
+		top: 0;
+		right: -0.65rem;
 	}
 	@media (min-width: 40rem) {
-		.grupo {
-			grid-template-columns: 6rem 1fr;
-		}
-		.grupo-nombres {
+		.nombres {
 			grid-template-columns: repeat(4, minmax(0, 1fr));
-			font-size: 0.85rem;
+			font-size: 0.95rem;
 		}
-		.grupo-nombres :global(li:nth-child(odd):not(:last-child))::after {
+		.nombres :global(li:nth-child(odd):not(:last-child))::after {
 			content: none;
 		}
-		.grupo-nombres :global(li:not(:nth-child(4n)):not(:last-child))::after {
+		.nombres :global(li:not(:nth-child(4n)):not(:last-child))::after {
 			content: '·';
 			position: absolute;
-			right: -0.45rem;
+			top: 0;
+			right: -0.65rem;
 		}
-		.franja-titulo,
 		.tag {
 			font-size: 0.95rem;
 		}
 	}
 
-	/* --- Fotos intercaladas, en rosa y negro --- */
+	/* --- Fotos entre bloque y bloque de nombres, en rosa y negro --- */
 	.fotos {
 		position: relative;
-		height: 9rem;
+		display: grid;
+		grid-template-columns: repeat(100, minmax(0, 1fr));
+		align-items: start;
+		width: 100%;
+		max-width: 36rem;
+		margin: 0.6rem auto;
 	}
 	.ventana {
-		position: absolute;
-		overflow: hidden;
+		grid-row: 1;
+		position: relative;
+		isolation: isolate;
+		aspect-ratio: 4 / 5; /* ASPECTO */
 		border-radius: 1.1rem;
 		background: var(--rosa);
 	}
 	.ventana :global(img) {
 		width: 100%;
 		height: 100%;
+		border-radius: inherit;
 		object-fit: cover;
 		filter: grayscale(1) contrast(1.5) brightness(1.05);
 		mix-blend-mode: multiply;
 	}
-	.ventana-1-1 {
-		left: 0;
-		top: 0.4rem;
-		width: 52%;
-		height: 7.6rem;
+	/* Pencho arriba a la izquierda y Fran más abajo, pisándole solo la esquina */
+	.ventana-pencho {
+		grid-column: 1 / 58;
 	}
-	.ventana-1-2 {
-		right: 0;
-		top: 1.4rem;
-		width: 52%;
-		height: 7.2rem;
+	/* Su foto es de noche: sin más luz no se le ve la cara */
+	.ventana-pencho :global(img) {
+		filter: grayscale(1) brightness(1.7) contrast(1.35);
+	}
+	.ventana-fran {
+		grid-column: 49 / 101;
+		margin-top: 100%; /* del ancho de su columna */
 		box-shadow: 0 0 0 3px #0b0b0b;
 	}
-	.ventana-2-1 {
-		left: 18%;
-		top: 0.5rem;
-		width: 64%;
-		height: 8rem;
+	.ventana-juan {
+		grid-column: 20 / 82;
 	}
-	.marco-ojo {
+
+	.foco {
 		position: absolute;
-		left: 38%;
-		top: 30%;
-		width: 26%;
-		height: 24%;
-		border: 2px solid #0b0b0b;
-		box-shadow: inset 0 0 0 2px #fff;
+		width: 28%;
+		aspect-ratio: 1;
+		translate: -50% -50%; /* `transform` lo usa el glitch */
+		border: 2px solid #fff;
 	}
+	.foco .rv-foco-texto {
+		position: absolute;
+		margin-block: 0.375rem;
+	}
+	.texto-izq {
+		right: 0;
+	}
+	.texto-der {
+		left: 0;
+	}
+	.texto-arriba {
+		bottom: 100%;
+	}
+	.texto-abajo {
+		top: 100%;
+	}
+
+	.fecha {
+		grid-row: 1;
+		grid-column: 60 / 101;
+		display: grid;
+		justify-items: end;
+		padding-top: 0.2rem;
+		color: var(--rosa);
+		font-size: 0.8rem;
+		font-weight: 700;
+		line-height: 1.2;
+		text-transform: uppercase;
+	}
+	.fecha strong {
+		font-family: 'Silkscreen', 'Space Mono', monospace;
+		font-size: 3.2rem;
+		line-height: 0.95;
+		letter-spacing: -0.06em;
+	}
+
 	.nodo {
 		position: absolute;
 		z-index: 2;
+		left: 3%;
+		bottom: 12%;
 		width: 0.7rem;
 		height: 1rem;
 		border: 2px solid var(--rosa);
@@ -349,6 +428,8 @@ const franjas = [
 	.barra-ui {
 		position: absolute;
 		z-index: 2;
+		left: 14%;
+		bottom: 22%;
 		width: 3.2rem;
 		height: 0.55rem;
 		border: 2px solid #0b0b0b;
@@ -380,16 +461,6 @@ const franjas = [
 	@media (min-width: 64rem) {
 		.cartel {
 			padding-inline: max(1rem, calc((100vw - 72rem) / 2));
-		}
-		.fotos {
-			height: 14rem;
-		}
-		.ventana-1-1,
-		.ventana-1-2 {
-			height: 12rem;
-		}
-		.ventana-2-1 {
-			height: 13rem;
 		}
 	}
 </style>

@@ -7,7 +7,11 @@ interface Opciones {
 	titulo?: string;
 	/** Nombre que sale en la ventanilla del sobre certificado */
 	destinatario?: string;
+	/** Lo que pone al terminar (por defecto, lo del álbum) */
+	final?: { titulo: string; unidad: string; texto: string };
 }
+
+const FINAL_ALBUM = { titulo: 'Expediente completo', unidad: 'cromos', texto: 'Incorporados a su álbum: todos los que vienen a la fiesta.' };
 
 /** Orden de salida: primero el resto, luego el del propio invitado y, al final, el trío (los especiales) */
 function ordenar(cromos: Cromo[], propio?: string) {
@@ -19,7 +23,7 @@ function ordenar(cromos: Cromo[], propio?: string) {
  * Abre el sobre con las cartas dadas (hay que tener <Sobre /> en la página).
  * Se resuelve cuando el invitado cierra el diálogo, termine o no de pasar las cartas.
  */
-export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una notificación', destinatario = 'Invitado/a' }: Opciones = {}): Promise<void> {
+export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una notificación', destinatario = 'Invitado/a', final = FINAL_ALBUM }: Opciones = {}): Promise<void> {
 	const dialogo = document.querySelector<HTMLDialogElement>('[data-sobre-dialogo]')!;
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialogo.querySelector<T>(sel)!;
 	const plantilla = $<HTMLTemplateElement>('[data-plantilla-carta]').content.firstElementChild!;
@@ -46,6 +50,9 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una 
 	$('[data-n-cartas]').textContent = `Contiene ${cartas.length} cromo${cartas.length === 1 ? '' : 's'}`;
 	$('[data-total]').textContent = String(cartas.length);
 	$('[data-final-n]').textContent = String(cartas.length);
+	$('[data-final-titulo]').textContent = final.titulo;
+	$('[data-final-unidad]').textContent = final.unidad;
+	$('[data-final-texto]').textContent = final.texto;
 
 	function mostrarCarta() {
 		const c = cartas[indice];

@@ -1,6 +1,7 @@
 // Base de datos de mentira para trabajar sin Supabase. Imita las RPC de B:
 // `buscar_invitados`, `registrar` y `listar_cromos`. Los registros se guardan en localStorage.
 // TODO(B): borrar este archivo cuando existan las RPC y apuntar datos.ts a src/lib/supabase.ts.
+import { acabadoDemo } from './acabados';
 import trio from '../../data/trio.json';
 import type { Album, Cromo } from './tipos';
 import { invitadoActual } from '../registro/sesion';
@@ -115,7 +116,7 @@ export async function demoAlbum(): Promise<Album> {
 		const datos = i.cromo ?? locales[i.id];
 		if (!datos) return [];
 		const asiste = i.id === yo ? (asistenciaPropia() ?? datos.asiste ?? true) : (datos.asiste ?? true);
-		return asiste ? [aCromo(i, datos)] : [];
+		return asiste ? [{ ...aCromo(i, datos), acabado: i.id === yo ? acabadoDemo() : null }] : [];
 	});
 	return { cromos, total: INVITADOS.length };
 }

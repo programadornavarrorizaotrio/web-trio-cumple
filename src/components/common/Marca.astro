@@ -22,6 +22,7 @@ const color: Record<Tema, string> = {
 	catan: 'text-amarillo',
 	tuenti: 'text-crema',
 	sepe: 'text-crema',
+	admin: 'text-white',
 };
 ---
 
@@ -61,6 +62,17 @@ const color: Record<Tema, string> = {
 						<path d="M13 13.2h6M16 13.2v6.2" stroke="var(--color-granate)" stroke-width="1.8" stroke-linecap="round" />
 					</g>
 				)}
+				{tema === 'admin' && (
+					<g>
+						<!-- Panel: una tarjeta con dos interruptores -->
+						<rect x="3" y="5" width="26" height="22" rx="5" fill="currentColor" />
+						<rect x="8" y="10" width="10" height="4.5" rx="2.25" fill="#14b8a6" />
+						<circle cx="15.8" cy="12.25" r="1.6" fill="#ffffff" />
+						<rect x="8" y="17.5" width="10" height="4.5" rx="2.25" fill="#c5ccd8" />
+						<circle cx="10.2" cy="19.75" r="1.6" fill="#ffffff" />
+						<path d="M21 12.25h4M21 19.75h4" stroke="#1f2a44" stroke-width="1.8" stroke-linecap="round" />
+					</g>
+				)}
 				{tema === 'riverland' && (
 					<g>
 						<!-- Monograma TF: bloques gruesos redondeados. T y F con hueco claro entre los brazos de la F -->
@@ -73,7 +85,7 @@ const color: Record<Tema, string> = {
 				)}
 			</svg>
 			<span class="rotulo text-xl leading-none">
-				{tema === 'riverland' ? 'Trio Feliz Fest' : 'Trio Feliz'}
+				{tema === 'riverland' ? 'Trio Feliz Fest' : tema === 'admin' ? 'Trio Feliz · Admin' : 'Trio Feliz'}
 			</span>
 		</span>
 	)

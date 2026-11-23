@@ -2,6 +2,8 @@
 import { Image } from 'astro:assets';
 import Cromo from './Cromo.astro';
 import FotosDemo from './FotosDemo.astro';
+import Acabados from './Acabados.astro';
+import Sobre from './Sobre.astro';
 import { imagenTema } from '../../layouts/temas';
 import { LISTA_TIPOS, TIPOS } from './tiposCarta';
 import './energias.css';
@@ -90,6 +92,9 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		</div>
 
 		<div class="mt-8 lg:mt-0">
+			<!-- Versiones de la carta propia -->
+			<Acabados />
+
 			<!-- Filtros: conseguidas / faltan y tipo -->
 			<div class="filtros">
 				<div class="segmentos" role="group" aria-label="Mostrar">
@@ -115,6 +120,9 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		</div>
 	</div>
 </div>
+
+<!-- Donde salen las versiones nuevas de la carta propia -->
+<Sobre />
 
 <!-- Carta en grande al tocarla -->
 <dialog data-zoom class="zoom" aria-label="Carta en grande">
@@ -632,6 +640,8 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	import { obtenerAlbum } from './datos';
 	import { ajustarTexto, energia, pintarCromo, pintarFoto } from './pintar';
 	import { datosCarta } from './tiposCarta';
+	import { montarAcabados } from './acabadosPanel';
+	import { invitadoActual } from '../registro/sesion';
 
 	const album = document.querySelector<HTMLElement>('[data-album]')!;
 	const carpeta = album.querySelector<HTMLElement>('[data-carpeta]')!;
@@ -680,6 +690,7 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		boton.dataset.id = c.id;
 		boton.dataset.tipo = carta.tipo;
 		boton.classList.toggle('es-especial', !!c.especial);
+		if (c.acabado) boton.dataset.acabado = c.acabado;
 		li.querySelector<HTMLElement>('.mini-ex')!.hidden = !c.especial;
 		li.dataset.tipo = carta.tipo;
 		boton.setAttribute('aria-label', `${c.apodo} (${c.nombre}), carta ${numero}`);
@@ -731,6 +742,11 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	const inclinar = foco.querySelector<HTMLElement>('[data-inclinar]')!;
 	const reflejo = foco.querySelector<HTMLElement>('[data-reflejo]')!;
 	const quieta = matchMedia('(prefers-reduced-motion: reduce)').matches;
+	/** Por dónde le da la luz a la carta (0–1): lo usan el reflejo y los acabados */
+	function luz(x: number, y: number) {
+		inclinar.style.setProperty('--rx', `${x * 100}%`);
+		inclinar.style.setProperty('--ry', `${y * 100}%`);
+	}
 	function mover(ev: PointerEvent) {
 		if (quieta) return;
 		const r = inclinar.getBoundingClientRect();
@@ -738,8 +754,7 @@ const simbolo = imagenTema('cartas', 'simbolo');
 		const y = (ev.clientY - r.top) / r.height;
 		inclinar.classList.add('moviendo');
 		inclinar.style.transform = `rotateY(${(x - 0.5) * 22}deg) rotateX(${(0.5 - y) * 22}deg)`;
-		reflejo.style.setProperty('--rx', `${x * 100}%`);
-		reflejo.style.setProperty('--ry', `${y * 100}%`);
+		luz(x, y);
 	}
 	function soltar() {
 		inclinar.classList.remove('moviendo');
@@ -749,6 +764,16 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	inclinar.addEventListener('pointerleave', soltar);
 	inclinar.addEventListener('pointerup', soltar);
 	inclinar.addEventListener('pointercancel', soltar);
+
+	// En los móviles que lo dejan sin pedir permiso, la luz sigue también la inclinación del teléfono
+	if (!quieta && 'DeviceOrientationEvent' in window && !('requestPermission' in DeviceOrientationEvent) && matchMedia('(pointer: coarse)').matches) {
+		window.addEventListener('deviceorientation', (ev) => {
+			if (ev.gamma === null || ev.beta === null || inclinar.classList.contains('moviendo')) return;
+			const tope = (n: number) => Math.min(1, Math.max(0, n));
+			inclinar.classList.add('inclinada');
+			luz(tope(0.5 + ev.gamma / 50), tope(0.5 + (ev.beta - 45) / 60));
+		});
+	}
 
 	// Al tocar la carta destacada se abre en grande; se cierra tocando fuera, con ✕ o con Esc
 	const zoom = document.querySelector<HTMLDialogElement>('[data-zoom]')!;
@@ -813,4 +838,26 @@ const simbolo = imagenTema('cartas', 'simbolo');
 	// Empieza siempre por la carta de número más bajo (la nº 1)
 	const inicial = cromos.reduce<(typeof cromos)[number] | undefined>((min, c) => (!min || c.numero < min.numero ? c : min), undefined);
 	if (inicial) seleccionar(inicial.id);
+
+	// "Tu carta": las versiones que ha conseguido y cuál luce
+	const sesion = invitadoActual();
+	const yo = cromos.find((c) => c.id === sesion?.id);
+	if (yo) {
+		void montarAcabados({
+			yo,
+			probar: (acabado) => {
+				if (actual !== yo) seleccionar(yo.id, true);
+				pintarCromo(tarjeta, { ...yo, acabado }, total);
+			},
+			puesto: (acabado) => {
+				yo.acabado = acabado;
+				const mini = carpeta.querySelector<HTMLElement>(`.mini[data-id="${yo.id}"]`);
+				if (mini) {
+					if (acabado) mini.dataset.acabado = acabado;
+					else delete mini.dataset.acabado;
+				}
+				if (actual === yo) pintarCromo(tarjeta, yo, total);
+			},
+		});
+	}
 </script>
