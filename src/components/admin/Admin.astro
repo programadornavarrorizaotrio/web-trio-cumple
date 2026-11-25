@@ -2,6 +2,7 @@
 // Admin de los organizadores. Todo se pinta en el navegador con las RPC `admin_*` (ver datos.ts): la página
 // en sí no tiene datos, y sin sesión de admin el servidor no devuelve nada.
 import Button from '../common/Button.astro';
+import AdminFicha from './AdminFicha.astro';
 import AdminRana from './AdminRana.astro';
 
 // Barra de abajo. El Wordle, los ajustes y el PIN van dentro de Liga: se tocan poco.
@@ -32,6 +33,14 @@ const campo =
 					<span class="block text-3xl" aria-hidden="true">🔎</span>
 					<span class="mt-2 block text-lg font-black leading-tight">Buscar invitado</span>
 					<span class="mt-0.5 block text-xs font-bold text-granate/70">Ver o corregir su ficha</span>
+				</button>
+				<button type="button" data-ir="ficha" class="col-span-2 flex items-center gap-4 rounded-xl border-2 border-granate/15 bg-white p-4 text-left text-granate shadow-chapa active:translate-y-0.5">
+					<span class="text-3xl" aria-hidden="true">🪪</span>
+					<span class="min-w-0 flex-1">
+						<span class="block text-lg font-black leading-tight">Mi ficha</span>
+						<span class="mt-0.5 block text-xs font-bold text-tinta-suave">Lo que se lee de ti en «El trío»: foto, textos y aficiones</span>
+					</span>
+					<span class="text-xl text-tinta-suave" aria-hidden="true">›</span>
 				</button>
 			</div>
 			<div>
@@ -127,6 +136,9 @@ const campo =
 		<!-- Rana: lo que dice la mascota en la web -->
 		<AdminRana />
 
+		<!-- Mi ficha: se abre desde Inicio -->
+		<AdminFicha />
+
 		<!-- Barra de abajo, al alcance del pulgar -->
 		<nav class="fixed inset-x-0 bottom-0 z-20 border-t-2 border-granate/15 bg-crema/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Secciones del admin">
 			<div class="mx-auto flex max-w-xl">
@@ -208,6 +220,7 @@ const campo =
 	import { usaBD } from '../../lib/rpc';
 	import { equipoPorId } from '../juegos/liga';
 	import { urlFoto } from '../cromos/datos';
+	import { montarFicha } from './ficha';
 	import { montarRana } from './rana';
 	import { ACABADOS } from '../cromos/acabados';
 	import type { InvitadoAdmin } from './datos';
@@ -247,6 +260,7 @@ const campo =
 	}
 
 	const rana = montarRana(raiz, { avisar, accion });
+	const miFicha = montarFicha(raiz, { accion });
 
 	// ── Pestañas ──
 	const cargadas = new Set<string>();
@@ -258,16 +272,22 @@ const campo =
 			await Promise.all([pintarAjustes(), pintarWordle(), pintarAcabados()]);
 		},
 		rana: () => rana.pintar(),
+		ficha: () => miFicha.pintar(),
 	};
 	async function abrir(id: string) {
-		raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pestana === id)));
+		// "Mi ficha" no tiene pestaña: cuelga de Inicio
+		const pestana = id === 'ficha' ? 'inicio' : id;
+		raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pestana === pestana)));
 		raiz.querySelectorAll<HTMLElement>('[data-vista]').forEach((v) => (v.hidden = v.dataset.vista !== id));
 		// Al principio de la sección, sin que la tape la cabecera fija
 		const cabecera = document.querySelector<HTMLElement>('header[data-barra]')?.offsetHeight ?? 0;
 		window.scrollTo({ top: raiz.getBoundingClientRect().top + window.scrollY - cabecera - 16 });
 		if (!cargadas.has(id)) {
 			cargadas.add(id);
-			await cargar[id]().catch((e) => avisar(admin.mensajeError(e), false));
+			await cargar[id]().catch((e) => {
+				cargadas.delete(id); // al volver a abrirla se intenta otra vez
+				avisar(admin.mensajeError(e), false);
+			});
 		}
 	}
 	raiz.querySelectorAll<HTMLButtonElement>('[data-pestana]').forEach((b) => b.addEventListener('click', () => void abrir(b.dataset.pestana!)));

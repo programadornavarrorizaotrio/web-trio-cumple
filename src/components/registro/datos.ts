@@ -118,14 +118,18 @@ export async function prepararFoto(archivo: File): Promise<Blob> {
 }
 
 /**
- * Sube la foto del cromo del invitado con sesión: pide una reserva (`pedir_subida_foto`), sube el archivo a
- * Storage a esa ruta y la confirma (`guardar_foto`). Devuelve el cromo con la foto ya puesta.
- * Errores: 'sesion', 'demasiados', 'foto' (no se pudo subir o confirmar).
+ * Pide una reserva (`pedir_subida_foto`) y sube el archivo a Storage a esa ruta, que devuelve. Falta confirmarla
+ * con la RPC que la use. Errores: 'sesion', 'demasiados', 'foto' (no se pudo subir).
  */
-export async function subirFoto(blob: Blob): Promise<Cromo> {
+export async function subirImagen(blob: Blob): Promise<string> {
 	const { ruta } = await rpcConClave<{ ruta: string }>('pedir_subida_foto');
 	const { supabase } = await import('../../lib/supabase');
 	const { error } = await supabase.storage.from('cromos').upload(ruta, blob, { contentType: blob.type, upsert: false });
 	if (error) throw new Error('foto');
-	return rpcConClave<Cromo>('guardar_foto', { ruta });
+	return ruta;
+}
+
+/** Sube la foto del cromo del invitado con sesión y la confirma (`guardar_foto`). Devuelve el cromo con la foto ya puesta. */
+export async function subirFoto(blob: Blob): Promise<Cromo> {
+	return rpcConClave<Cromo>('guardar_foto', { ruta: await subirImagen(blob) });
 }

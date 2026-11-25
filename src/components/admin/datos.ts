@@ -3,6 +3,7 @@
 import { rpcConClave } from '../../lib/rpc';
 import type { EquipoId } from '../juegos/liga';
 import type { AcabadoId } from '../cromos/acabados';
+import type { FichaTrio, Persona } from '../trio/fichas';
 
 export interface Resumen {
 	invitados: number;
@@ -154,6 +155,22 @@ export const acabados = () => rpcConClave<AcabadosAdmin>('admin_acabados');
 /** Vacía: quita el easter egg. Error: 'datos' (de 3 a 40 letras). */
 export const guardarPalabra = (palabra: string) => rpcConClave<void>('admin_guardar_palabra', { palabra });
 
+// ── Mi ficha (supabase/migrations/…_fichas_trio.sql) ──
+/** `ficha` null si aún no la ha cambiado. Error: 'sin-ficha' (admin que no es del trío). */
+export const miFicha = () => rpcConClave<{ persona: Persona; ficha: FichaTrio | null }>('admin_ficha');
+/** Cada uno guarda la suya. `fotoRuta`: una foto ya subida con `subirImagen`. Errores: 'sin-ficha', 'datos', 'foto'. */
+export const guardarFicha = (f: Omit<FichaTrio, 'persona' | 'foto'> & { fotoRuta: string | null; quitarFoto: boolean }) =>
+	rpcConClave<FichaTrio>('admin_guardar_ficha', {
+		edad: f.edad,
+		lema: f.lema,
+		descripcion: f.descripcion,
+		aficiones: f.aficiones,
+		advertencia: f.advertencia,
+		encuadre: f.encuadre,
+		foto_ruta: f.fotoRuta,
+		quitar_foto: f.quitarFoto,
+	});
+
 /** Mensaje para los errores de las RPC */
 export function mensajeError(e: unknown): string {
 	const codigo = e instanceof Error ? e.message : '';
@@ -166,6 +183,10 @@ export function mensajeError(e: unknown): string {
 		'ya-entregado': 'Ese premio ya se entregó.',
 		'sin-equipo': 'Aún no juega la liga: tiene que elegir equipo antes.',
 		'ya-salio': 'Esa palabra ya ha salido: no se puede borrar.',
+		'sin-ficha': 'Solo los tres cumpleañeros tienen ficha.',
+		foto: 'La foto no se ha podido subir. Inténtalo otra vez.',
+		'foto-tipo': 'Esa foto no vale. Prueba con otra (JPG o PNG).',
+		demasiados: 'Demasiadas fotos seguidas: espera un rato.',
 	};
 	return mensajes[codigo] ?? 'No se ha podido hacer. Comprueba la conexión e inténtalo otra vez.';
 }
