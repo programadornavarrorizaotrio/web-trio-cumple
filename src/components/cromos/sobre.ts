@@ -4,14 +4,24 @@ import { pintarCromo } from './pintar';
 interface Opciones {
 	/** Id del invitado que abre el sobre: su cromo sale casi al final */
 	propio?: string;
+	/** Cuál de los dos sobres: la oferta de empleo del registro o el de cartas coleccionables */
+	variante?: Variante;
 	titulo?: string;
-	/** Nombre que sale en la ventanilla del sobre certificado */
+	/** Nombre que sale en la ventanilla de la oferta de empleo */
 	destinatario?: string;
 	/** Lo que pone al terminar (por defecto, lo del álbum) */
 	final?: { titulo: string; unidad: string; texto: string };
 }
 
-const FINAL_ALBUM = { titulo: 'Expediente completo', unidad: 'cromos', texto: 'Incorporados a su álbum: todos los que vienen a la fiesta.' };
+type Variante = 'empleo' | 'cartas';
+
+const FINAL_ALBUM = { titulo: 'Plantilla completa', unidad: 'cromos', texto: 'Incorporados a su álbum: todos sus compañeros de fiesta.' };
+
+/** Textos de cada sobre */
+const TEXTOS: Record<Variante, { antetitulo: string; titulo: string; pieza: string; piezas: [string, string]; cab: string; fin: string }> = {
+	empleo: { antetitulo: 'SEPE del Trío', titulo: 'Tiene una oferta de empleo', pieza: 'Documento', piezas: ['cromo', 'cromos'], cab: 'Resolución', fin: 'Ver el álbum' },
+	cartas: { antetitulo: 'Trio Feliz · Cartas', titulo: '¡Te ha tocado un sobre!', pieza: 'Carta', piezas: ['carta', 'cartas'], cab: '¡Nueva!', fin: 'Ver mi carta' },
+};
 
 /** Orden de salida: primero el resto, luego el del propio invitado y, al final, el trío (los especiales) */
 function ordenar(cromos: Cromo[], propio?: string) {
@@ -23,7 +33,7 @@ function ordenar(cromos: Cromo[], propio?: string) {
  * Abre el sobre con las cartas dadas (hay que tener <Sobre /> en la página).
  * Se resuelve cuando el invitado cierra el diálogo, termine o no de pasar las cartas.
  */
-export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una notificación', destinatario = 'Invitado/a', final = FINAL_ALBUM }: Opciones = {}): Promise<void> {
+export function abrirSobre(cromos: Cromo[], { propio, variante = 'empleo', titulo, destinatario = 'Invitado/a', final = FINAL_ALBUM }: Opciones = {}): Promise<void> {
 	const dialogo = document.querySelector<HTMLDialogElement>('[data-sobre-dialogo]')!;
 	const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialogo.querySelector<T>(sel)!;
 	const plantilla = $<HTMLTemplateElement>('[data-plantilla-carta]').content.firstElementChild!;
@@ -32,7 +42,8 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una 
 	const pasoSobre = $('[data-paso-sobre]');
 	const pasoCartas = $('[data-paso-cartas]');
 	const pasoFinal = $('[data-paso-final]');
-	const paquete = $('[data-paquete]');
+	const paquete = $(`[data-paquete="${variante}"]`);
+	const textos = TEXTOS[variante];
 	const escenario = $('[data-escenario]');
 	const botonSiguiente = $('[data-siguiente]');
 	const botonSaltar = $('[data-saltar]');
@@ -40,14 +51,22 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una 
 	// Estado inicial (el diálogo se reutiliza entre aperturas)
 	let indice = 0;
 	let ocupado = false;
-	paquete.classList.remove('abierto');
+	dialogo.dataset.variante = variante;
+	dialogo.querySelectorAll<HTMLElement>('[data-paquete]').forEach((p) => {
+		p.hidden = p !== paquete;
+		p.classList.remove('abierto');
+	});
 	pasoSobre.hidden = false;
 	pasoCartas.hidden = true;
 	pasoFinal.hidden = true;
 	escenario.replaceChildren();
-	$('[data-titulo-sobre]').textContent = titulo;
+	$('[data-antetitulo]').textContent = textos.antetitulo;
+	$('[data-titulo-sobre]').textContent = titulo ?? textos.titulo;
+	$('[data-pieza]').textContent = textos.pieza;
+	$('[data-final-cab]').textContent = textos.cab;
+	$('[data-fin]').textContent = textos.fin;
 	$('[data-destinatario]').textContent = destinatario;
-	$('[data-n-cartas]').textContent = `Contiene ${cartas.length} cromo${cartas.length === 1 ? '' : 's'}`;
+	$(`[data-paquete="${variante}"] [data-n-cartas]`).textContent = `Contiene ${cartas.length} ${textos.piezas[cartas.length === 1 ? 0 : 1]}`;
 	$('[data-total]').textContent = String(cartas.length);
 	$('[data-final-n]').textContent = String(cartas.length);
 	$('[data-final-titulo]').textContent = final.titulo;
@@ -61,7 +80,7 @@ export function abrirSobre(cromos: Cromo[], { propio, titulo = 'Tiene usted una 
 		carta.classList.add('entra');
 		escenario.replaceChildren(carta);
 		$('[data-actual]').textContent = String(indice + 1);
-		$('[data-anuncio]').textContent = `Documento ${indice + 1} de ${cartas.length}: ${c.apodo} (${c.nombre})`;
+		$('[data-anuncio]').textContent = `${textos.pieza} ${indice + 1} de ${cartas.length}: ${c.apodo} (${c.nombre})`;
 		botonSiguiente.textContent = indice === cartas.length - 1 ? 'Terminar' : 'Siguiente →';
 	}
 
