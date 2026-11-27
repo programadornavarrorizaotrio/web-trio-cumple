@@ -8,6 +8,7 @@ import Nenufar from './Nenufar.astro';
 // Escena del trío: continúa el recorrido de la portada (Trioland) con el amanecer del día siguiente.
 // La rana entra primero y los presenta; después caen los tres chibis 3D a sus nenúfares. Al tocar uno
 // sale su advertencia en un bocadillo con "Ver ficha", que abre una Hoja con el modelo giratorio.
+// Los textos y la foto son los de trio.json; si alguno ha cambiado su ficha en /admin, se ponen los suyos al cargar.
 // Sin JS, o con "reducir movimiento", todo se ve ya colocado (los modelos se ven como imagen `poster`).
 // Posición de cada chibi: [x en % de la escena, escala, sube (rem)]; el del medio, más atrás y más pequeño.
 // El 4º valor es la x en pantallas grandes, donde la rana se aparta a la izquierda.
@@ -120,7 +121,7 @@ const fondos = await Promise.all(
 		{
 			trio.map((p, i) => (
 				<div id={`dialogo-${p.slug}`} class="dialogo" hidden style={`--xm: ${sitios[i][0]}; --xg: ${sitios[i][3]}`}>
-					<p class="aviso">{p.advertencia}</p>
+					<p class="aviso" data-ficha-advertencia>{p.advertencia}</p>
 					<button type="button" class="boton" data-abrir-hoja={`ficha-${p.slug}`}>
 						Ver ficha
 					</button>
@@ -136,7 +137,7 @@ const fondos = await Promise.all(
 			<div class="mini">
 				<!-- La foto de verdad a la derecha del chibi: se descubre como una cortina al abrir la ficha -->
 				<div class="mini-foto" aria-hidden="true">
-					<img src={fondos[i].src} alt="" loading="lazy" decoding="async" style={`object-position: ${fondos[i].encuadre}`} />
+					<img data-ficha-foto src={fondos[i].src} alt="" loading="lazy" decoding="async" style={`object-position: ${fondos[i].encuadre}`} />
 				</div>
 				<div class="mini-agua"></div>
 				<Nenufar class="mini-nenufar" />
@@ -169,15 +170,15 @@ const fondos = await Promise.all(
 				<dl class="panel">
 					<div class="fila">
 						<dt>Edad</dt>
-						<dd>{p.edad} años</dd>
+						<dd data-ficha-edad>{p.edad} años</dd>
 					</div>
 					<div class="fila">
 						<dt>Lema</dt>
-						<dd>{p.lema}</dd>
+						<dd data-ficha-lema>{p.lema}</dd>
 					</div>
 				</dl>
-				<p class="desc">{p.descripcion}</p>
-				<ul class="aficiones">
+				<p class="desc" data-ficha-descripcion>{p.descripcion}</p>
+				<ul class="aficiones" data-ficha-aficiones>
 					{p.aficiones.map((a) => <li class="chip">{a}</li>)}
 				</ul>
 				<form method="dialog">
@@ -941,6 +942,9 @@ const fondos = await Promise.all(
 </style>
 
 <script>
+	import { obtenerFichas, type FichaTrio } from './fichas';
+	import { urlFoto } from '../cromos/datos';
+
 	const VISOR = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js';
 	const fase = document.querySelector<HTMLElement>('#trio');
 
@@ -959,6 +963,34 @@ const fondos = await Promise.all(
 			);
 			obs.observe(fase);
 		}
+
+		// --- Lo que cada uno haya cambiado de su ficha en /admin (si falla, se queda la de la web) ---
+		const ponerFicha = (f: FichaTrio) => {
+			const hoja = document.getElementById(`ficha-${f.persona}`);
+			const dialogo = document.getElementById(`dialogo-${f.persona}`);
+			if (!hoja || !dialogo) return;
+			hoja.querySelector('[data-ficha-edad]')!.textContent = `${f.edad} años`;
+			hoja.querySelector('[data-ficha-lema]')!.textContent = f.lema;
+			hoja.querySelector('[data-ficha-descripcion]')!.textContent = f.descripcion;
+			dialogo.querySelector('[data-ficha-advertencia]')!.textContent = f.advertencia;
+			// Se clona un chip de los que hay para conservar su estilo
+			const lista = hoja.querySelector('[data-ficha-aficiones]')!;
+			const molde = lista.firstElementChild!;
+			lista.replaceChildren(
+				...f.aficiones.map((a) => {
+					const li = molde.cloneNode(false) as HTMLElement;
+					li.textContent = a;
+					return li;
+				}),
+			);
+			const foto = hoja.querySelector<HTMLImageElement>('[data-ficha-foto]')!;
+			const url = urlFoto(f.foto);
+			if (url) foto.src = url;
+			if (f.encuadre) foto.style.objectPosition = f.encuadre;
+		};
+		obtenerFichas()
+			.then((fichas) => fichas.forEach(ponerFicha))
+			.catch(() => {});
 
 		// --- <model-viewer> (~300 KB): se carga cuando la escena se acerca a la pantalla ---
 		const cargar = () => {

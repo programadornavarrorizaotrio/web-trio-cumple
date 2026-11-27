@@ -1,0 +1,194 @@
+---
+// "Mi ficha" del admin: cada cumpleañero edita la suya (la de «El trío», en la portada). La lógica, en ficha.ts.
+import { getImage } from 'astro:assets';
+import Button from '../common/Button.astro';
+import trio from '../../data/trio.json';
+
+// La ficha de partida de cada uno (trio.json) y su foto, por si aún no la ha cambiado
+const fotos = import.meta.glob<{ default: ImageMetadata }>('../../assets/trio/*.jpg', { eager: true });
+type Datos = (typeof trio)[number] & { fondo?: string; encuadreFondo?: string };
+const partida = Object.fromEntries(
+	await Promise.all(
+		(trio as Datos[]).map(async (p) => [
+			p.slug,
+			{
+				nombre: p.nombre,
+				edad: p.edad,
+				lema: p.lema,
+				descripcion: p.descripcion,
+				aficiones: p.aficiones,
+				advertencia: p.advertencia,
+				foto: (await getImage({ src: fotos[`../../assets/trio/${p.fondo ?? p.foto}`].default, width: 800, format: 'webp' })).src,
+				encuadre: p.encuadreFondo ?? p.encuadre,
+				poster: `/${p.poster}`,
+			},
+		]),
+	),
+);
+const campo =
+	'mt-1 block w-full min-w-0 rounded border-2 border-granate/25 bg-white px-3 py-2.5 font-normal text-tinta placeholder:text-tinta-suave/50 focus:border-granate focus:outline-none';
+const chapita =
+	'inline-block cursor-pointer rounded-full border-2 border-granate/20 px-4 py-2 text-sm font-bold text-granate focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-granate active:bg-amarillo-claro';
+---
+
+<section data-vista="ficha" hidden class="space-y-4" data-ficha-partida={JSON.stringify(partida)}>
+	<button type="button" data-ir="inicio" class="py-1 text-sm font-bold text-granate">‹ Inicio</button>
+
+	<form data-form-ficha class="space-y-5 rounded-xl bg-white p-4 shadow-chapa">
+		<div>
+			<h3 class="text-lg text-granate">Mi ficha</h3>
+			<p class="mt-1 text-sm text-tinta-suave">La que sale al tocar tu muñeco en «El trío», en la portada. Cada uno solo puede cambiar la suya.</p>
+		</div>
+
+		<!-- Así se ve, con los colores de la ficha de verdad. La foto se arrastra para encuadrarla. -->
+		<div class="mf">
+			<div class="mf-mini">
+				<img data-mf-poster class="mf-poster" alt="" />
+				<div data-mf-foto class="mf-foto" tabindex="0" role="group" aria-label="Foto de tu ficha: arrástrala o usa las flechas para encuadrarla">
+					<img data-mf-img alt="" draggable="false" />
+					<span class="mf-pista" aria-hidden="true">Arrastra para encuadrar</span>
+				</div>
+			</div>
+			<div class="mf-cuerpo" aria-hidden="true">
+				<p class="mf-bocadillo" data-mf-advertencia></p>
+				<p data-mf-nombre class="mf-nombre"></p>
+				<p class="mf-datos"><span data-mf-edad></span> · <span data-mf-lema></span></p>
+				<p data-mf-descripcion class="mf-desc"></p>
+				<ul data-mf-aficiones class="mf-aficiones"></ul>
+			</div>
+		</div>
+
+		<div class="flex flex-wrap gap-2">
+			<label class={chapita}>Cambiar foto<input data-elegir-foto type="file" accept="image/*" class="sr-only" /></label>
+			<button type="button" data-quitar-foto-ficha hidden class={chapita}>Quitar esta foto</button>
+		</div>
+
+		<div class="grid grid-cols-[5.5rem_1fr] gap-3">
+			<label class="text-sm font-bold">Edad<input name="edad" type="number" inputmode="numeric" min="1" max="120" required class={campo} /></label>
+			<label class="text-sm font-bold">Lema<input name="lema" required maxlength="40" autocomplete="off" class={campo} /></label>
+		</div>
+
+		<label class="block text-sm font-bold">
+			<span class="flex items-baseline justify-between">Descripción <span data-mf-quedan class="text-xs font-normal text-tinta-suave"></span></span>
+			<textarea name="descripcion" rows="6" required maxlength="400" class={campo}></textarea>
+		</label>
+
+		<fieldset>
+			<legend class="text-sm font-bold">Aficiones</legend>
+			<p class="text-xs text-tinta-suave">Con un emoji delante quedan mejor. Hasta ocho.</p>
+			<ul data-lista-aficiones class="mt-1.5 space-y-2"></ul>
+			<button type="button" data-otra-aficion class={chapita + ' mt-2'}>+ Otra</button>
+		</fieldset>
+
+		<label class="block text-sm font-bold"
+			>Advertencia<input name="advertencia" required maxlength="90" autocomplete="off" class={campo} />
+			<span class="mt-1 block text-xs font-normal text-tinta-suave">Lo que sale en el bocadillo al tocar tu muñeco.</span></label
+		>
+
+		<Button type="submit" tamano="lg" class="w-full">Guardar mi ficha</Button>
+	</form>
+</section>
+
+<style>
+	.mf {
+		overflow: hidden;
+		border-radius: 1rem;
+		background: #0e2a1f;
+		color: #fff4d6;
+	}
+	.mf-mini {
+		position: relative;
+		height: 15rem;
+		background: linear-gradient(180deg, #5b8fd0 0%, #9ccfe6 38%, #ffe6b0 70%, #1aa497 70%, #0d6c6a 100%);
+	}
+	.mf-poster {
+		position: absolute;
+		left: 25%;
+		bottom: 1.2rem;
+		width: 44%;
+		max-width: 11rem;
+		height: auto;
+		translate: -50% 0;
+	}
+	.mf-foto {
+		position: absolute;
+		inset: 0 0 0 50%;
+		overflow: hidden;
+		border-left: 3px solid #c6f26b;
+		cursor: grab;
+		touch-action: none;
+	}
+	.mf-foto:active {
+		cursor: grabbing;
+	}
+	.mf-foto:focus-visible {
+		outline: 3px solid #c6f26b;
+		outline-offset: -3px;
+	}
+	.mf-foto img {
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		object-fit: cover;
+		user-select: none;
+		pointer-events: none;
+	}
+	.mf-pista {
+		position: absolute;
+		inset: auto 0.4rem 0.4rem;
+		border-radius: 9999px;
+		background: rgb(6 20 16 / 0.7);
+		padding: 0.2rem 0.4rem;
+		font-size: 0.62rem;
+		font-weight: 700;
+		text-align: center;
+		pointer-events: none;
+	}
+	.mf-cuerpo {
+		padding: 1rem;
+	}
+	.mf-bocadillo {
+		width: fit-content;
+		max-width: 100%;
+		margin-bottom: 0.9rem;
+		border-radius: 0.9rem 0.9rem 0.9rem 0.15rem;
+		background: #fff4d6;
+		padding: 0.45rem 0.75rem;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: #0e2a1f;
+		overflow-wrap: anywhere;
+	}
+	.mf-nombre {
+		font-size: 1.5rem;
+		font-weight: 900;
+		line-height: 1;
+		color: #c6f26b;
+	}
+	.mf-datos {
+		margin-top: 0.4rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+	.mf-desc {
+		margin-top: 0.6rem;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		overflow-wrap: anywhere;
+	}
+	.mf-aficiones {
+		margin-top: 0.7rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.mf-aficiones :global(li) {
+		border-radius: 9999px;
+		background: rgb(255 255 255 / 0.12);
+		padding: 0.25rem 0.7rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+</style>
