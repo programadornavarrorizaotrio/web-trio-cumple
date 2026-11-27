@@ -125,6 +125,7 @@ rana_mensajes         id, texto, pose, destino (todos | sin-responder | vienen |
 rana_vistos           (mensaje_id, invitado_id) PK, visto_en   ← quién ha cerrado cada mensaje
 acabados              id PK, orden, rango (null: easter egg)   ← versiones especiales del cromo
 invitado_acabados     (invitado_id, acabado) PK, conseguido_en, visto_en, puesto
+trio_fichas           persona PK ('pencho' | 'fran' | 'juan'), edad, lema, descripcion, aficiones text[], advertencia, foto_path, encuadre   ← solo las que se han cambiado
 admin_registro        admin_id, accion, detalle, created_at   ← qué ha tocado cada admin
 ```
 
@@ -158,6 +159,7 @@ Para los tres cumpleañeros (`invitados.rol = 'admin'`). **No hay cuentas aparte
 - `admin_wordle`, `admin_anadir_wordle`, `admin_borrar_wordle`: las palabras del Wordle del trío.
 - `admin_rana`, `admin_rana_decir`, `admin_rana_callar`: lo que dice la rana en la web (a todos, a un grupo o a una persona). Los invitados lo reciben con `escuchar_rana` y lo cierran con `rana_vista`.
 - `admin_acabados`, `admin_guardar_palabra`: la palabra secreta del álbum y cuántos tienen cada acabado.
+- `admin_ficha`, `admin_guardar_ficha`: cada uno edita **su** ficha del trío (la de su cromo especial, 1–3). La web las lee con `fichas_trio`; la que no se ha cambiado sale de `trio.json`.
 
 Pensado para crecer (aún sin hacer):
 - **Más cosas en el admin**: lo editable (minijuegos, rangos, premios, `ajustes`) ya vive en tablas; cada pantalla nueva es una RPC `admin_*` más.
@@ -185,7 +187,7 @@ src/
     fotos/
   data/
     fiesta.json  ← fecha, hora, lugar, ventana de fotos
-    trio.json    ← los tres cumpleañeros (cromos especiales de ejemplo)
+    trio.json    ← los tres cumpleañeros (ficha de partida; cada uno cambia la suya en /admin)
     estanco.json ← los 4–5 productos
   layouts/
   lib/           ← cliente de Supabase y sesión del invitado
